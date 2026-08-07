@@ -338,6 +338,8 @@ body{
 
 /* ---------- Arma ---------- */
 .crest{ display:block; filter:drop-shadow(0 5px 12px rgba(0,0,0,.6)); flex-shrink:0; }
+/* Gerçek armalar farklı en-boy oranlarında; kutuya sığdırılıp ortalanır */
+.crest-img{ object-fit:contain; object-position:center; }
 .crest-wrap{ position:relative; display:inline-grid; place-items:center; }
 .crest-wrap::before{
   content:''; position:absolute; inset:-22%; border-radius:50%;
@@ -958,9 +960,109 @@ body{
   .num{ width:52px; height:47px; font-size:24px; }
 }
 
+/* ============================================================
+   AÇILIŞ BÖLÜMÜ — sayfanın en üstündeki tanıtım alanı
+   Metinler sırayla belirir, altta takım kartları kayar.
+   ============================================================ */
+.lander{
+  position:relative; overflow:hidden;
+  border-radius:var(--r-xl); border:1px solid var(--line);
+  margin:22px 0 26px; padding:46px 20px 0;
+  min-height:min(78vh, 600px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+  background:
+    radial-gradient(ellipse 100% 70% at 50% -12%, color-mix(in srgb, var(--iris) 26%, transparent), transparent 60%),
+    radial-gradient(ellipse 85% 55% at 50% 112%, color-mix(in srgb, var(--magenta) 17%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--bg-2), var(--bg));
+  box-shadow:var(--shadow-lg);
+}
+.lander-in{
+  position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center; padding-bottom:24px;
+}
+
+@keyframes landIn{ from{ opacity:0; transform:translateY(15px); } to{ opacity:1; transform:none; } }
+.lander-pill, .lander-desc, .lander-cta, .lander-stats, .lander-title .w{
+  opacity:0; animation:landIn .75s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.lander-desc { animation-delay:.50s; }
+.lander-cta  { animation-delay:.58s; }
+.lander-stats{ animation-delay:.66s; }
+
+.lander-pill{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:11px; font-weight:600; letter-spacing:.3px; color:var(--dim);
+  background:rgba(var(--pane),.55); border:1px solid var(--line-2);
+  padding:7px 15px; border-radius:99px;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+}
+.lander-title{
+  margin:18px 0 0; font-family:var(--f-head); font-weight:400;
+  font-size:clamp(38px, 8.6vw, 72px); line-height:.95; letter-spacing:-.5px;
+  text-transform:uppercase; color:var(--text);
+}
+.lander-title .ln{ display:block; }
+.lander-title .w{ display:inline-block; }
+.lander-title .grad{
+  background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.lander-desc{
+  margin:20px 0 0; max-width:560px; font-size:14.5px; line-height:1.75; color:var(--dim);
+}
+.lander-desc b{ color:var(--text); font-weight:600; }
+.lander-cta{ display:flex; gap:11px; flex-wrap:wrap; justify-content:center; margin-top:26px; }
+.lander-cta .btn{ border-radius:99px; padding:13px 26px; font-size:13.5px; }
+.lander-stats{ display:flex; gap:26px; flex-wrap:wrap; justify-content:center; margin-top:28px; }
+.lander-stats div{ display:flex; flex-direction:column; gap:3px; }
+.lander-stats b{
+  font-family:var(--f-num); font-size:27px; letter-spacing:1px; line-height:1; color:var(--text);
+}
+.lander-stats span{
+  font-size:9.5px; letter-spacing:1.6px; text-transform:uppercase; color:var(--faint);
+}
+
+/* Kayan takım şeridi */
+.marquee{
+  position:relative; width:100%; margin-top:auto; padding-bottom:28px;
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track{ display:flex; gap:14px; width:max-content; animation:mqSlide 34s linear infinite; }
+.marquee:hover .marquee-track{ animation-play-state:paused; }
+@keyframes mqSlide{ to{ transform:translateX(-50%); } }
+
+.mq-card{
+  flex:0 0 auto; width:124px; aspect-ratio:3/4; border-radius:var(--r-lg);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px;
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 16px 34px -16px rgba(0,0,0,.85);
+  background:linear-gradient(165deg,
+    color-mix(in srgb, var(--c1) 50%, #0b0b14),
+    color-mix(in srgb, var(--c2) 62%, #06060c));
+}
+.mq-card:nth-child(odd) { transform:rotate(-2.2deg); }
+.mq-card:nth-child(even){ transform:rotate(2.6deg) translateY(-9px); }
+.mq-card .nm{
+  font-family:var(--f-head); font-size:11.5px; letter-spacing:1.3px;
+  color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.65);
+}
+
+/* Yeniden çizimlerde giriş animasyonu tekrarlanmasın */
+.lander.no-anim .lander-pill, .lander.no-anim .lander-desc,
+.lander.no-anim .lander-cta,  .lander.no-anim .lander-stats,
+.lander.no-anim .lander-title .w{ opacity:1; animation:none; }
+
+@media (max-width:560px){
+  .lander{ padding-top:36px; min-height:auto; }
+  .lander-stats{ gap:18px; }
+  .lander-stats b{ font-size:22px; }
+  .mq-card{ width:98px; }
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{ animation-duration:.001s !important; animation-iteration-count:1 !important;
-    transition-duration:.001s !important; }
+    animation-delay:0s !important; transition-duration:.001s !important; }
   .reveal{ opacity:1; transform:none; }
 }
 
@@ -995,6 +1097,23 @@ const TWO_HOURS = 2 * 60 * 60 * 1000;
    TAKIMLAR
    ============================================================ */
 const BIG4 = ['GS','FB','BJK','TS'];
+
+/* ------------------------------------------------------------
+   GERÇEK ARMALAR — yalnızca dört büyük için.
+   Buradaki adresler Wikimedia'ya bağlıdır. Görsel yüklenemezse
+   crest() kendiliğinden çizilmiş armaya döner, sayfa bozulmaz.
+
+   Dosyaları kendi sunucuna almak istersen (önerilir):
+     1) dört PNG'yi index.html yanında bir img/ klasörüne indir
+     2) aşağıdaki adresleri 'img/gs.png' gibi göreli yollarla değiştir
+   Listeden bir satırı silersen o takım yine çizilmiş armayı kullanır.
+   ------------------------------------------------------------ */
+const LOGOS = {
+  GS: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Galatasaray_SK_football_logo.png/250px-Galatasaray_SK_football_logo.png',
+  FB: 'https://upload.wikimedia.org/wikipedia/tr/thumb/8/86/Fenerbah%C3%A7e_SK.png/250px-Fenerbah%C3%A7e_SK.png',
+  BJK:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/BesiktasJK-Logo.svg/250px-BesiktasJK-Logo.svg.png',
+  TS: 'https://upload.wikimedia.org/wikipedia/tr/a/ab/TrabzonsporAmblemi.png',
+};
 
 const TEAMS = {
   /* --- Dört büyükler (çizgili armalar) --- */
@@ -1423,7 +1542,17 @@ function timeLeftShort(ms){
    ============================================================ */
 const SHIELD = 'M32 2 L60 11 V34 C60 49 47 59.5 32 65 C17 59.5 4 49 4 34 V11 Z';
 
+/* Dört büyükte gerçek arma, diğerlerinde çizilmiş arma.
+   Görsel yüklenemezse onerror ile çizilmiş armaya döner. */
 function crest(code, size = 44){
+  if (!LOGOS[code]) return crestShield(code, size);
+  const t = TEAMS[code];
+  return `<img class="crest crest-img" src="${LOGOS[code]}"
+    width="${size}" height="${Math.round(size * 67/64)}" alt="${t ? t.name : code}"
+    decoding="async" onerror="this.outerHTML=crestShield('${code}',${size})">`;
+}
+
+function crestShield(code, size = 44){
   const t = TEAMS[code];
   if (!t) return `<span style="width:${size}px;display:inline-block"></span>`;
   const uid = `c${code}${Math.random().toString(36).slice(2,7)}`;
@@ -2285,6 +2414,70 @@ window.P_tahmin = (function(){
    ============================================================ */
 
 let fTeam = 'ALL', fComp = 'ALL', shown = 14;
+let landed = false;               // açılış animasyonu yalnızca ilk çizimde oynar
+
+/* ---------------- Açılış bölümü ---------------- */
+/* Başlık kelimeleri tek tek belirir; son kelime degrade renkli.
+   Yazıyı değiştirmek için aşağıdaki iki satır yeterli.        */
+const LANDER_TITLE = [['DÖRT', 'BÜYÜK,'], ['TEK', 'TAHMİN', 'LİGİ']];
+const LANDER_GRAD_WORD = 'LİGİ';
+
+function landingHero(){
+  const derbies = FIXTURES.filter(m => m.derby).length;
+
+  let i = 0;
+  const title = LANDER_TITLE.map(words => `<span class="ln">${
+    words.map(w => `<span class="w ${w === LANDER_GRAD_WORD ? 'grad' : ''}"
+      style="animation-delay:${(.15 + i++ * .07).toFixed(2)}s">${w}&nbsp;</span>`).join('')
+  }</span>`).join('');
+
+  /* Şerit: dört büyüğün kartları. Kesintisiz dönmesi için iki kez basılır. */
+  const tiles = [...BIG4, ...BIG4].map(c => `
+    <div class="mq-card t-${c.toLowerCase()}">
+      ${crest(c, 58)}<span class="nm">${TEAMS[c].short || TEAMS[c].name}</span>
+    </div>`).join('');
+
+  return `
+  <section class="lander ${landed ? 'no-anim' : ''}">
+    <div class="lander-in">
+      <span class="lander-pill">
+        <span class="pulse-dot"></span>2026/27 sezonu · ${FIXTURES.length} maç · ${derbies} derbi
+      </span>
+
+      <h1 class="lander-title">${title}</h1>
+
+      <p class="lander-desc">
+        Galatasaray, Fenerbahçe, Beşiktaş ve Trabzonspor'un oynadığı <b>her maç</b> —
+        Süper Lig ve Avrupa kupaları tek yerde. Skoru tahmin et, derbilerde
+        <b style="color:var(--gold)">beş kat</b> puan topla, sezonu zirvede bitir.
+      </p>
+
+      <div class="lander-cta">
+        <button class="btn" onclick="P_tahmin.startCta()">
+          ${isLoggedIn() ? 'Maçlara Geç' : 'Hemen Başla'}
+        </button>
+        <button class="btn ghost" onclick="P_tahmin.jumpTo('bolum-kurallar')">Nasıl Oynanır?</button>
+      </div>
+
+      <div class="lander-stats">
+        <div><b>${FIXTURES.length}</b><span>Maç</span></div>
+        <div><b>${derbies}</b><span>Derbi</span></div>
+        <div><b>×5</b><span>Derbi Puanı</span></div>
+        <div><b>${Store.users.length}</b><span>Oyuncu</span></div>
+      </div>
+    </div>
+
+    <div class="marquee"><div class="marquee-track">${tiles}${tiles}</div></div>
+  </section>`;
+}
+
+function jumpTo(id){
+  document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function startCta(){
+  if (!isLoggedIn()){ openAuth('signup'); return; }
+  jumpTo('bolum-maclar');
+}
 
 /* ---------------- Hero: sıradaki / oynanan maç ---------------- */
 function heroBlock(){
@@ -2306,9 +2499,9 @@ function heroBlock(){
 
   const middle = live
     ? `<div style="text-align:center">
-         <div class="score tint" style="font-size:46px">${r.h} — ${r.a}</div>
+         <div class="score tint" style="font-size:46px">${r ? `${r.h} — ${r.a}` : '– — –'}</div>
          <div style="font-size:10.5px;color:var(--red);letter-spacing:2.5px;margin-top:9px;font-weight:700">
-           ${r.minute}' OYNANIYOR
+           ${r?.minute ? r.minute + "' OYNANIYOR" : 'OYNANIYOR'}
          </div>
        </div>
        ${next ? `
@@ -2365,7 +2558,9 @@ function statsBlock(){
     <div class="card-pad">
       <div class="stat-row">
         <div class="stat"><b data-count="${me.points}">0</b><span>Puanın</span></div>
-        <div class="stat"><b data-count="${me.rank}">0</b><span>Sıran / ${rows.length}</span></div>
+        <div class="stat">
+          ${typeof me.rank === 'number' ? `<b data-count="${me.rank}">0</b>` : `<b>${me.rank}</b>`}
+          <span>Sıran / ${rows.length}</span></div>
         <div class="stat"><b data-count="${me.exact}">0</b><span>Tam İsabet</span></div>
       </div>
       <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;
@@ -2456,7 +2651,7 @@ function matchCard(m){
   const stateChip = open
     ? `<span class="state state-open">⏱ ${timeLeftShort(new Date(m.dt) - NOW())}</span>`
     : st === 'live'
-      ? `<span class="state state-live"><span class="pulse-dot"></span>CANLI ${r.minute}'</span>`
+      ? `<span class="state state-live"><span class="pulse-dot"></span>CANLI${r?.minute ? ' ' + r.minute + "'" : ''}</span>`
       : `<span class="state state-done">🔒 BİTTİ</span>`;
 
   const center = (st !== 'open' && r)
@@ -2497,8 +2692,8 @@ function matchCard(m){
 
   let others = '';
   if (!open){
-    const rows = USERS.map(u => {
-      const p = (u.you ? myPredictions() : PREDICTIONS[u.uid])?.[m.id];
+    const rows = Store.users.map(u => {
+      const p = (u.you ? myPredictions() : predictionsOf(u.uid))?.[m.id];
       if (!p) return null;
       const pts = r && isFinished(m) ? calcPoints(p.h, p.a, r.h, r.a, m.mult) : null;
       return { u, p, pts };
@@ -2737,11 +2932,12 @@ function rulesBlock(){
 /* ---------------- Çiz ---------------- */
 function render(){
   document.getElementById('app').innerHTML = `
+    ${landingHero()}
     ${heroBlock()}
     ${statsBlock()}
     ${prizeBlock()}
 
-    <div class="sec-title"><h3>Yaklaşan Maçlar</h3><span class="rule"></span></div>
+    <div class="sec-title" id="bolum-maclar"><h3>Yaklaşan Maçlar</h3><span class="rule"></span></div>
     ${filterBar()}
     ${matchList()}
 
@@ -2751,9 +2947,10 @@ function render(){
     <div class="sec-title"><h3>Sıralama</h3><span class="rule"></span></div>
     ${miniBoard()}
 
-    <div class="sec-title"><h3>Kurallar</h3><span class="rule"></span></div>
+    <div class="sec-title" id="bolum-kurallar"><h3>Kurallar</h3><span class="rule"></span></div>
     ${rulesBlock()}
   `;
+  landed = true;
 
   const next = upcomingFixtures().find(f => matchState(f) === 'open');
   if (next && document.getElementById('cd-d')){
@@ -2764,7 +2961,7 @@ function render(){
   }
   initReveal(); initTilt(); initCounters();
 }
-return { heroBlock, statsBlock, prizeBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, savePick, saveResult, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
+return { landingHero, jumpTo, startCta, heroBlock, statsBlock, prizeBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, savePick, saveResult, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
 })();
 
 /* ===== puan-tablosu.html ===== */
@@ -2997,13 +3194,13 @@ function historyCard(m){
   const H = TEAMS[m.home], A = TEAMS[m.away], b = badgeOf(m);
   const r = RESULTS[m.id];
   const live = matchState(m) === 'live';
-  const hw = r.h > r.a, aw = r.a > r.h;
+  const hw = !!r && r.h > r.a, aw = !!r && r.a > r.h;
   const feat = isFeatured(m);
 
-  const rows = USERS.map(u => {
-    const p = (u.you ? myPredictions() : PREDICTIONS[u.uid])?.[m.id];
+  const rows = Store.users.map(u => {
+    const p = (u.you ? myPredictions() : predictionsOf(u.uid))?.[m.id];
     if (!p) return null;
-    const pts = live ? null : calcPoints(p.h, p.a, r.h, r.a, m.mult);
+    const pts = (live || !r) ? null : calcPoints(p.h, p.a, r.h, r.a, m.mult);
     return { u, p, pts };
   }).filter(Boolean).sort((a,b) => (b.pts ?? -1) - (a.pts ?? -1));
 
@@ -3016,7 +3213,7 @@ function historyCard(m){
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
       ${m.comp === 'SL' && !m.official ? '<span class="prov">geçici</span>' : ''}
       <span class="state ${live ? 'state-live' : 'state-done'}">
-        ${live ? `<span class="pulse-dot"></span>CANLI ${r.minute}'` : fmtDateShort(m.dt)}
+        ${live ? `<span class="pulse-dot"></span>CANLI${r?.minute ? ' ' + r.minute + "'" : ''}` : fmtDateShort(m.dt)}
       </span>
     </div>
 
@@ -3027,7 +3224,7 @@ function historyCard(m){
           <div class="info"><div class="nm ${hw ? 'win' : 'lose'}">${H.name}</div>
             <div class="meta">${m.venue || ''}</div></div>
         </div>
-        <div class="center"><div class="score ${live ? 'tint' : ''}">${r.h} — ${r.a}</div></div>
+        <div class="center"><div class="score ${live ? 'tint' : ''}">${r ? `${r.h} — ${r.a}` : '– — –'}</div></div>
         <div class="side away">
           <span class="crest-wrap">${crest(m.away, feat ? 40 : 32)}</span>
           <div class="info"><div class="nm ${aw ? 'win' : 'lose'}">${A.name}</div>
@@ -3065,9 +3262,10 @@ function togglePicks(id, btn){
 /* ---------------- Özet ---------------- */
 function summary(list){
   const done = list.filter(isFinished);
-  const goals = done.reduce((s,m) => s + RESULTS[m.id].h + RESULTS[m.id].a, 0);
-  const avg = done.length ? (goals / done.length).toFixed(1) : '0';
-  const bigWins = done.filter(m => {
+  const scored = done.filter(m => RESULTS[m.id]);          // sonucu girilmemiş maçlar sayılmaz
+  const goals = scored.reduce((s,m) => s + RESULTS[m.id].h + RESULTS[m.id].a, 0);
+  const avg = scored.length ? (goals / scored.length).toFixed(1) : '0';
+  const bigWins = scored.filter(m => {
     const r = RESULTS[m.id];
     const big = m.big[0];
     const home = m.home === big;
