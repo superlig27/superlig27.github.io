@@ -749,6 +749,135 @@ body{
 /* ---------- Konfeti ---------- */
 .confetti{ position:fixed; width:8px; height:13px; z-index:190; pointer-events:none; border-radius:1px; }
 
+/* ---------- Kullanıcı çipi (üst çubuk) ---------- */
+.auth-chip{
+  display:flex; align-items:center; gap:7px; cursor:pointer; flex-shrink:0;
+  padding:5px 11px 5px 5px; border-radius:22px;
+  background:rgba(255,255,255,.05); border:1px solid var(--line);
+  color:var(--dim); font-family:var(--f-body); font-size:12px; font-weight:500;
+  transition:border-color .2s, color .2s, background .2s;
+}
+.auth-chip:hover{ color:var(--text); border-color:var(--line-2); background:rgba(255,255,255,.09); }
+.auth-chip .av{
+  width:24px; height:24px; border-radius:50%; flex-shrink:0;
+  display:grid; place-items:center; font-family:var(--f-head); font-size:12px;
+  background:rgba(255,255,255,.09); color:var(--dim);
+}
+.auth-chip.on .av{ background:var(--grad); color:var(--ink); }
+.auth-chip.on{ color:var(--text); }
+.auth-chip .lb{ max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.auth-chip .lb b{
+  font-size:8.5px; letter-spacing:1px; color:var(--gold); font-weight:700;
+  margin-left:4px; vertical-align:1px;
+}
+
+/* ---------- Pencere (modal) ---------- */
+.modal{
+  position:fixed; inset:0; z-index:220;
+  display:grid; place-items:center; padding:18px;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+  opacity:0; transition:opacity .26s;
+}
+.modal.show{ opacity:1; }
+.modal-card{
+  position:relative; width:100%; max-width:392px;
+  max-height:92vh; overflow-y:auto;
+  border-radius:var(--r-xl); border:1px solid var(--line-2);
+  background:linear-gradient(168deg, rgba(255,255,255,.07), rgba(255,255,255,.02) 40%),
+             color-mix(in srgb, var(--bg-2) 96%, transparent);
+  box-shadow:var(--shadow-lg);
+  transform:translateY(16px) scale(.98); transition:transform .3s cubic-bezier(.2,.8,.3,1);
+}
+.modal.show .modal-card{ transform:none; }
+.modal-card::before{
+  content:''; position:absolute; top:0; left:14%; right:14%; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent);
+}
+.modal-x{
+  position:absolute; top:12px; right:12px; z-index:2;
+  width:30px; height:30px; border-radius:50%; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid var(--line);
+  color:var(--dim); font-size:13px; line-height:1;
+  transition:color .2s, background .2s;
+}
+.modal-x:hover{ color:var(--text); background:rgba(255,255,255,.1); }
+
+.modal-head{
+  display:flex; align-items:center; gap:12px;
+  padding:22px 22px 16px;
+}
+.modal-title{ font-family:var(--f-head); font-size:19px; letter-spacing:.6px; line-height:1.1; }
+.modal-sub{ font-size:11.5px; color:var(--faint); margin-top:3px; }
+.modal-body{ padding:4px 22px 22px; }
+
+.tabs{ display:flex; gap:4px; padding:0 22px 14px; }
+.tabs button{
+  flex:1; cursor:pointer; padding:9px; border-radius:10px;
+  background:rgba(255,255,255,.035); border:1px solid transparent;
+  color:var(--dim); font-family:var(--f-body); font-size:12.5px; font-weight:600;
+  transition:all .2s;
+}
+.tabs button:hover{ color:var(--text); }
+.tabs button.on{ color:var(--ink); background:var(--grad); border-color:transparent; }
+
+.fld{ display:block; margin-bottom:13px; }
+.fld span{
+  display:block; font-size:10px; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--faint); margin-bottom:6px;
+}
+.fld input{
+  width:100%; padding:12px 14px; border-radius:var(--r-md);
+  background:rgba(255,255,255,.04); border:1px solid var(--line-2);
+  color:var(--text); font-family:var(--f-body); font-size:14px; outline:none;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+}
+.fld input::placeholder{ color:var(--faint); }
+.fld input:focus{
+  border-color:var(--iris); background:rgba(255,255,255,.06);
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--iris) 16%, transparent);
+}
+
+.linkbtn{
+  display:block; width:100%; margin-top:11px; padding:6px; cursor:pointer;
+  background:none; border:none; color:var(--faint);
+  font-family:var(--f-body); font-size:12px; text-decoration:underline;
+  text-underline-offset:3px; transition:color .2s;
+}
+.linkbtn:hover{ color:var(--dim); }
+
+.au-msg{ min-height:18px; margin-top:11px; font-size:12px; text-align:center; }
+.au-msg .err{ color:var(--red); }
+.au-msg .ok{ color:var(--cyan); }
+
+/* ---------- Giriş çağrısı (tahmin alanı yerine) ---------- */
+.login-cta{
+  margin-top:16px; padding-top:15px; border-top:1px dashed var(--line);
+  display:flex; align-items:center; justify-content:center; gap:11px; flex-wrap:wrap;
+  font-size:12.5px; color:var(--faint);
+}
+
+/* ---------- Yönetici sonuç girişi ---------- */
+.admin-box{
+  margin-top:13px; padding:11px 13px; border-radius:var(--r-md);
+  background:color-mix(in srgb, var(--gold) 8%, transparent);
+  border:1px solid color-mix(in srgb, var(--gold) 26%, transparent);
+  display:flex; align-items:center; justify-content:center; gap:9px; flex-wrap:wrap;
+}
+.admin-box .lbl{
+  width:100%; text-align:center; font-size:9.5px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--gold); margin-bottom:3px;
+}
+.admin-box .num{ width:52px; height:42px; font-size:22px; }
+
+/* ---------- Geçici fikstür işareti ---------- */
+.prov{
+  font-size:8.5px; letter-spacing:1.2px; text-transform:uppercase;
+  padding:2.5px 7px; border-radius:5px; white-space:nowrap;
+  color:var(--faint); background:rgba(255,255,255,.045);
+  border:1px dashed var(--line-2);
+}
+
 /* ---------- Tema seçici ---------- */
 .theme-dock{
   position:fixed; right:16px; bottom:16px; z-index:150;
@@ -854,7 +983,10 @@ body{
 /* ------------------------------------------------------------
    DEMO ZAMANI — canlıya alırken:  const DEMO_NOW = null;
    ------------------------------------------------------------ */
-const DEMO_NOW = '2027-01-24T20:05:00+03:00';   // TS–BJK derbisi devam ederken
+/* Normalde null: gerçek saat kullanılır.
+   Sezonun ortasını önizlemek istersen buraya bir tarih yaz:
+   örn. '2026-11-22T18:00:00+03:00'                            */
+const DEMO_NOW = null;
 const NOW = () => (DEMO_NOW ? new Date(DEMO_NOW) : new Date());
 
 const TWO_HOURS = 2 * 60 * 60 * 1000;
@@ -871,21 +1003,21 @@ const TEAMS = {
   BJK:{ name:'Beşiktaş',    short:'BEŞİKTAŞ',    c1:'#f2f2f2', c2:'#141418', stripe:'v3', st:'Tüpraş Stadyumu',  pow:82 },
   TS: { name:'Trabzonspor', short:'TRABZONSPOR', c1:'#93123c', c2:'#1d8fd1', stripe:'d',  st:'Papara Park',      pow:80 },
 
-  /* --- Diğer Süper Lig takımları --- */
-  BAS:{ name:'Başakşehir',      c1:'#12336b', c2:'#e8792b', st:'Fatih Terim Stadyumu', pow:71 },
-  SAM:{ name:'Samsunspor',      c1:'#b0182c', c2:'#ffffff', st:'Samsun Stadyumu',      pow:70 },
-  GOZ:{ name:'Göztepe',         c1:'#b0182c', c2:'#f2c200', st:'Gürsel Aksel',         pow:69 },
-  KON:{ name:'Konyaspor',       c1:'#0d7a3c', c2:'#ffffff', st:'Konya Büyükşehir',     pow:66 },
-  RIZ:{ name:'Rizespor',        c1:'#0d7a3c', c2:'#1b6ec2', st:'Çayeli Stadyumu',      pow:63 },
-  KAS:{ name:'Kasımpaşa',       c1:'#0f2f6b', c2:'#ffffff', st:'Recep Tayyip Erdoğan', pow:62 },
-  ANT:{ name:'Antalyaspor',     c1:'#b0182c', c2:'#ffffff', st:'Corendon Airlines',    pow:64 },
-  ALA:{ name:'Alanyaspor',      c1:'#e8792b', c2:'#0d7a3c', st:'Bahçeşehir Okulları',  pow:63 },
-  GAZ:{ name:'Gaziantep FK',    c1:'#b0182c', c2:'#141418', st:'Kalyon Stadyumu',      pow:62 },
-  KAY:{ name:'Kayserispor',     c1:'#b0182c', c2:'#f2c200', st:'RHG Enertürk Enerji',  pow:60 },
-  EYU:{ name:'Eyüpspor',        c1:'#4b1e78', c2:'#f2c200', st:'Eyüp Stadyumu',        pow:61 },
-  KOC:{ name:'Kocaelispor',     c1:'#0d7a3c', c2:'#141418', st:'Kocaeli Stadyumu',     pow:58 },
-  GEN:{ name:'Gençlerbirliği',  c1:'#b0182c', c2:'#141418', st:'Eryaman Stadyumu',     pow:57 },
-  KRG:{ name:'Karagümrük',      c1:'#b0182c', c2:'#141418', st:'Atatürk Olimpiyat',    pow:59 },
+  /* --- Diğer Süper Lig takımları (2026/27 gerçek kadro) --- */
+  BAS:{ name:'Başakşehir',      c1:'#12336b', c2:'#e8792b', st:'Fatih Terim Stadyumu',    pow:71 },
+  SAM:{ name:'Samsunspor',      c1:'#b0182c', c2:'#ffffff', st:'Samsun Yeni 19 Mayıs',    pow:72 },
+  GOZ:{ name:'Göztepe',         c1:'#b0182c', c2:'#f2c200', st:'Gürsel Aksel',            pow:70 },
+  KON:{ name:'Konyaspor',       c1:'#0d7a3c', c2:'#ffffff', st:'Konya Büyükşehir',        pow:66 },
+  RIZ:{ name:'Rizespor',        c1:'#0d7a3c', c2:'#1b6ec2', st:'Çayeli Stadyumu',         pow:63 },
+  KAS:{ name:'Kasımpaşa',       c1:'#0f2f6b', c2:'#ffffff', st:'Recep Tayyip Erdoğan',    pow:62 },
+  ALA:{ name:'Alanyaspor',      c1:'#e8792b', c2:'#0d7a3c', st:'Bahçeşehir Okulları',     pow:63 },
+  GAZ:{ name:'Gaziantep FK',    c1:'#b0182c', c2:'#141418', st:'Kalyon Stadyumu',         pow:62 },
+  EYU:{ name:'Eyüpspor',        c1:'#4b1e78', c2:'#f2c200', st:'Eyüp Stadyumu',           pow:61 },
+  KOC:{ name:'Kocaelispor',     c1:'#0d7a3c', c2:'#141418', st:'Kocaeli Stadyumu',        pow:59 },
+  GEN:{ name:'Gençlerbirliği',  c1:'#b0182c', c2:'#141418', st:'Eryaman Stadyumu',        pow:57 },
+  ERZ:{ name:'Erzurumspor',     c1:'#0b6b3a', c2:'#1b6ec2', st:'Kazım Karabekir',         pow:55 },
+  AME:{ name:'Amedspor',        c1:'#0b6b3a', c2:'#b0182c', st:'Diyarbakır Stadyumu',     pow:56 },
+  COR:{ name:'Çorum FK',        c1:'#b0182c', c2:'#141418', st:'Çorum Şehir Stadyumu',    pow:54 },
 
   /* --- Avrupa rakipleri --- */
   RMA:{ name:'Real Madrid',      c1:'#ffffff', c2:'#d4af37', st:'Bernabéu',        pow:95 },
@@ -996,7 +1128,7 @@ function poisson(lambda, r){
    açıklanınca bu bölümü elle doldurmak yeterli.
    ============================================================ */
 const SL_TEAMS = ['GS','FB','BJK','TS','BAS','SAM','GOZ','KON','RIZ','KAS',
-                  'ANT','ALA','GAZ','KAY','EYU','KOC','GEN','KRG'];
+                  'ALA','GAZ','EYU','KOC','GEN','ERZ','AME','COR'];
 
 /* Berger tablosu — her takım her hafta bir maç yapar, derbiler tutarlı olur */
 function roundRobin(codes){
@@ -1027,10 +1159,10 @@ function isoIstanbul(utcMs, hh, mm){
          `T${p(hh)}:${p(mm)}:00+03:00`;
 }
 
-const SEASON_START = ymd('2026-08-15');            // 1. hafta, Cumartesi
+const SEASON_START = ymd('2026-08-14');            // 1. hafta, Cuma (resmi açılış)
 /* Hafta içi maç saatleri: [gün kayması, saat] */
-const SL_SLOTS = [[0,'16:00'],[0,'19:00'],[1,'19:00'],[1,'21:30'],[-1,'21:30'],[1,'16:00'],
-                  [0,'21:30'],[2,'20:00'],[1,'14:30']];
+const SL_SLOTS = [[0,'21:30'],[1,'19:00'],[1,'21:30'],[2,'16:00'],[2,'19:00'],
+                  [2,'21:30'],[3,'19:00'],[3,'21:30'],[1,'16:00']];
 
 function slDate(week, idx){
   const [off, time] = SL_SLOTS[idx % SL_SLOTS.length];
@@ -1038,24 +1170,94 @@ function slDate(week, idx){
   return isoIstanbul(SEASON_START + ((week - 1) * 7 + off) * DAY_MS, hh, mm);
 }
 
+/* ------------------------------------------------------------
+   RESMİ FİKSTÜR — TFF çekilişinden doğrulanan eşleşmeler
+   [hafta, ev sahibi, deplasman].  İkinci devre simetriktir:
+   aynı eşleşme (hafta + 17) haftasında sahalar değişerek tekrarlar.
+   Yeni bilgi geldikçe buraya satır eklemen yeterli; eklenen her
+   satır üretilen geçici eşleşmenin yerini alır.
+   ------------------------------------------------------------ */
+const VERIFIED_SL = [
+  [1,'GS','COR'], [1,'GEN','FB'], [1,'BJK','EYU'], [1,'KAS','TS'],
+  [2,'ERZ','GS'], [2,'FB','KON'], [2,'ALA','BJK'],
+  [3,'GS','GOZ'], [3,'SAM','FB'], [3,'BJK','COR'],
+  [4,'BAS','GS'], [4,'FB','BJK'],
+  [5,'GS','KOC'], [5,'GAZ','FB'],
+  [6,'TS','GS'],
+  [8,'TS','BJK'],
+  [9,'GS','FB'],
+  [13,'BJK','GS'],
+  [15,'FB','TS'],
+];
+
+const HALF = 17;                       // 18 takım → devre başı 17 hafta
+
+/* Dört büyüğün sezon programını kurar.
+   Resmi eşleşmeler sabit tutulur; boş kalan haftalara, aynı hafta
+   içinde iki büyük takım aynı rakibe düşmeyecek şekilde rakip atanır. */
+function buildSchedule(){
+  const fixed = {};
+  VERIFIED_SL.forEach(([wk, h, a]) => {
+    if (isBig(h)) fixed[wk + '|' + h] = { opp:a, home:true,  official:true };
+    if (isBig(a)) fixed[wk + '|' + a] = { opp:h, home:false, official:true };
+  });
+
+  for (let attempt = 0; attempt < 60; attempt++){
+    const r = rng(hashStr('fikstur' + attempt));
+    const pools = {}, sched = {};
+    BIG4.forEach(c => {
+      sched[c] = {};
+      pools[c] = SL_TEAMS.filter(x => x !== c);
+      for (let w = 1; w <= HALF; w++){
+        const f = fixed[w + '|' + c];
+        if (f) pools[c] = pools[c].filter(x => x !== f.opp);
+      }
+    });
+
+    let ok = true;
+    for (let w = 1; w <= HALF && ok; w++){
+      const used = new Set();
+      BIG4.forEach(c => {
+        const f = fixed[w + '|' + c];
+        if (f){ sched[c][w] = f; used.add(c); used.add(f.opp); }
+      });
+      for (const c of BIG4){
+        if (sched[c][w]) continue;
+        const cand = pools[c].filter(x => !used.has(x));
+        if (!cand.length){ ok = false; break; }
+        const opp = cand[Math.floor(r() * cand.length)];
+        sched[c][w] = { opp, home:(w + hashStr(c + opp)) % 2 === 0, official:false };
+        pools[c] = pools[c].filter(x => x !== opp);
+        used.add(c); used.add(opp);
+      }
+    }
+    if (ok && BIG4.every(c => Object.keys(sched[c]).length === HALF)) return sched;
+  }
+  throw new Error('Fikstür üretilemedi — VERIFIED_SL satırlarında çakışma olabilir.');
+}
+
 /* ---------- Süper Lig ---------- */
 function buildLeague(){
-  const rounds = roundRobin(SL_TEAMS);
-  const out = [];
-  for (let half = 0; half < 2; half++){
-    rounds.forEach((round, ri) => {
-      const wk = half * 17 + ri + 1;
-      let slot = 0;
-      round.forEach(([h, a]) => {
-        if (!isBig(h) && !isBig(a)) return;            // sadece dört büyüğün maçları
-        const home = half === 0 ? h : a;
-        const away = half === 0 ? a : h;
-        out.push({
-          id: `SL${String(wk).padStart(2,'0')}${home}`,
-          comp:'SL', stage:'league', wk, home, away,
-          dt: slDate(wk, slot++),
-          derby: isBig(home) && isBig(away),
-        });
+  const sched = buildSchedule();
+  const out = [], seen = new Set();
+
+  for (let w = 1; w <= HALF * 2; w++){
+    const base = w > HALF ? w - HALF : w;      // ikinci devre birincinin aynası
+    const mirror = w > HALF;
+    let slot = 0;
+    BIG4.forEach(c => {
+      const e = sched[c][base];
+      const home = mirror ? !e.home : e.home;
+      const H = home ? c : e.opp;
+      const A = home ? e.opp : c;
+      const id = 'SL' + String(w).padStart(2,'0') + H;
+      if (seen.has(id)) return;                // derbiler iki takımda da var
+      seen.add(id);
+      out.push({
+        id, comp:'SL', stage:'league', wk:w, home:H, away:A,
+        dt: slDate(w, slot++),
+        derby: isBig(H) && isBig(A),
+        official: e.official,
       });
     });
   }
@@ -1063,38 +1265,28 @@ function buildLeague(){
 }
 
 /* ---------- Avrupa kupaları ---------- */
-const UCL_DATES = ['2026-09-16','2026-09-30','2026-10-21','2026-11-04',
-                   '2026-11-25','2026-12-09','2027-01-20','2027-01-28'];
-const UEL_DATES = ['2026-09-24','2026-10-01','2026-10-22','2026-11-05',
-                   '2026-11-26','2026-12-10','2027-01-21','2027-01-29'];
-
-const EURO_ENTRIES = [
-  { team:'GS',  comp:'UCL',  dates:UCL_DATES,
-    opps:[['RMA',0],['CLB',1],['MCI',0],['AJX',1],['INT',0],['SLA',1],['BEN',0],['OLY',1]] },
-  { team:'FB',  comp:'UCL',  dates:UCL_DATES,
-    opps:[['CLB',1],['ARS',0],['ATM',1],['BAY',0],['PSG',1],['DIN',0],['OLY',1],['SLA',0]] },
-  { team:'BJK', comp:'UEL',  dates:UEL_DATES,
-    opps:[['ROM',1],['FEY',0],['RAN',1],['LYO',0],['FRA',1],['PAO',0],['RSO',1],['GNT',0]] },
-  { team:'TS',  comp:'UECL', dates:UEL_DATES,
-    opps:[['LEG',0],['VIK',1],['MOL',0],['LUG',1],['GNT',0],['PAO',1],['DIN',0],['MOL',1]] },
-];
+/* ------------------------------------------------------------
+   AVRUPA KUPALARI — kura çekildikten sonra doldurulacak
+   Örnek satır:
+     { team:'GS', comp:'UCL', md:1, opp:'RMA', away:false,
+       dt:'2026-09-16T22:00:00+03:00' },
+   comp: 'UCL' | 'UEL' | 'UECL'      away: true ise maç deplasmanda
+   Takım kodu TEAMS içinde yoksa oraya bir satır eklemen yeterli.
+   ------------------------------------------------------------ */
+const EURO_FIXTURES = [];
 
 function buildEurope(){
-  const out = [];
-  EURO_ENTRIES.forEach(({ team, comp, dates, opps }) => {
-    opps.forEach(([opp, away], i) => {
-      const hh = comp === 'UCL' ? (i % 2 ? 23 : 20) : (i % 2 ? 20 : 23);
-      out.push({
-        id: `${comp}${i + 1}${team}`,
-        comp, stage:'league', md:i + 1,
-        home: away ? opp : team,
-        away: away ? team : opp,
-        dt: isoIstanbul(ymd(dates[i]), hh, hh === 23 ? 0 : 45),
-        derby:false,
-      });
-    });
-  });
-  return out;
+  return EURO_FIXTURES.map((e, i) => ({
+    id: `${e.comp}${e.md || i + 1}${e.team}`,
+    comp: e.comp,
+    stage: e.stage || 'league',
+    md: e.md,
+    home: e.away ? e.opp : e.team,
+    away: e.away ? e.team : e.opp,
+    dt: e.dt,
+    derby: false,
+    official: true,
+  }));
 }
 
 /* ---------- Tüm fikstür ---------- */
@@ -1108,35 +1300,6 @@ const FIXTURES = [...buildLeague(), ...buildEurope()]
   .sort((a, b) => new Date(a.dt) - new Date(b.dt));
 
 const FIXTURE_BY_ID = Object.fromEntries(FIXTURES.map(m => [m.id, m]));
-
-/* ============================================================
-   SONUÇLAR  (oynanmış maçlar için simüle edilir)
-   Gerçek sonuçları elle girmek istersen: RESULT_OVERRIDES[id] = {h,a}
-   ============================================================ */
-const RESULT_OVERRIDES = {};
-
-function simulateResult(m){
-  const r = rng(hashStr('res' + m.id));
-  const eh = Math.max(.25, 1.05 + (strength(m.home) + 4 - strength(m.away)) / 26);
-  const ea = Math.max(.20, 0.95 + (strength(m.away) - strength(m.home) - 4) / 26);
-  return { h: poisson(eh, r), a: poisson(ea, r) };
-}
-
-const RESULTS = {};
-FIXTURES.forEach(m => {
-  const t = new Date(m.dt).getTime();
-  if (NOW().getTime() < t) return;                 // henüz başlamadı
-  RESULTS[m.id] = RESULT_OVERRIDES[m.id] || simulateResult(m);
-});
-/* Şu an oynanan maçlar canlı işaretlensin */
-FIXTURES.forEach(m => {
-  const t = new Date(m.dt).getTime();
-  const n = NOW().getTime();
-  if (RESULTS[m.id] && n < t + TWO_HOURS){
-    RESULTS[m.id].live = true;
-    RESULTS[m.id].minute = Math.max(1, Math.min(90, Math.floor((n - t) / 60000)));
-  }
-});
 
 /* ============================================================
    MAÇ DURUMU
@@ -1179,61 +1342,6 @@ const SEASON_PICKS = {
 const SEASON_RESULT = { champion:null, derbyKing:null, euroBest:null };
 
 /* ============================================================
-   KULLANICILAR + TAHMİNLER (demo)
-   ============================================================ */
-const USERS = [
-  { uid:'u_sen',   name:'Sen',   you:true },
-  { uid:'u_kaan',  name:'Kaan'  },
-  { uid:'u_emre',  name:'Emre'  },
-  { uid:'u_deniz', name:'Deniz' },
-  { uid:'u_selin', name:'Selin' },
-  { uid:'u_baris', name:'Barış' },
-  { uid:'u_mert',  name:'Mert'  },
-  { uid:'u_ece',   name:'Ece'   },
-  { uid:'u_onur',  name:'Onur'  },
-];
-
-const USER_SEASON = {
-  u_sen:  { champion:'GS',  derbyKing:'GS',  euroBest:'GS'  },
-  u_kaan: { champion:'GS',  derbyKing:'GS',  euroBest:'FB'  },
-  u_emre: { champion:'FB',  derbyKing:'FB',  euroBest:'FB'  },
-  u_deniz:{ champion:'FB',  derbyKing:'GS',  euroBest:'GS'  },
-  u_selin:{ champion:'BJK', derbyKing:'BJK', euroBest:'BJK' },
-  u_baris:{ champion:'GS',  derbyKing:'FB',  euroBest:'GS'  },
-  u_mert: { champion:'TS',  derbyKing:'TS',  euroBest:'TS'  },
-  u_ece:  { champion:'FB',  derbyKing:'GS',  euroBest:'BJK' },
-  u_onur: { champion:'GS',  derbyKing:'BJK', euroBest:'GS'  },
-};
-
-/* Her kullanıcı, kilitlenmiş her maça bir tahmin girmiş sayılır.
-   "isabet" katsayısı yükseldikçe tahminler gerçek sonuca yaklaşır. */
-const USER_SKILL = { u_sen:.62, u_kaan:.55, u_emre:.5, u_deniz:.47, u_selin:.4,
-                     u_baris:.36, u_mert:.44, u_ece:.33, u_onur:.5 };
-
-function fakePrediction(uid, m){
-  const r = rng(hashStr(uid + m.id));
-  const res = RESULTS[m.id];
-  const skill = USER_SKILL[uid] ?? .4;
-  if (res && r() < skill){
-    // sonuca yakın tahmin: bazen tam isabet, bazen bir gol sapma
-    const jitter = () => (r() < .55 ? 0 : (r() < .5 ? -1 : 1));
-    return { h: Math.max(0, res.h + jitter()), a: Math.max(0, res.a + jitter()) };
-  }
-  const eh = Math.max(.3, 1.1 + (strength(m.home) + 4 - strength(m.away)) / 24);
-  const ea = Math.max(.25, 1.0 + (strength(m.away) - strength(m.home) - 4) / 24);
-  return { h: poisson(eh, r), a: poisson(ea, r) };
-}
-
-const PREDICTIONS = {};
-USERS.forEach(u => {
-  PREDICTIONS[u.uid] = {};
-  FIXTURES.forEach(m => {
-    if (matchState(m) === 'open') return;           // açık maça sahte tahmin yok
-    PREDICTIONS[u.uid][m.id] = fakePrediction(u.uid, m);
-  });
-});
-
-/* ============================================================
    PUANLAMA
    10 tam isabet · 8 kazanan + 1 gol · 6 doğru sonuç · 2 kıl payı · 0
    ============================================================ */
@@ -1259,112 +1367,6 @@ function ptsClass(p, mult){
   if (base >= 8)  return 'pt-8';
   if (base >= 6)  return 'pt-6';
   return 'pt-2';
-}
-
-/* ============================================================
-   YEREL KAYIT (senin tahminlerin)
-   ============================================================ */
-const LS_KEY = 'dortbuyuk2627';
-function loadLocal(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
-function saveLocal(d){ try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e){} }
-
-function myPredictions(){ const l = loadLocal(); return { ...PREDICTIONS.u_sen, ...(l.preds || {}) }; }
-function setMyPrediction(id, h, a){
-  const d = loadLocal(); d.preds = d.preds || {};
-  d.preds[id] = { h:parseInt(h), a:parseInt(a) }; saveLocal(d);
-}
-function mySeason(){ const l = loadLocal(); return { ...USER_SEASON.u_sen, ...(l.season || {}) }; }
-function setMySeason(kind, team){
-  const d = loadLocal(); d.season = d.season || {};
-  d.season[kind] = team; saveLocal(d);
-}
-
-/* ============================================================
-   SIRALAMA
-   ============================================================ */
-function lastFinishedId(){
-  const done = FIXTURES.filter(isFinished);
-  return done.length ? done[done.length - 1].id : null;
-}
-
-function leaderboard(){
-  const my = myPredictions(), mySea = mySeason();
-  const lastId = lastFinishedId();
-
-  const rows = USERS.map(u => {
-    const preds  = u.you ? my    : (PREDICTIONS[u.uid] || {});
-    const season = u.you ? mySea : (USER_SEASON[u.uid] || {});
-    let pts = 0, exact = 0, count = 0, prevPts = 0, derbyPts = 0, euroPts = 0;
-
-    FIXTURES.forEach(m => {
-      const p = preds[m.id], r = RESULTS[m.id];
-      if (!p) return;
-      count++;
-      if (!r || !isFinished(m)) return;
-      const got = calcPoints(p.h, p.a, r.h, r.a, m.mult);
-      pts += got;
-      if (m.derby) derbyPts += got;
-      if (['UCL','UEL','UECL'].includes(m.comp)) euroPts += got;
-      if (p.h === r.h && p.a === r.a) exact++;
-      if (m.id !== lastId) prevPts += got;
-    });
-
-    Object.keys(SEASON_PICKS).forEach(k => {
-      if (SEASON_RESULT[k] && season[k] === SEASON_RESULT[k]) pts += SEASON_PICKS[k].points;
-    });
-
-    return { ...u, points:pts, exact, count, prevPoints:prevPts, derbyPts, euroPts, season };
-  });
-
-  rows.sort((a,b) => b.points - a.points || b.exact - a.exact || a.name.localeCompare(b.name,'tr'));
-
-  const prev = [...rows].sort((a,b) => b.prevPoints - a.prevPoints || a.name.localeCompare(b.name,'tr'));
-  rows.forEach((r,i) => { r.rank = i + 1; r.delta = prev.findIndex(x => x.uid === r.uid) - i; });
-  return rows;
-}
-
-/* ============================================================
-   TAKIM İSTATİSTİKLERİ
-   ============================================================ */
-/* Sadece dört büyükler arası derbi tablosu */
-function derbyTable(){
-  const t = {}; BIG4.forEach(c => t[c] = { code:c, w:0, d:0, l:0, gf:0, ga:0, pts:0, played:0 });
-  FIXTURES.forEach(m => {
-    if (!m.derby) return;
-    const r = RESULTS[m.id]; if (!r || !isFinished(m)) return;
-    const H = t[m.home], A = t[m.away];
-    H.played++; A.played++; H.gf += r.h; H.ga += r.a; A.gf += r.a; A.ga += r.h;
-    if (r.h > r.a){ H.w++; A.l++; H.pts += 3; }
-    else if (r.h < r.a){ A.w++; H.l++; A.pts += 3; }
-    else { H.d++; A.d++; H.pts++; A.pts++; }
-  });
-  return Object.values(t).sort((a,b) => b.pts - a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
-}
-
-/* Bir takımın tüm turnuvalardaki karnesi */
-function teamRecord(code, comp){
-  const rec = { w:0, d:0, l:0, gf:0, ga:0, played:0 };
-  FIXTURES.forEach(m => {
-    if (!m.big.includes(code)) return;
-    if (comp && comp !== 'ALL' && m.comp !== comp) return;
-    const r = RESULTS[m.id]; if (!r || !isFinished(m)) return;
-    const home = m.home === code;
-    const gf = home ? r.h : r.a, ga = home ? r.a : r.h;
-    rec.played++; rec.gf += gf; rec.ga += ga;
-    if (gf > ga) rec.w++; else if (gf < ga) rec.l++; else rec.d++;
-  });
-  return rec;
-}
-/* Son 5 maç formu: ['G','B','M', ...] */
-function teamForm(code, n = 5){
-  const out = [];
-  FIXTURES.filter(m => m.big.includes(code) && isFinished(m) && RESULTS[m.id])
-    .slice(-n).forEach(m => {
-      const r = RESULTS[m.id], home = m.home === code;
-      const gf = home ? r.h : r.a, ga = home ? r.a : r.h;
-      out.push(gf > ga ? 'G' : gf < ga ? 'M' : 'B');
-    });
-  return out;
 }
 
 /* ============================================================
@@ -1471,6 +1473,291 @@ function isDark(hex){
 </script>
 <script>
 /* ============================================================
+   DÖRT BÜYÜK 26/27 — Veri deposu
+   İki modda çalışır:
+     'bulut' → Firebase'e bağlıysa gerçek kullanıcılar ve tahminler
+     'demo'  → bağlantı yoksa tarayıcıda saklanan örnek veri
+   Sayfalar yalnızca buradaki fonksiyonları çağırır; hangi modda
+   olduğunu bilmeleri gerekmez.
+   ============================================================ */
+
+const Store = {
+  mode: 'demo',        // 'demo' | 'bulut'
+  me: null,            // { uid, name, email, admin }
+  users: [],           // [{ uid, name }]
+  predictions: {},     // uid -> { matchId: {h,a} }
+  season: {},          // uid -> { champion, derbyKing, euroBest }
+  results: {},         // matchId -> { h, a }
+  ready: false,
+};
+
+const LS_KEY = 'dortbuyuk2627';
+function loadLocal(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch(e){ return {}; } }
+function saveLocal(d){ try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch(e){} }
+
+/* ============================================================
+   DEMO VERİSİ
+   Sezon başlamadan önce herkes boş başlar; ortasında bir görünüm
+   istersen data.js içindeki DEMO_NOW'u ileri bir tarihe al.
+   ============================================================ */
+const DEMO_USERS = [
+  { uid:'u_sen',   name:'Sen',   you:true },
+  { uid:'u_kaan',  name:'Kaan'  },
+  { uid:'u_emre',  name:'Emre'  },
+  { uid:'u_deniz', name:'Deniz' },
+  { uid:'u_selin', name:'Selin' },
+  { uid:'u_baris', name:'Barış' },
+  { uid:'u_mert',  name:'Mert'  },
+  { uid:'u_ece',   name:'Ece'   },
+  { uid:'u_onur',  name:'Onur'  },
+];
+const DEMO_SEASON = {
+  u_sen:  { champion:'GS',  derbyKing:'GS',  euroBest:'GS'  },
+  u_kaan: { champion:'GS',  derbyKing:'GS',  euroBest:'FB'  },
+  u_emre: { champion:'FB',  derbyKing:'FB',  euroBest:'FB'  },
+  u_deniz:{ champion:'FB',  derbyKing:'GS',  euroBest:'GS'  },
+  u_selin:{ champion:'BJK', derbyKing:'BJK', euroBest:'BJK' },
+  u_baris:{ champion:'GS',  derbyKing:'FB',  euroBest:'GS'  },
+  u_mert: { champion:'TS',  derbyKing:'TS',  euroBest:'TS'  },
+  u_ece:  { champion:'FB',  derbyKing:'GS',  euroBest:'BJK' },
+  u_onur: { champion:'GS',  derbyKing:'BJK', euroBest:'GS'  },
+};
+const DEMO_SKILL = { u_sen:.62, u_kaan:.55, u_emre:.5, u_deniz:.47, u_selin:.4,
+                     u_baris:.36, u_mert:.44, u_ece:.33, u_onur:.5 };
+
+/* Oynanmış maçlar için örnek sonuç (takım güçlerine göre) */
+function simulateResult(m){
+  const r = rng(hashStr('res' + m.id));
+  const eh = Math.max(.25, 1.05 + (strength(m.home) + 4 - strength(m.away)) / 26);
+  const ea = Math.max(.20, 0.95 + (strength(m.away) - strength(m.home) - 4) / 26);
+  return { h: poisson(eh, r), a: poisson(ea, r) };
+}
+function demoPrediction(uid, m, res){
+  const r = rng(hashStr(uid + m.id));
+  const skill = DEMO_SKILL[uid] ?? .4;
+  if (res && r() < skill){
+    const j = () => (r() < .55 ? 0 : (r() < .5 ? -1 : 1));
+    return { h: Math.max(0, res.h + j()), a: Math.max(0, res.a + j()) };
+  }
+  const eh = Math.max(.3, 1.1 + (strength(m.home) + 4 - strength(m.away)) / 24);
+  const ea = Math.max(.25, 1.0 + (strength(m.away) - strength(m.home) - 4) / 24);
+  return { h: poisson(eh, r), a: poisson(ea, r) };
+}
+
+function loadDemo(){
+  Store.mode = 'demo';
+  Store.users = DEMO_USERS.map(u => ({ ...u }));
+
+  /* Demo modda "giriş", tarayıcıda saklanan bir takma addır.
+     Ad yoksa oturum açılmamış sayılır (anon) ve tahmin girişi kapalıdır. */
+  const savedName = loadLocal().name || null;
+  Store.me = {
+    uid:'u_sen', name: savedName || 'Misafir', email:'demo@ornek.com',
+    admin:false, demo:true, anon: !savedName,
+  };
+  const meRow = Store.users.find(u => u.uid === 'u_sen');
+  if (meRow && savedName) meRow.name = savedName;
+
+  Store.season = JSON.parse(JSON.stringify(DEMO_SEASON));
+  Store.results = {};
+  Store.predictions = {};
+
+  FIXTURES.forEach(m => {
+    if (NOW().getTime() < new Date(m.dt).getTime()) return;
+    Store.results[m.id] = simulateResult(m);
+  });
+  FIXTURES.forEach(m => {
+    const t = new Date(m.dt).getTime(), n = NOW().getTime();
+    const r = Store.results[m.id];
+    if (r && n < t + TWO_HOURS){
+      r.live = true;
+      r.minute = Math.max(1, Math.min(90, Math.floor((n - t) / 60000)));
+    }
+  });
+  DEMO_USERS.forEach(u => {
+    Store.predictions[u.uid] = {};
+    FIXTURES.forEach(m => {
+      if (matchState(m) === 'open') return;
+      Store.predictions[u.uid][m.id] = demoPrediction(u.uid, m, Store.results[m.id]);
+    });
+  });
+
+  // tarayıcıda saklanan kendi tahminlerin demo verinin üstüne biner
+  const local = loadLocal();
+  Object.assign(Store.predictions.u_sen, local.preds || {});
+  Object.assign(Store.season.u_sen, local.season || {});
+  Store.ready = true;
+}
+
+/* ============================================================
+   BULUT VERİSİ (Firebase)
+   cloud.js hazır olduğunda window.Cloud'u doldurur.
+   ============================================================ */
+async function loadCloud(){
+  const C = window.Cloud;
+  const snap = await C.loadAll();
+  Store.mode = 'bulut';
+  Store.users = snap.users;
+  Store.predictions = snap.predictions;
+  Store.season = snap.season;
+  Store.results = snap.results;
+  Store.me = C.currentUser();
+  if (Store.me) Store.users.forEach(u => { u.you = u.uid === Store.me.uid; });
+  Store.ready = true;
+}
+
+/* Sayfalar bunu çağırır; bulut varsa bulut, yoksa demo */
+async function initStore(){
+  if (window.Cloud?.enabled){
+    try { await loadCloud(); return; }
+    catch(e){ console.warn('Bulut verisi alınamadı, demo moduna düşülüyor:', e); }
+  }
+  loadDemo();
+}
+
+/* ============================================================
+   OKUMA
+   ============================================================ */
+const RESULTS = new Proxy({}, {          // eski çağrılar bozulmasın
+  get: (_, k) => Store.results[k],
+  has: (_, k) => k in Store.results,
+  ownKeys: () => Reflect.ownKeys(Store.results),
+  getOwnPropertyDescriptor: (_, k) =>
+    ({ enumerable:true, configurable:true, value:Store.results[k] }),
+});
+
+const isLoggedIn = () => !!Store.me && !Store.me.anon;
+const isAdmin    = () => !!Store.me?.admin;
+
+function myPredictions(){ return Store.predictions[Store.me?.uid] || {}; }
+function mySeason(){ return Store.season[Store.me?.uid] || {}; }
+
+function predictionsOf(uid){ return Store.predictions[uid] || {}; }
+
+/* ============================================================
+   YAZMA
+   ============================================================ */
+async function setMyPrediction(id, h, a){
+  const uid = Store.me?.uid;
+  if (!uid) return;
+  const val = { h: parseInt(h), a: parseInt(a) };
+  Store.predictions[uid] = Store.predictions[uid] || {};
+  Store.predictions[uid][id] = val;
+
+  if (Store.mode === 'bulut'){
+    await window.Cloud.savePrediction(uid, id, val);
+  } else {
+    const d = loadLocal(); d.preds = d.preds || {};
+    d.preds[id] = val; saveLocal(d);
+  }
+}
+
+async function setMySeason(kind, team){
+  const uid = Store.me?.uid;
+  if (!uid) return;
+  Store.season[uid] = Store.season[uid] || {};
+  Store.season[uid][kind] = team;
+
+  if (Store.mode === 'bulut'){
+    await window.Cloud.saveSeasonPick(uid, kind, team);
+  } else {
+    const d = loadLocal(); d.season = d.season || {};
+    d.season[kind] = team; saveLocal(d);
+  }
+}
+
+/* Yönetici: maç sonucu gir */
+async function setResult(id, h, a){
+  if (!isAdmin()) throw new Error('Yetki yok');
+  const val = { h: parseInt(h), a: parseInt(a) };
+  Store.results[id] = val;
+  if (Store.mode === 'bulut') await window.Cloud.saveResult(id, val);
+}
+
+/* ============================================================
+   SIRALAMA VE İSTATİSTİK
+   ============================================================ */
+function lastFinishedId(){
+  const done = FIXTURES.filter(isFinished);
+  return done.length ? done[done.length - 1].id : null;
+}
+
+function leaderboard(){
+  const lastId = lastFinishedId();
+
+  const rows = Store.users.map(u => {
+    const preds  = Store.predictions[u.uid] || {};
+    const season = Store.season[u.uid] || {};
+    let pts = 0, exact = 0, count = 0, prevPts = 0, derbyPts = 0, euroPts = 0;
+
+    FIXTURES.forEach(m => {
+      const p = preds[m.id], r = Store.results[m.id];
+      if (!p) return;
+      count++;
+      if (!r || !isFinished(m)) return;
+      const got = calcPoints(p.h, p.a, r.h, r.a, m.mult);
+      pts += got;
+      if (m.derby) derbyPts += got;
+      if (['UCL','UEL','UECL'].includes(m.comp)) euroPts += got;
+      if (p.h === r.h && p.a === r.a) exact++;
+      if (m.id !== lastId) prevPts += got;
+    });
+
+    Object.keys(SEASON_PICKS).forEach(k => {
+      if (SEASON_RESULT[k] && season[k] === SEASON_RESULT[k]) pts += SEASON_PICKS[k].points;
+    });
+
+    return { ...u, points:pts, exact, count, prevPoints:prevPts, derbyPts, euroPts, season };
+  });
+
+  rows.sort((a,b) => b.points - a.points || b.exact - a.exact || a.name.localeCompare(b.name,'tr'));
+  const prev = [...rows].sort((a,b) => b.prevPoints - a.prevPoints || a.name.localeCompare(b.name,'tr'));
+  rows.forEach((r,i) => { r.rank = i + 1; r.delta = prev.findIndex(x => x.uid === r.uid) - i; });
+  return rows;
+}
+
+function derbyTable(){
+  const t = {}; BIG4.forEach(c => t[c] = { code:c, w:0, d:0, l:0, gf:0, ga:0, pts:0, played:0 });
+  FIXTURES.forEach(m => {
+    if (!m.derby) return;
+    const r = Store.results[m.id]; if (!r || !isFinished(m)) return;
+    const H = t[m.home], A = t[m.away];
+    H.played++; A.played++; H.gf += r.h; H.ga += r.a; A.gf += r.a; A.ga += r.h;
+    if (r.h > r.a){ H.w++; A.l++; H.pts += 3; }
+    else if (r.h < r.a){ A.w++; H.l++; A.pts += 3; }
+    else { H.d++; A.d++; H.pts++; A.pts++; }
+  });
+  return Object.values(t).sort((a,b) => b.pts - a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
+}
+
+function teamRecord(code, comp){
+  const rec = { w:0, d:0, l:0, gf:0, ga:0, played:0 };
+  FIXTURES.forEach(m => {
+    if (!m.big.includes(code)) return;
+    if (comp && comp !== 'ALL' && m.comp !== comp) return;
+    const r = Store.results[m.id]; if (!r || !isFinished(m)) return;
+    const home = m.home === code;
+    const gf = home ? r.h : r.a, ga = home ? r.a : r.h;
+    rec.played++; rec.gf += gf; rec.ga += ga;
+    if (gf > ga) rec.w++; else if (gf < ga) rec.l++; else rec.d++;
+  });
+  return rec;
+}
+
+function teamForm(code, n = 5){
+  const out = [];
+  FIXTURES.filter(m => m.big.includes(code) && isFinished(m) && Store.results[m.id])
+    .slice(-n).forEach(m => {
+      const r = Store.results[m.id], home = m.home === code;
+      const gf = home ? r.h : r.a, ga = home ? r.a : r.h;
+      out.push(gf > ga ? 'G' : gf < ga ? 'M' : 'B');
+    });
+  return out;
+}
+
+</script>
+<script>
+/* ============================================================
    DÖRT BÜYÜK 26/27 — Ortak arayüz katmanı
    Arkaplan, gezinme, animasyonlar, efektler
    ============================================================ */
@@ -1495,12 +1782,12 @@ function mountChrome(active){
           <span class="brand-mark">4B</span>
           <span class="brand-txt">DÖRT BÜYÜK<small>2026 / 27 FANTAZİ</small></span>
         </a>
-        <span class="demo-chip">DEMO</span>
         <div class="nav-links">
           ${PAGES.map(p => `<a href="javascript:void(0)" data-href="${p.href}" onclick="go('${p.href}')" class="${p.href === active ? 'on' : ''}">
             <span class="lg">${p.label}</span><span class="sm">${p.short}</span>
           </a>`).join('')}
         </div>
+        <span id="authSlot"></span>
       </div>
     </nav>
   `);
@@ -1709,15 +1996,284 @@ function startCountdown(target, els){
 }
 
 /* ---------- Sayfa açılış ---------- */
-function boot(activePage, render){
+async function boot(activePage, render){
   applyTheme(currentTheme());        // ilk boyamadan önce temayı uygula
   mountChrome(activePage);
+  document.getElementById('app').innerHTML =
+    `<div class="empty" style="padding:80px 20px"><span class="em">⚽</span>Yükleniyor…</div>`;
+
+  await waitForCloud();
+  await initStore();
+
   render();
   mountFooter();
   mountThemeDock();
+  refreshAuthChip();
   initReveal();
   initTilt();
   initCounters();
+
+  // oturum değişince (başka sekmede çıkış vb.) tazele
+  window.Cloud?.onChange(async () => {
+    await initStore(); refreshAuthChip(); render();
+  });
+}
+
+/* cloud.js bir modül olduğu için gecikmeli yüklenir; kısa süre bekle */
+function waitForCloud(){
+  if (!document.querySelector('script[data-cloud]')) return Promise.resolve();
+  if (window.__cloudReady) return Promise.resolve();
+  return new Promise(res => {
+    const done = () => { window.__cloudReady = true; res(); };
+    window.addEventListener('cloud-auth', done, { once:true });
+    setTimeout(done, 3500);            // bağlanamazsa demo moduna düş
+  });
+}
+
+</script>
+<script>
+/* ============================================================
+   DÖRT BÜYÜK 26/27 — Giriş arayüzü
+   Bulut açıkken gerçek Firebase hesabı, demo modda tarayıcıda
+   saklanan yerel bir takma ad ile çalışır.
+   ============================================================ */
+
+let authTab = 'login';   // 'login' | 'signup' | 'reset'
+
+/* ---------- Üst çubuktaki kullanıcı alanı ---------- */
+function authChipHtml(){
+  const me = Store.me;
+  if (!me || me.anon){
+    return `<button class="auth-chip" onclick="openAuth()">
+      <span class="av">?</span><span class="lb">Giriş yap</span></button>`;
+  }
+  const initial = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
+  return `<button class="auth-chip on" onclick="openAccount()">
+    <span class="av">${initial}</span>
+    <span class="lb">${me.name}${me.admin ? ' <b>YÖNETİCİ</b>' : ''}</span>
+  </button>`;
+}
+function refreshAuthChip(){
+  const el = document.getElementById('authSlot');
+  if (el) el.innerHTML = authChipHtml();
+}
+
+/* ---------- Giriş penceresi ---------- */
+function openAuth(tab){
+  authTab = tab || 'login';
+  let el = document.getElementById('authModal');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'authModal';
+    el.className = 'modal';
+    el.addEventListener('click', e => { if (e.target === el) closeAuth(); });
+    document.body.appendChild(el);
+  }
+  el.innerHTML = authModalHtml();
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => document.getElementById('au-email')?.focus(), 120);
+}
+function closeAuth(){
+  const el = document.getElementById('authModal');
+  if (!el) return;
+  el.classList.remove('show');
+  setTimeout(() => el.remove(), 260);
+}
+
+function authModalHtml(){
+  const demo = !window.Cloud?.enabled;
+  const tabs = [['login','Giriş'],['signup','Kayıt ol']];
+
+  const body = authTab === 'reset' ? `
+    <p class="sub" style="margin-bottom:16px">
+      Hesabının e-postasını gir, şifre sıfırlama bağlantısı gönderelim.</p>
+    <label class="fld"><span>E-posta</span>
+      <input id="au-email" type="email" autocomplete="email" placeholder="ornek@mail.com"></label>
+    <button class="btn" style="width:100%;margin-top:6px" onclick="doReset()">Sıfırlama bağlantısı gönder</button>
+    <button class="linkbtn" onclick="openAuth('login')">← Girişe dön</button>
+  ` : authTab === 'signup' ? `
+    <label class="fld"><span>Görünen ad</span>
+      <input id="au-name" type="text" autocomplete="nickname" placeholder="Ligde görünecek adın" maxlength="24"></label>
+    ${demo ? '' : `
+    <label class="fld"><span>E-posta</span>
+      <input id="au-email" type="email" autocomplete="email" placeholder="ornek@mail.com"></label>
+    <label class="fld"><span>Şifre</span>
+      <input id="au-pass" type="password" autocomplete="new-password" placeholder="En az 6 karakter"></label>`}
+    <button class="btn" style="width:100%;margin-top:6px" onclick="doSignup()">Hesap oluştur</button>
+  ` : `
+    ${demo ? `
+    <label class="fld"><span>Görünen ad</span>
+      <input id="au-name" type="text" autocomplete="nickname" placeholder="Ligde görünecek adın" maxlength="24"></label>`
+    : `
+    <label class="fld"><span>E-posta</span>
+      <input id="au-email" type="email" autocomplete="email" placeholder="ornek@mail.com"></label>
+    <label class="fld"><span>Şifre</span>
+      <input id="au-pass" type="password" autocomplete="current-password" placeholder="••••••••"></label>`}
+    <button class="btn" style="width:100%;margin-top:6px" onclick="doLogin()">Giriş yap</button>
+    ${demo ? '' : `<button class="linkbtn" onclick="openAuth('reset')">Şifremi unuttum</button>`}
+  `;
+
+  return `<div class="modal-card">
+    <button class="modal-x" onclick="closeAuth()" aria-label="Kapat">✕</button>
+    <div class="modal-head">
+      <span class="brand-mark">4B</span>
+      <div>
+        <div class="modal-title">${authTab === 'reset' ? 'Şifre sıfırla' : 'Fantazi Ligi'}</div>
+        <div class="modal-sub">Tahmin girmek için hesabın olmalı</div>
+      </div>
+    </div>
+
+    ${authTab === 'reset' ? '' : `
+    <div class="tabs">
+      ${tabs.map(([k,l]) => `<button class="${authTab===k?'on':''}"
+        onclick="openAuth('${k}')">${l}</button>`).join('')}
+    </div>`}
+
+    <div class="modal-body">
+      ${demo ? `<div class="note" style="margin-bottom:16px">
+        <span>🧪</span><span><b>Demo modu.</b> Sunucu bağlantısı yok; girdiğin ad yalnızca
+        bu tarayıcıda saklanır. Yayına alındığında burası gerçek hesapla çalışacak.</span>
+      </div>` : ''}
+      ${body}
+      <div id="au-msg" class="au-msg"></div>
+    </div>
+  </div>`;
+}
+
+function authMsg(text, kind){
+  const el = document.getElementById('au-msg');
+  if (el) el.innerHTML = `<span class="${kind || 'err'}">${text}</span>`;
+}
+
+/* Firebase hata kodlarını okunur Türkçeye çevirir */
+function authError(e){
+  const c = (e && e.code) || '';
+  if (c.includes('invalid-credential') || c.includes('wrong-password') ||
+      c.includes('user-not-found')) return 'E-posta veya şifre hatalı.';
+  if (c.includes('email-already-in-use')) return 'Bu e-posta zaten kayıtlı.';
+  if (c.includes('weak-password'))        return 'Şifre en az 6 karakter olmalı.';
+  if (c.includes('invalid-email'))        return 'E-posta adresi geçersiz.';
+  if (c.includes('too-many-requests'))    return 'Çok fazla deneme. Biraz sonra tekrar dene.';
+  if (c.includes('network'))              return 'Bağlantı kurulamadı.';
+  return e?.message || 'Bir şeyler ters gitti.';
+}
+
+/* ---------- İşlemler ---------- */
+async function doLogin(){
+  const demo = !window.Cloud?.enabled;
+  if (demo){
+    const name = (document.getElementById('au-name')?.value || '').trim();
+    if (!name) return authMsg('Bir ad gir.');
+    demoLogin(name);
+    return;
+  }
+  const email = document.getElementById('au-email').value.trim();
+  const pass  = document.getElementById('au-pass').value;
+  if (!email || !pass) return authMsg('E-posta ve şifre gerekli.');
+  authMsg('Giriş yapılıyor…', 'ok');
+  try {
+    await window.Cloud.login(email, pass);
+    closeAuth();
+    toast('Hoş geldin 👋');
+    await reloadAfterAuth();
+  } catch(e){ authMsg(authError(e)); }
+}
+
+async function doSignup(){
+  const demo = !window.Cloud?.enabled;
+  const name = (document.getElementById('au-name')?.value || '').trim();
+  if (!name) return authMsg('Görünen ad gerekli.');
+  if (demo){ demoLogin(name); return; }
+
+  const email = document.getElementById('au-email').value.trim();
+  const pass  = document.getElementById('au-pass').value;
+  if (!email || !pass) return authMsg('E-posta ve şifre gerekli.');
+  authMsg('Hesap oluşturuluyor…', 'ok');
+  try {
+    await window.Cloud.signup(email, pass, name);
+    closeAuth();
+    toast(`Aramıza hoş geldin, <b>${name}</b> 🎉`);
+    await reloadAfterAuth();
+  } catch(e){ authMsg(authError(e)); }
+}
+
+async function doReset(){
+  const email = document.getElementById('au-email').value.trim();
+  if (!email) return authMsg('E-posta gerekli.');
+  try {
+    await window.Cloud.resetPassword(email);
+    authMsg('Sıfırlama bağlantısı gönderildi. Gelen kutunu kontrol et.', 'ok');
+  } catch(e){ authMsg(authError(e)); }
+}
+
+async function doLogout(){
+  closeAuth();
+  if (window.Cloud?.enabled) await window.Cloud.logout();
+  else { const d = loadLocal(); delete d.name; saveLocal(d); }
+  toast('Çıkış yapıldı');
+  await reloadAfterAuth();
+}
+
+/* Demo modda yerel takma ad */
+function demoLogin(name){
+  const d = loadLocal(); d.name = name; saveLocal(d);
+  Store.me = { uid:'u_sen', name, email:'demo@ornek.com', admin:false, demo:true, anon:false };
+  const meRow = Store.users.find(u => u.uid === 'u_sen');
+  if (meRow) meRow.name = name;
+  closeAuth();
+  toast(`Hoş geldin, <b>${name}</b>`);
+  refreshAuthChip();
+  if (typeof render === 'function') render();
+}
+
+async function reloadAfterAuth(){
+  await initStore();
+  refreshAuthChip();
+  if (typeof render === 'function') render();
+}
+
+/* ---------- Hesap penceresi ---------- */
+function openAccount(){
+  const me = Store.me;
+  let el = document.getElementById('authModal');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'authModal'; el.className = 'modal';
+    el.addEventListener('click', e => { if (e.target === el) closeAuth(); });
+    document.body.appendChild(el);
+  }
+  const rows = leaderboard();
+  const mine = rows.find(r => r.uid === me.uid);
+
+  el.innerHTML = `<div class="modal-card">
+    <button class="modal-x" onclick="closeAuth()" aria-label="Kapat">✕</button>
+    <div class="modal-head">
+      <span class="brand-mark" style="font-size:16px">${(me.name||'?').charAt(0).toLocaleUpperCase('tr')}</span>
+      <div>
+        <div class="modal-title">${me.name}</div>
+        <div class="modal-sub">${me.demo ? 'Demo hesabı' : me.email}</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="stat-row" style="margin-bottom:14px">
+        <div class="stat"><b>${mine?.points ?? 0}</b><span>Puan</span></div>
+        <div class="stat"><b>${mine?.rank ?? '–'}</b><span>Sıra</span></div>
+        <div class="stat"><b>${mine?.exact ?? 0}</b><span>Tam isabet</span></div>
+      </div>
+      ${me.admin ? `<div class="note" style="margin-bottom:14px"><span>🛠</span>
+        <span>Yönetici hesabı — maç kartlarında sonuç girme alanı açık.</span></div>` : ''}
+      <button class="btn ghost" style="width:100%" onclick="doLogout()">Çıkış yap</button>
+    </div>
+  </div>`;
+  requestAnimationFrame(() => el.classList.add('show'));
+}
+
+/* ---------- Giriş kapısı ---------- */
+/* Tahmin kaydetmeden önce çağrılır. Girişli değilse pencereyi açar. */
+function requireLogin(){
+  if (Store.me && !Store.me.anon) return true;
+  openAuth('login');
+  return false;
 }
 
 </script>
@@ -1801,7 +2357,8 @@ function heroBlock(){
 /* ---------------- İstatistikler ---------------- */
 function statsBlock(){
   const rows = leaderboard();
-  const me = rows.find(r => r.you);
+  const me = rows.find(r => r.you) ||
+             { points:0, rank:'–', exact:0, derbyPts:0, euroPts:0 };
   const done = FIXTURES.filter(isFinished).length;
   return `
   <div class="card reveal">
@@ -1855,6 +2412,10 @@ function prizeBlock(){
         eder. Avrupa maçları ve final ×6'ya kadar çıkar.</span>
       </div>
       ${rowsHtml}
+      <div class="note" style="margin-top:14px">
+        <span>🌍</span><span>Avrupa maçları <b>kura çekildikten sonra</b> fikstüre eklenecek.
+        Şu an yalnızca Süper Lig maçları listeleniyor.</span>
+      </div>
     </div>
   </div>`;
 }
@@ -1862,8 +2423,11 @@ function prizeBlock(){
 /* ---------------- Filtreler ---------------- */
 function filterBar(){
   const teams = [['ALL','Tüm Takımlar'], ...BIG4.map(c => [c, TEAMS[c].name])];
+  const have = new Set(FIXTURES.map(m => m.comp));
   const comps = [['ALL','Hepsi'],['DERBY','⚔️ Derbiler'],['SL','Süper Lig'],
-                 ['EU','🌍 Avrupa'],['UCL','Şampiyonlar L.'],['UEL','Avrupa L.'],['UECL','Konferans L.']];
+                 ['EU','🌍 Avrupa'],['UCL','Şampiyonlar L.'],['UEL','Avrupa L.'],['UECL','Konferans L.']]
+                 .filter(([k]) => ['ALL','DERBY','SL'].includes(k) ||
+                        (k === 'EU' ? ['UCL','UEL','UECL'].some(x => have.has(x)) : have.has(k)));
   return `
   <div class="filterbar">
     <div class="row">
@@ -1900,7 +2464,13 @@ function matchCard(m){
     : `<div class="vs-lite">VS</div>`;
 
   let pickArea = '';
-  if (open){
+  if (open && !isLoggedIn()){
+    pickArea = `
+      <div class="login-cta">
+        <span>Tahmin girmek için giriş yapmalısın</span>
+        <button class="btn" onclick="openAuth('login')">Giriş yap</button>
+      </div>`;
+  } else if (open){
     pickArea = `
       <div class="pick">
         <div class="pick-label">${my ? 'Tahminini güncelle' : 'Tahminini gir'}</div>
@@ -1955,6 +2525,7 @@ function matchCard(m){
       <span class="tier ${b.cls}">${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
       <span class="when">${fmtTime(m.dt)}</span>
+      ${m.comp === 'SL' && !m.official ? '<span class="prov" title="Resmi fikstür girilene kadar geçici eşleşme">geçici</span>' : ''}
       ${stateChip}
     </div>
     <div class="derby-body">
@@ -1971,6 +2542,16 @@ function matchCard(m){
         </div>
       </div>
       ${pickArea}
+      ${isAdmin() && st !== 'open' ? `
+        <div class="admin-box">
+          <div class="lbl">🛠 Maç sonucu</div>
+          <input class="num" id="rh_${m.id}" type="number" min="0" max="20"
+                 value="${r?.h ?? ''}" placeholder="–">
+          <span class="dash">—</span>
+          <input class="num" id="ra_${m.id}" type="number" min="0" max="20"
+                 value="${r?.a ?? ''}" placeholder="–">
+          <button class="btn" onclick="P_tahmin.saveResult('${m.id}')">Kaydet</button>
+        </div>` : ''}
       ${others}
     </div>
   </article>`;
@@ -1981,16 +2562,32 @@ function togglePicks(id, btn){
   btn.classList.toggle('open');
 }
 
-function savePick(id, ev){
+async function savePick(id, ev){
+  if (!requireLogin()) return;
   const h = document.getElementById('h_' + id).value;
   const a = document.getElementById('a_' + id).value;
   if (h === '' || a === ''){ toast('Önce iki skoru da gir 🙂'); return; }
   if (+h < 0 || +a < 0 || +h > 20 || +a > 20){ toast('Skor 0 ile 20 arasında olmalı'); return; }
 
-  setMyPrediction(id, h, a);
+  const x = ev.clientX, y = ev.clientY;
+  try {
+    await setMyPrediction(id, h, a);
+  } catch(e){ toast('Kaydedilemedi: ' + (e.message || 'bağlantı hatası')); return; }
+
   const m = FIXTURE_BY_ID[id];
-  confetti(ev.clientX, ev.clientY);
+  confetti(x, y);
   toast(`<b>${TEAMS[m.home].name} ${h}–${a} ${TEAMS[m.away].name}</b> kaydedildi`);
+  render();
+}
+
+/* Yönetici: maç sonucu kaydet */
+async function saveResult(id){
+  const h = document.getElementById('rh_' + id).value;
+  const a = document.getElementById('ra_' + id).value;
+  if (h === '' || a === ''){ toast('İki skoru da gir'); return; }
+  try { await setResult(id, h, a); }
+  catch(e){ toast('Kaydedilemedi: ' + (e.message || '')); return; }
+  toast('Sonuç kaydedildi');
   render();
 }
 
@@ -2064,8 +2661,9 @@ function seasonBlock(){
     </div>`;
   }).join('');
 }
-function pickSeason(kind, team){
-  setMySeason(kind, team);
+async function pickSeason(kind, team){
+  if (!requireLogin()) return;
+  await setMySeason(kind, team);
   toast(`${SEASON_PICKS[kind].title.replace('?','')} → <b>${TEAMS[team].name}</b>`);
   render();
 }
@@ -2166,7 +2764,7 @@ function render(){
   }
   initReveal(); initTilt(); initCounters();
 }
-return { heroBlock, statsBlock, prizeBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, savePick, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
+return { heroBlock, statsBlock, prizeBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, savePick, saveResult, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
 })();
 
 /* ===== puan-tablosu.html ===== */
@@ -2377,8 +2975,11 @@ function derbyStandings(){
 /* ---------------- Filtreler ---------------- */
 function filterBar(){
   const teams = [['ALL','Tüm Takımlar'], ...BIG4.map(c => [c, TEAMS[c].name])];
+  const have = new Set(FIXTURES.map(m => m.comp));
   const comps = [['ALL','Hepsi'],['DERBY','⚔️ Derbiler'],['SL','Süper Lig'],
-                 ['EU','🌍 Avrupa'],['UCL','Şampiyonlar L.'],['UEL','Avrupa L.'],['UECL','Konferans L.']];
+                 ['EU','🌍 Avrupa'],['UCL','Şampiyonlar L.'],['UEL','Avrupa L.'],['UECL','Konferans L.']]
+                 .filter(([k]) => ['ALL','DERBY','SL'].includes(k) ||
+                        (k === 'EU' ? ['UCL','UEL','UECL'].some(x => have.has(x)) : have.has(k)));
   return `
   <div class="filterbar">
     <div class="row">${teams.map(([k,l]) =>
@@ -2413,6 +3014,7 @@ function historyCard(m){
     <div class="derby-top">
       <span class="tier ${b.cls}">${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
+      ${m.comp === 'SL' && !m.official ? '<span class="prov">geçici</span>' : ''}
       <span class="state ${live ? 'state-live' : 'state-done'}">
         ${live ? `<span class="pulse-dot"></span>CANLI ${r.minute}'` : fmtDateShort(m.dt)}
       </span>
@@ -2526,12 +3128,16 @@ const ROUTES = {
   'puan-tablosu.html': P_puan.render,
   'gecmis.html':       P_gecmis.render,
 };
+let CURRENT = 'index.html';
 function go(href){
+  CURRENT = href;
   document.querySelectorAll('.nav-links a').forEach(a =>
     a.classList.toggle('on', a.dataset.href === href));
   ROUTES[href]();
   window.scrollTo({ top:0, behavior:'smooth' });
 }
+/* auth-ui.js açık sayfayı yeniden çizmek için global render() bekler */
+window.render = () => ROUTES[CURRENT]();
 boot('index.html', P_tahmin.render);
 
 </script>
