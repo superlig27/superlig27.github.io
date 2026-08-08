@@ -2016,25 +2016,34 @@ const UCL_TEAMS = [
 
 /* ------------------------------------------------------------
    SEZON BAHİSLERİ — sezon başında bir kez, uzun vadeli
-   Puanlar maç puanlarına göre ölçeklendi: bir sezonda maçlardan
-   ortalama ~1000 puan toplanıyor ve zirvedeki iki oyuncu arasında
-   tipik fark ~50 puan. Buradaki bahisler sıralamayı çevirebilecek
-   kadar ağır, ama sezonu tek başına belirlemeyecek kadar sınırlı.
-   Toplam en fazla 625 puan (150 + 250 + 3×75).
+
+   AĞIRLIK NASIL BELİRLENDİ (165 maçlık sezon, 12 sezon × 3000 deneme):
+     · Maçlardan toplanan puan  : ~1650–1930
+     · 1. ile 2. arasındaki fark: ortanca 83  (14–176)
+     · 1. ile 7. arasındaki fark: ortanca 342 (119–453)
+
+   Simülasyon şunu gösterdi: "2. sıradaki 1.'yi geçebilsin" oranı
+   toplam ~390 puandan sonra artmıyor (doyuma ulaşıyor), ama
+   "7. sıradaki yukarı tırmanıyor" oranı toplamla birlikte artmaya
+   devam ediyor. Bu yüzden toplam 390'da tutuldu:
+     toplam 390 → 2.→1. %19 · 7.→1. %0.3 · 7.→ilk3 %3.6
+     toplam 625 → 2.→1. %19 · 7.→1. %1.2 · 7.→ilk3 %7.4  (fazla oynak)
+
+   Toplam en fazla 390 puan (120 + 150 + 3×40).
    Ağırlığı değiştirmek istersen tek yer: aşağıdaki "points".
    ------------------------------------------------------------ */
 const SEASON_PICKS = {
-  champion: { title:'SÜPER LİG ŞAMPİYONU', emoji:'🏆', points:150, kind:'team',
+  champion: { title:'SÜPER LİG ŞAMPİYONU', emoji:'🏆', points:120, kind:'team',
               desc:'2026/27 kupasını kaldıracak takımı seç.',
               options: BIG4,
               lock:'2027-02-07T19:00:00+03:00' },
 
-  uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', emoji:'🌍', points:250, kind:'list',
+  uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', emoji:'🌍', points:150, kind:'list',
               desc:'36 takımdan biri. Hangisini seçersen seç puan aynı — favoriyi de sürprizi de 250 puan.',
               options: UCL_TEAMS,
               lock:'2027-02-07T19:00:00+03:00' },
 
-  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', emoji:'⬇️', points:75, kind:'multi', max:3,
+  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', emoji:'⬇️', points:40, kind:'multi', max:3,
               desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
               options: SL_TEAMS,
               lock:'2027-02-07T19:00:00+03:00' },
