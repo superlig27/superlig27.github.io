@@ -993,6 +993,26 @@ body{
   font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
   color:var(--faint); margin-bottom:8px;
 }
+.dm-sel{
+  width:100%; box-sizing:border-box; font:inherit; font-size:13px; cursor:pointer;
+  padding:11px 13px; border-radius:var(--r-md); margin-bottom:14px;
+  background:rgba(0,0,0,.3); border:1px solid var(--line-2); color:var(--text);
+}
+.dm-sel:focus{ outline:none; border-color:var(--iris); }
+.dm-sel option{ background:var(--bg-2); color:var(--text); }
+
+.dm-match{
+  display:flex; align-items:center; gap:12px; margin-bottom:18px;
+  padding:14px; border-radius:var(--r-lg);
+  background:rgba(255,255,255,.03); border:1px solid var(--line);
+}
+.dm-match .mid{ flex:1; min-width:0; text-align:center; }
+.dm-match .nm{ font-family:var(--f-head); font-size:14px; letter-spacing:.5px; }
+.dm-match .nm em{ font-style:normal; color:var(--faint); margin:0 3px; }
+.dm-match .sub{ display:flex; gap:7px; justify-content:center; flex-wrap:wrap; margin-top:7px; }
+.dm-match .fav{ font-size:10.5px; color:var(--faint); margin-top:8px; line-height:1.5; }
+.dm-match .fav b{ color:var(--dim); }
+
 .dm-in{ display:flex; gap:18px; flex-wrap:wrap; }
 .dm-in > div{ flex:1; min-width:150px; }
 .dm-pair{ display:flex; align-items:center; gap:9px; }
@@ -4111,39 +4131,28 @@ return { render, nextChip };
 window.P_demo = (function(){
 /* ============================================================
    Sistemi anlatmak için kum havuzu. Hiçbir şey kaydedilmez.
-   İki gerçek oran tablosu kullanılır; aynı tahminin farklı
-   maçlarda neden farklı puan getirdiği böyle görünür.
+   Oranı girilmiş GERÇEK maçlar üzerinde çalışır; böylece hem
+   oran tablosu hem önem çarpanı maçın kendisinden gelir.
    ============================================================ */
-const TABLES = {
-  favori: {
-    name:'Tek taraflı maç', sub:'Galatasaray – Çorum FK',
-    scores:{ '1:0':7.00,'2:0':6.00,'2:1':9.00,'3:0':6.50,'3:1':10.00,'3:2':23.00,
-             '4:0':9.00,'4:1':15.00,'4:2':36.00,'4:3':91.00,'5:0':13.25,'5:1':23.00,
-             '5:2':56.00,'5:3':126.00,'6:0':23.00,'6:1':36.00,'6:2':91.00,
-             '7:0':41.00,'7:1':71.00,'7:2':151.00,
-             '0:0':15.00,'1:1':11.00,'2:2':21.00,'3:3':71.00,
-             '0:1':26.00,'0:2':61.00,'1:2':29.00,'0:3':126.00,'1:3':76.00,'2:3':66.00 },
-  },
-  dengeli: {
-    name:'Dengeli maç', sub:'Bandırmaspor – İstanbulspor',
-    scores:{ '1:0':6.50,'2:0':9.50,'2:1':8.50,'3:0':17.00,'3:1':17.00,'3:2':26.00,
-             '4:0':36.00,'4:1':36.00,'4:2':56.00,'4:3':101.00,'5:0':71.00,'5:1':76.00,'5:2':101.00,
-             '0:0':8.00,'1:1':6.00,'2:2':13.25,'3:3':51.00,
-             '0:1':8.00,'0:2':13.25,'1:2':10.00,'0:3':29.00,'1:3':23.00,'2:3':31.00,
-             '0:4':66.00,'1:4':56.00,'2:4':71.00,'3:4':101.00,'0:5':126.00,'1:5':126.00,'2:5':151.00 },
-  },
-};
-
-const DEMO_ID = '__demo';
-let table = 'favori', imp = 'lig', done = false;
+let mid = null, done = false;
 let P = { h:2, a:1 }, R = { h:2, a:0 };
 
-/* Seçili senaryoyu Store'a kurar ve sahte bir maç nesnesi döndürür */
-function demoMatch(){
-  Store.odds[DEMO_ID] = { scores: TABLES[table].scores };   // yeni nesne → önbellek sıfırlanır
-  return { id:DEMO_ID, comp: imp === 'avrupa' ? 'UCL' : 'SL',
-           derby: imp === 'derbi', mult: imp === 'lig' ? 1 : 2 };
+/* Oranı girilmiş maçlar — yaklaşanlar önce */
+function playable(){
+  return FIXTURES.filter(hasOdds).sort((a,b) => {
+    const ao = matchState(a) === 'open', bo = matchState(b) === 'open';
+    if (ao !== bo) return ao ? -1 : 1;
+    return new Date(a.dt) - new Date(b.dt);
+  });
 }
+
+function currentMatch(){
+  const list = playable();
+  if (!list.length) return null;
+  return list.find(m => m.id === mid) || list[0];
+}
+
+function setMatch(id){ mid = id; done = false; render(); }
 
 const TIER_TEXT = {
   10:['Tam isabet','Skoru tam bildin.'],
@@ -4152,10 +4161,6 @@ const TIER_TEXT = {
   2: ['Kıl payı','Tek gol saptın ama sonuç değişti.'],
   0: ['Tutmadı','Ne sonucu ne skoru tutturdun.'],
 };
-
-function setT(k){ table = k; done = false; render(); }
-function setI(k){ imp = k; done = false; render(); }
-function preset(ph,pa,rh,ra){ P={h:ph,a:pa}; R={h:rh,a:ra}; done = true; render(); }
 
 function calc(){
   const g = id => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? 0 : Math.max(0, Math.min(20, v)); };
@@ -4167,8 +4172,8 @@ function calc(){
 }
 
 function resultPanel(){
-  const m = demoMatch();
-  const i = oddsInfo(DEMO_ID);
+  const m = currentMatch();
+  const i = oddsInfo(m.id);
   const s = scorePrediction(P, R, m);
   const [name, why] = TIER_TEXT[s.tier] || TIER_TEXT[0];
 
@@ -4243,37 +4248,61 @@ function resultPanel(){
 }
 
 function render(){
-  const chip = (cur, val, label, fn) =>
-    `<button class="pill ${cur === val ? 'on' : ''}" onclick="P_demo.${fn}('${val}')">${label}</button>`;
+  const list = playable();
+  const app = document.getElementById('app');
+  const head = `<div class="sec-title" style="margin-top:26px"><h3>Puan Hesaplayıcı</h3>
+                  <span class="rule"></span></div>`;
 
-  document.getElementById('app').innerHTML = `
-    <div class="sec-title" style="margin-top:26px"><h3>Puan Hesaplayıcı</h3><span class="rule"></span></div>
+  if (!list.length){
+    app.innerHTML = head + `
+      <div class="card"><div class="card-pad">
+        <div class="empty" style="padding:26px"><span class="em">📊</span>
+          Hesaplayıcı için oranı girilmiş bir maç gerekiyor.<br>
+          <span style="font-size:11px;color:var(--faint)">
+            Bir maçın oran tablosu girildiğinde burada seçilebilir olur.</span></div>
+        ${isAdmin() ? `<button class="btn" style="width:100%"
+            onclick="go('oranlar.html')">🛠 Toplu oran gir</button>` : ''}
+      </div></div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn ghost" onclick="go('nasil-oynanir.html')">← Kurallara dön</button>
+      </div>`;
+    return;
+  }
 
+  const m = currentMatch();
+  const i = oddsInfo(m.id);
+  const b = badgeOf(m);
+  const fav = Object.keys(i.scores).reduce((x,k) => i.scores[k] < i.scores[x] ? k : x);
+  const real = Store.results[m.id];
+
+  app.innerHTML = head + `
     <div class="card reveal">
       <div class="card-pad">
         <div class="note" style="margin-bottom:16px">
-          <span>🧪</span><span>Burada hiçbir şey kaydedilmez. Bir tahmin ve bir sonuç yaz,
-          <b>Hesapla</b>'ya bas — puanın nasıl çıktığını adım adım gör.</span>
+          <span>🧪</span><span>Burada hiçbir şey kaydedilmez. Bir maç seç, bir tahmin ve
+          bir sonuç yaz, <b>Hesapla</b>'ya bas — puanın nasıl çıktığını adım adım gör.</span>
         </div>
 
-        <div class="dm-lbl">Maç tipi</div>
-        <div class="filterbar" style="position:static;margin:0 0 14px;padding:0;background:none">
-          <div class="row">
-            ${chip(imp,'lig','Lig maçı ×1','setI')}
-            ${chip(imp,'derbi','⚔️ Derbi ×2','setI')}
-            ${chip(imp,'avrupa','🌍 Avrupa ×2','setI')}
-          </div>
-        </div>
+        <div class="dm-lbl">Maç</div>
+        <select class="dm-sel" onchange="P_demo.setMatch(this.value)">
+          ${list.map(f => `<option value="${f.id}" ${f.id === m.id ? 'selected' : ''}>
+            ${TEAMS[f.home].name} – ${TEAMS[f.away].name} · ${fmtDateShort(f.dt)}${f.derby ? ' · derbi' : ''}
+          </option>`).join('')}
+        </select>
 
-        <div class="dm-lbl">Oran tablosu</div>
-        <div class="filterbar" style="position:static;margin:0 0 6px;padding:0;background:none">
-          <div class="row">
-            ${chip(table,'favori','Tek taraflı maç','setT')}
-            ${chip(table,'dengeli','Dengeli maç','setT')}
+        <div class="dm-match">
+          <span class="crest-wrap">${crest(m.home, 34)}</span>
+          <div class="mid">
+            <div class="nm">${TEAMS[m.home].short || TEAMS[m.home].name}
+              <em>–</em> ${TEAMS[m.away].short || TEAMS[m.away].name}</div>
+            <div class="sub">
+              <span class="tier ${b.cls}">${b.text}</span>
+              <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">önem ×${m.mult}</span>
+            </div>
+            <div class="fav">Bahisçinin favori skoru <b>${fav.replace(':','-')}</b>
+              (${i.scores[fav].toFixed(2)}) · ${Object.keys(i.scores).length} skor girili</div>
           </div>
-        </div>
-        <div style="font-size:11px;color:var(--faint);margin-bottom:16px">
-          ${TABLES[table].sub} · gerçek bahis oranları
+          <span class="crest-wrap">${crest(m.away, 34)}</span>
         </div>
 
         <div class="dm-in">
@@ -4294,19 +4323,10 @@ function render(){
             </div>
           </div>
         </div>
+        ${real ? `<div style="font-size:11px;color:var(--faint);margin-top:8px">
+          Bu maç <b style="color:var(--dim)">${real.h}-${real.a}</b> bitti.</div>` : ''}
 
         <button class="btn" style="width:100%;margin-top:16px" onclick="P_demo.calc()">Hesapla</button>
-
-        <div class="dm-lbl" style="margin-top:18px">Hazır örnekler</div>
-        <div class="filterbar" style="position:static;margin:0;padding:0;background:none">
-          <div class="row">
-            <button class="pill" onclick="P_demo.preset(2,0,2,0)">Favori skoru tuttu</button>
-            <button class="pill" onclick="P_demo.preset(0,1,0,1)">Sürprizi tutturdu</button>
-            <button class="pill" onclick="P_demo.preset(2,1,2,0)">Tek gol saptı</button>
-            <button class="pill" onclick="P_demo.preset(8,2,1,0)">Uçuk skor yazdı</button>
-            <button class="pill" onclick="P_demo.preset(1,1,1,0)">Beraberlik dedi</button>
-          </div>
-        </div>
 
         <div id="d-out">${done ? resultPanel() : ''}</div>
       </div>
@@ -4318,7 +4338,7 @@ function render(){
   initReveal();
 }
 
-return { render, calc, setT, setI, preset };
+return { render, calc, setMatch };
 })();
 
 /* ===== oranlar.html — TOPLU ORAN GİRİŞİ (yönetici) ===== */
