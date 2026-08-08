@@ -999,7 +999,7 @@ body{
 
 .lander-in{
   position:relative; z-index:3;
-  display:flex; flex-direction:column; align-items:center; padding-bottom:22px;
+  display:flex; flex-direction:column; align-items:center; padding-bottom:10px;
   /* fareye göre çok hafif paralaks */
   transform:translate3d(var(--px,0px), var(--py,0px), 0);
   transition:transform .6s cubic-bezier(.2,.7,.3,1);
@@ -1022,10 +1022,14 @@ body{
   backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
 }
 .lander-title{
-  margin:22px 0 0; font-family:var(--f-head); font-weight:400;
+  margin:16px 0 0; font-family:var(--f-head); font-weight:400;
   /* hem genişliğe hem YÜKSEKLİĞE göre ölçeklenir; kısa ekranlarda taşmaz */
-  font-size:clamp(40px, min(11vw, 13vh), 112px);
-  line-height:.92; letter-spacing:-1px;
+  font-size:clamp(36px, min(10vw, 10.5vh), 96px);
+  /* DİKKAT: Türkçe büyük harflerde İ noktası ve Ö/Ü umlautu normal
+     büyük harf yüksekliğinin ÜSTÜNE çıkar (mürekkep yüksekliği ≈ 1.05em).
+     Üstteki satırın virgül altlığıyla birlikte 1.17em gerekiyor;
+     daha dar bir satır yüksekliği noktaları üst satıra bindirir. */
+  line-height:1.24; letter-spacing:-1px;
   text-transform:uppercase; color:var(--text);
   text-shadow:0 18px 60px rgba(0,0,0,.55);
 }
@@ -3122,6 +3126,17 @@ const TITLE      = [['DÖRT', 'BÜYÜK,'], ['TEK', 'TAHMİN', 'LİGİ']];
 const GRAD_WORD  = 'LİGİ';
 
 let cdTimer = null;      // sıradaki maç sayacı
+let rzTimer = null;      // yeniden boyutlandırma gecikmesi
+
+/* Ekran genişleyince şerit yarısı yetmeyebilir; yeniden doldur. */
+function onResize(){
+  clearTimeout(rzTimer);
+  rzTimer = setTimeout(() => {
+    if (CURRENT !== 'index.html') return;
+    const unit = MQ_UNIT();
+    document.querySelectorAll('.marquee').forEach(mq => seamless(mq, unit));
+  }, 200);
+}
 
 /* Sıradaki maç rozeti — tıklayınca fikstüre gider */
 function nextChip(){
@@ -3139,6 +3154,29 @@ function nextChip(){
       </span>
       <span class="cd" id="lander-cd">${timeLeftShort(new Date(m.dt) - NOW())}</span>
     </button>`;
+}
+
+/* Şeridin temel bloğu — dört büyüğün kartları */
+function MQ_UNIT(){
+  return BIG4.map(c => `
+    <div class="mq-card t-${c.toLowerCase()}">
+      ${crest(c, 60)}<span class="nm">${TEAMS[c].short || TEAMS[c].name}</span>
+    </div>`).join('');
+}
+
+/* ---- Dikişsiz kaydırma ----
+   Animasyon şeridi -%50, yani tam bir "yarı" kadar kaydırır. Dikiş
+   görünmemesi için YARININ EKRANDAN GENİŞ olması şart; aksi hâlde
+   şerit bitince sağda boşluk kalır ve başa dönerken zıplar.
+   Kart genişliği ekran yüksekliğine bağlı (clamp) olduğundan sayıyı
+   hesaplamak yerine ÖLÇÜP yetene kadar çoğaltıyoruz.               */
+function seamless(mq, unit){
+  const track = mq.querySelector('.marquee-track');
+  if (!track) return;
+  const build = n => { track.innerHTML = unit.repeat(n).repeat(2); };
+  let reps = 2;
+  build(reps);
+  while (track.scrollWidth / 2 <= mq.clientWidth + 48 && reps < 12) build(++reps);
 }
 
 /* Fare hareketiyle ışık + hafif paralaks */
@@ -3177,12 +3215,10 @@ function render(){
       style="animation-delay:${(.15 + i++ * .07).toFixed(2)}s">${w}&nbsp;</span>`).join('')
   }</span>`).join('');
 
-  /* Şerit: kesintisiz dönmesi için takım seti iki kez basılır */
-  const tiles = [...BIG4, ...BIG4].map(c => `
-    <div class="mq-card t-${c.toLowerCase()}">
-      ${crest(c, 60)}<span class="nm">${TEAMS[c].short || TEAMS[c].name}</span>
-    </div>`).join('');
-  const strip = tiles + tiles;
+  /* Şeridin temel bloğu: dört takım. Kaç kez tekrarlanacağına
+     yerleştirmeden sonra seamless() ölçerek karar verir. */
+  const unit  = MQ_UNIT();
+  const strip = unit.repeat(2).repeat(2);   // başlangıç tahmini
 
   document.getElementById('app').innerHTML = `
   <section class="lander" id="lander">
@@ -3220,6 +3256,14 @@ function render(){
 
   const root = document.getElementById('lander');
   if (root) initPointerFx(root);
+
+  /* Şeritleri ekran genişliğine göre doldur */
+  document.querySelectorAll('.marquee').forEach(mq => seamless(mq, unit));
+
+  /* Pencere yeniden boyutlandığında dikiş açılmasın */
+  clearTimeout(rzTimer);
+  window.removeEventListener('resize', onResize);
+  window.addEventListener('resize', onResize);
 
   /* Sayaç: sayfa değişince eskisini durdur */
   clearInterval(cdTimer);
