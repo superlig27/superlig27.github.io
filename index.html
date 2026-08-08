@@ -987,6 +987,78 @@ body{
 .odds-row .x{ color:var(--cyan); text-align:right; }
 .odds-row .p{ font-family:var(--f-num); font-size:15px; text-align:right; color:var(--gold); }
 
+/* ---------- Puan hesaplayıcı (demo.html) ---------- */
+.try-card{ background:var(--grad-soft); border-color:var(--line-2); }
+.dm-lbl{
+  font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--faint); margin-bottom:8px;
+}
+.dm-in{ display:flex; gap:18px; flex-wrap:wrap; }
+.dm-in > div{ flex:1; min-width:150px; }
+.dm-pair{ display:flex; align-items:center; gap:9px; }
+.dm-pair .num{ flex:1; min-width:0; }
+
+.dm-res{
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  margin-top:20px; padding:18px; border-radius:var(--r-lg);
+  background:var(--grad-soft); border:1px solid var(--line-2);
+}
+.dm-res.zero{ background:rgba(255,255,255,.03); border-color:var(--line); }
+.dm-res .big{ display:flex; align-items:baseline; gap:7px; }
+.dm-res .big b{ font-family:var(--f-num); font-size:52px; line-height:1; letter-spacing:1px; }
+.dm-res .big span{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--faint); }
+.dm-res .tier{ display:flex; align-items:center; gap:11px; flex:1; min-width:170px; }
+.dm-res .tier b{ display:block; font-size:13px; }
+.dm-res .tier em{ display:block; font-style:normal; font-size:11.5px; color:var(--faint); margin-top:2px; }
+
+.dm-calc{
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  flex-wrap:wrap; margin-top:16px;
+}
+.dm-calc .n{
+  font-family:var(--f-num); font-size:24px; letter-spacing:1px;
+  padding:5px 13px; border-radius:10px;
+  background:rgba(255,255,255,.05); border:1px solid var(--line);
+}
+.dm-calc .c1{ color:var(--cyan);  border-color:rgba(41,214,238,.35); }
+.dm-calc .c2{ color:var(--gold);  border-color:rgba(247,201,90,.35); }
+.dm-calc .eq{ color:var(--ink); background:var(--grad); border-color:transparent; }
+.dm-calc .op{ color:var(--faint); font-size:16px; }
+.dm-leg{
+  display:flex; justify-content:center; gap:16px; flex-wrap:wrap;
+  margin-top:9px; font-size:10px; color:var(--faint);
+}
+.dm-leg span{ display:inline-flex; align-items:center; gap:5px; }
+.dm-leg i{ width:9px; height:9px; border-radius:3px; display:inline-block; }
+.dm-leg .k1{ background:rgba(255,255,255,.25); }
+.dm-leg .k2{ background:var(--cyan); }
+.dm-leg .k3{ background:var(--gold); }
+
+.dm-h{
+  font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--faint); margin:20px 0 9px;
+}
+.dm-alts{ border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden; }
+.dm-alt{
+  display:grid; grid-template-columns:1fr 70px 66px 56px; align-items:center; gap:6px;
+  padding:8px 12px; font-size:12px; border-bottom:1px solid rgba(255,255,255,.04);
+}
+.dm-alt:last-child{ border-bottom:none; }
+.dm-alt.hd{ font-size:9.5px; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--faint); background:rgba(255,255,255,.03); }
+.dm-alt.now{ background:var(--grad-soft); }
+.dm-alt .sk{ font-family:var(--f-num); font-size:17px; letter-spacing:1px; }
+.dm-alt.hd .sk{ font-family:var(--f-body); font-size:9.5px; }
+.dm-alt .ih{ color:var(--faint); text-align:right; }
+.dm-alt .tb{ text-align:center; font-family:var(--f-num); font-size:15px; }
+.dm-alt.hd .tb, .dm-alt.hd .pz{ font-family:var(--f-body); font-size:9.5px; color:var(--faint); }
+.dm-alt .pz{ text-align:right; font-family:var(--f-num); font-size:16px; }
+
+@media (max-width:520px){
+  .dm-res .big b{ font-size:42px; }
+  .dm-alt{ grid-template-columns:1fr 58px 52px 48px; }
+}
+
 /* ---------- Oyuncu profili ---------- */
 .lb-row.clickable{ cursor:pointer; border-radius:10px;
   transition:background .2s, transform .2s; }
@@ -4035,6 +4107,220 @@ function render(){
 return { render, nextChip };
 })();
 
+/* ===== demo.html — PUAN HESAPLAYICI ===== */
+window.P_demo = (function(){
+/* ============================================================
+   Sistemi anlatmak için kum havuzu. Hiçbir şey kaydedilmez.
+   İki gerçek oran tablosu kullanılır; aynı tahminin farklı
+   maçlarda neden farklı puan getirdiği böyle görünür.
+   ============================================================ */
+const TABLES = {
+  favori: {
+    name:'Tek taraflı maç', sub:'Galatasaray – Çorum FK',
+    scores:{ '1:0':7.00,'2:0':6.00,'2:1':9.00,'3:0':6.50,'3:1':10.00,'3:2':23.00,
+             '4:0':9.00,'4:1':15.00,'4:2':36.00,'4:3':91.00,'5:0':13.25,'5:1':23.00,
+             '5:2':56.00,'5:3':126.00,'6:0':23.00,'6:1':36.00,'6:2':91.00,
+             '7:0':41.00,'7:1':71.00,'7:2':151.00,
+             '0:0':15.00,'1:1':11.00,'2:2':21.00,'3:3':71.00,
+             '0:1':26.00,'0:2':61.00,'1:2':29.00,'0:3':126.00,'1:3':76.00,'2:3':66.00 },
+  },
+  dengeli: {
+    name:'Dengeli maç', sub:'Bandırmaspor – İstanbulspor',
+    scores:{ '1:0':6.50,'2:0':9.50,'2:1':8.50,'3:0':17.00,'3:1':17.00,'3:2':26.00,
+             '4:0':36.00,'4:1':36.00,'4:2':56.00,'4:3':101.00,'5:0':71.00,'5:1':76.00,'5:2':101.00,
+             '0:0':8.00,'1:1':6.00,'2:2':13.25,'3:3':51.00,
+             '0:1':8.00,'0:2':13.25,'1:2':10.00,'0:3':29.00,'1:3':23.00,'2:3':31.00,
+             '0:4':66.00,'1:4':56.00,'2:4':71.00,'3:4':101.00,'0:5':126.00,'1:5':126.00,'2:5':151.00 },
+  },
+};
+
+const DEMO_ID = '__demo';
+let table = 'favori', imp = 'lig', done = false;
+let P = { h:2, a:1 }, R = { h:2, a:0 };
+
+/* Seçili senaryoyu Store'a kurar ve sahte bir maç nesnesi döndürür */
+function demoMatch(){
+  Store.odds[DEMO_ID] = { scores: TABLES[table].scores };   // yeni nesne → önbellek sıfırlanır
+  return { id:DEMO_ID, comp: imp === 'avrupa' ? 'UCL' : 'SL',
+           derby: imp === 'derbi', mult: imp === 'lig' ? 1 : 2 };
+}
+
+const TIER_TEXT = {
+  10:['Tam isabet','Skoru tam bildin.'],
+  8: ['Neredeyse','Kazananı bildin, tek gol saptın.'],
+  6: ['Doğru sonuç','Kazananı bildin ama skoru kaçırdın.'],
+  2: ['Kıl payı','Tek gol saptın ama sonuç değişti.'],
+  0: ['Tutmadı','Ne sonucu ne skoru tutturdun.'],
+};
+
+function setT(k){ table = k; done = false; render(); }
+function setI(k){ imp = k; done = false; render(); }
+function preset(ph,pa,rh,ra){ P={h:ph,a:pa}; R={h:rh,a:ra}; done = true; render(); }
+
+function calc(){
+  const g = id => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? 0 : Math.max(0, Math.min(20, v)); };
+  P = { h:g('d-ph'), a:g('d-pa') };
+  R = { h:g('d-rh'), a:g('d-ra') };
+  done = true;
+  render();
+  document.getElementById('d-out')?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function resultPanel(){
+  const m = demoMatch();
+  const i = oddsInfo(DEMO_ID);
+  const s = scorePrediction(P, R, m);
+  const [name, why] = TIER_TEXT[s.tier] || TIER_TEXT[0];
+
+  const compMult = m.mult;
+  const rr = R.h > R.a ? 'H' : R.h < R.a ? 'A' : 'D';
+  /* Çarpanı yuvarlanmış çarpımdan geri bölmek yerine doğrudan hesapla,
+     yoksa hesaplayıcıda 10 × 1.94 × 2 = 39 gibi tutarsızlık görünür. */
+  const oddsMult = s.tier >= 8 ? scoreMult(m, R.h, R.a)
+                 : s.tier === 6 ? outcomeMult(m, rr) : 1;
+  const rKey = `${R.h}:${R.a}`;
+  const rOdds = i.scores[rKey];
+  const outName = { H:'ev sahibi kazanır', D:'beraberlik', A:'deplasman kazanır' }[rr];
+
+  /* Oran çarpanı nereden geldi? */
+  const source = s.tier >= 8
+    ? `Gerçekleşen skor <b>${R.h}-${R.a}</b>${rOdds ? ` oranı <b>${rOdds.toFixed(2)}</b>` : ' <b>listede yok</b>'}
+       — maçın en kısa oranı ${i.min.toFixed(2)}.`
+    : s.tier === 6
+      ? `Gerçekleşen sonuç <b>${outName}</b>, bahisçiye göre ihtimali
+         <b>%${Math.round(i.p[rr] * 100)}</b>.`
+      : s.tier === 2 ? 'Bu basamakta oran çarpanı yok — düz 2 puan.'
+                     : 'Puan yok.';
+
+  /* Aynı tahminle başka sonuçlar ne getirirdi? */
+  const tot = Object.values(i.scores).reduce((x,o) => x + 1/o, 0);
+  const alt = Object.keys(i.scores)
+    .sort((x,y) => i.scores[x] - i.scores[y]).slice(0, 8)
+    .map(k => {
+      const [h,a] = k.split(':').map(Number);
+      const sc = scorePrediction(P, { h, a }, m);
+      const isNow = h === R.h && a === R.a;
+      return `<div class="dm-alt ${isNow ? 'now' : ''}">
+        <span class="sk">${h}-${a}</span>
+        <span class="ih">%${(100/i.scores[k]/tot).toFixed(1)}</span>
+        <span class="tb ${ptsClass(sc.tier)}">${sc.tier || 0}</span>
+        <span class="pz ${ptsClass(sc.tier)}">${sc.pts}p</span>
+      </div>`;
+    }).join('');
+
+  return `
+    <div class="dm-res ${s.pts ? '' : 'zero'}">
+      <div class="big"><b>${s.pts}</b><span>puan</span></div>
+      <div class="tier">
+        <span class="pbadge pb-${s.tier}">${s.tier}p</span>
+        <div><b>${name}</b><em>${why}</em></div>
+      </div>
+    </div>
+
+    ${s.pts ? `
+    <div class="dm-calc">
+      <span class="n">${s.tier}</span><span class="op">×</span>
+      <span class="n c1">${oddsMult.toFixed(2)}</span><span class="op">×</span>
+      <span class="n c2">${compMult}</span><span class="op">=</span>
+      <span class="n eq">${s.pts}</span>
+    </div>
+    <div class="dm-leg">
+      <span><i class="k1"></i>temel puan</span>
+      <span><i class="k2"></i>oran çarpanı</span>
+      <span><i class="k3"></i>önem çarpanı</span>
+    </div>` : ''}
+
+    <div class="note" style="margin-top:14px">
+      <span>🔍</span><span>${source}</span>
+    </div>
+
+    <div class="dm-h">Aynı tahminle maç başka türlü bitseydi</div>
+    <div class="dm-alts">
+      <div class="dm-alt hd"><span class="sk">Skor</span><span class="ih">İhtimal</span>
+        <span class="tb">Basamak</span><span class="pz">Puan</span></div>
+      ${alt}
+    </div>`;
+}
+
+function render(){
+  const chip = (cur, val, label, fn) =>
+    `<button class="pill ${cur === val ? 'on' : ''}" onclick="P_demo.${fn}('${val}')">${label}</button>`;
+
+  document.getElementById('app').innerHTML = `
+    <div class="sec-title" style="margin-top:26px"><h3>Puan Hesaplayıcı</h3><span class="rule"></span></div>
+
+    <div class="card reveal">
+      <div class="card-pad">
+        <div class="note" style="margin-bottom:16px">
+          <span>🧪</span><span>Burada hiçbir şey kaydedilmez. Bir tahmin ve bir sonuç yaz,
+          <b>Hesapla</b>'ya bas — puanın nasıl çıktığını adım adım gör.</span>
+        </div>
+
+        <div class="dm-lbl">Maç tipi</div>
+        <div class="filterbar" style="position:static;margin:0 0 14px;padding:0;background:none">
+          <div class="row">
+            ${chip(imp,'lig','Lig maçı ×1','setI')}
+            ${chip(imp,'derbi','⚔️ Derbi ×2','setI')}
+            ${chip(imp,'avrupa','🌍 Avrupa ×2','setI')}
+          </div>
+        </div>
+
+        <div class="dm-lbl">Oran tablosu</div>
+        <div class="filterbar" style="position:static;margin:0 0 6px;padding:0;background:none">
+          <div class="row">
+            ${chip(table,'favori','Tek taraflı maç','setT')}
+            ${chip(table,'dengeli','Dengeli maç','setT')}
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--faint);margin-bottom:16px">
+          ${TABLES[table].sub} · gerçek bahis oranları
+        </div>
+
+        <div class="dm-in">
+          <div>
+            <div class="dm-lbl">Senin tahminin</div>
+            <div class="dm-pair">
+              <input class="num" id="d-ph" type="number" min="0" max="20" value="${P.h}">
+              <span class="dash">—</span>
+              <input class="num" id="d-pa" type="number" min="0" max="20" value="${P.a}">
+            </div>
+          </div>
+          <div>
+            <div class="dm-lbl">Maçın sonucu</div>
+            <div class="dm-pair">
+              <input class="num" id="d-rh" type="number" min="0" max="20" value="${R.h}">
+              <span class="dash">—</span>
+              <input class="num" id="d-ra" type="number" min="0" max="20" value="${R.a}">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn" style="width:100%;margin-top:16px" onclick="P_demo.calc()">Hesapla</button>
+
+        <div class="dm-lbl" style="margin-top:18px">Hazır örnekler</div>
+        <div class="filterbar" style="position:static;margin:0;padding:0;background:none">
+          <div class="row">
+            <button class="pill" onclick="P_demo.preset(2,0,2,0)">Favori skoru tuttu</button>
+            <button class="pill" onclick="P_demo.preset(0,1,0,1)">Sürprizi tutturdu</button>
+            <button class="pill" onclick="P_demo.preset(2,1,2,0)">Tek gol saptı</button>
+            <button class="pill" onclick="P_demo.preset(8,2,1,0)">Uçuk skor yazdı</button>
+            <button class="pill" onclick="P_demo.preset(1,1,1,0)">Beraberlik dedi</button>
+          </div>
+        </div>
+
+        <div id="d-out">${done ? resultPanel() : ''}</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn ghost" onclick="go('nasil-oynanir.html')">← Kurallara dön</button>
+    </div>`;
+  initReveal();
+}
+
+return { render, calc, setT, setI, preset };
+})();
+
 /* ===== oranlar.html — TOPLU ORAN GİRİŞİ (yönetici) ===== */
 window.P_oranlar = (function(){
 /* ============================================================
@@ -4230,6 +4516,19 @@ window.P_nasil = (function(){
 function render(){
   document.getElementById('app').innerHTML = `
     <div class="sec-title" style="margin-top:26px"><h3>Nasıl Oynanır</h3><span class="rule"></span></div>
+
+    <div class="card reveal try-card">
+      <div class="card-pad" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-size:26px;flex-shrink:0">🧮</span>
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:13.5px;font-weight:600">Puan hesaplayıcı</div>
+          <div style="font-size:11.5px;color:var(--faint);margin-top:2px">
+            Bir tahmin ve bir sonuç yaz, kaç puan geleceğini anında gör.</div>
+        </div>
+        <button class="btn" onclick="go('demo.html')">Dene →</button>
+      </div>
+    </div>
+
     ${P_tahmin.rulesBlock()}
 
     <div class="sec-title"><h3>Puan Çarpanları ve Ödül</h3><span class="rule"></span></div>
@@ -4619,6 +4918,7 @@ const ROUTES = {
   'puan-tablosu.html':  P_puan.render,
   'gecmis.html':        P_gecmis.render,
   'nasil-oynanir.html': P_nasil.render,
+  'demo.html':          P_demo.render,      // puan hesaplayıcı
   'oranlar.html':       P_oranlar.render,   // yönetici — navigasyonda yok
 };
 const HOME = 'index.html';
