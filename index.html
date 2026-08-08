@@ -1403,39 +1403,10 @@ body{
   background:var(--grad); padding:5px 13px; border-radius:99px; white-space:nowrap;
 }
 
-/* Kayan takım şeritleri — iki sıra, ters yönlerde */
-.marquee{
-  position:relative; width:100%;
-  -webkit-mask-image:linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-          mask-image:linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-}
-.marquee.top{ margin-top:auto; padding-bottom:30px; }
-/* İkinci şerit yalnızca yüksek ekranlarda; alçak ekranda tek sıra sığar */
-.marquee.bot{ display:none; margin-top:14px; padding-bottom:30px; }
-@media (min-height:1120px){
-  .marquee.top{ padding-bottom:0; }
-  .marquee.bot{ display:block; }
-}
-.marquee-track{ display:flex; gap:14px; width:max-content; animation:mqSlide 36s linear infinite; }
-.marquee.bot .marquee-track{ animation:mqSlideRev 48s linear infinite; }
-.marquee:hover .marquee-track{ animation-play-state:paused; }
-@keyframes mqSlide{ from{ transform:translateX(0); }     to{ transform:translateX(-50%); } }
-@keyframes mqSlideRev{ from{ transform:translateX(-50%); } to{ transform:translateX(0); } }
-
-.mq-card{
-  flex:0 0 auto; width:clamp(92px, 11.5vh, 132px); aspect-ratio:3/4; border-radius:var(--r-lg);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px;
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:0 16px 34px -16px rgba(0,0,0,.85);
-  background:linear-gradient(165deg,
-    color-mix(in srgb, var(--c1) 50%, #0b0b14),
-    color-mix(in srgb, var(--c2) 62%, #06060c));
-}
-.mq-card:nth-child(odd) { transform:rotate(-2.2deg); }
-.mq-card:nth-child(even){ transform:rotate(2.6deg) translateY(-9px); }
-.mq-card .nm{
-  font-family:var(--f-head); font-size:11.5px; letter-spacing:1.3px;
-  color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.65);
+/* Şimşek katmanı — metnin altında, zemin efektlerinin üstünde */
+.bolt-fx{
+  position:absolute; inset:0; width:100%; height:100%;
+  z-index:2; pointer-events:none; display:block;
 }
 
 @media (max-width:640px){
@@ -1448,7 +1419,6 @@ body{
   .lander-stats b{ font-size:23px; }
   .lander-next{ margin-top:20px; padding-left:13px; }
   .lander-next .mt b{ font-size:12px; }
-  .mq-card{ width:clamp(88px, 10vh, 108px); }
 }
 
 /* Alçak ekranlarda dikey boşlukları kıs */
@@ -1459,7 +1429,6 @@ body{
   .lander-stats{ margin-top:22px; }
   .lander-stats b{ font-size:24px; }
   .lander-next { margin-top:18px; }
-  .marquee.top { padding-bottom:22px; }
   .lander-in   { padding-bottom:14px; }
 }
 
@@ -2734,8 +2703,9 @@ function applyTheme(key){
   document.querySelectorAll('.theme-list button').forEach(b =>
     b.classList.toggle('on', b.dataset.theme === t.key));
 }
+const DEFAULT_THEME = 'grafit';          // varsayılan tema
 function currentTheme(){
-  try { return localStorage.getItem(THEME_KEY) || 'obsidyen'; } catch(e){ return 'obsidyen'; }
+  try { return localStorage.getItem(THEME_KEY) || DEFAULT_THEME; } catch(e){ return DEFAULT_THEME; }
 }
 function mountThemeDock(){
   document.body.insertAdjacentHTML('beforeend', `
@@ -4207,17 +4177,6 @@ const TITLE      = [['DÖRT', 'BÜYÜK,'], ['TEK', 'TAHMİN', 'LİGİ']];
 const GRAD_WORD  = 'LİGİ';
 
 let cdTimer = null;      // sıradaki maç sayacı
-let rzTimer = null;      // yeniden boyutlandırma gecikmesi
-
-/* Ekran genişleyince şerit yarısı yetmeyebilir; yeniden doldur. */
-function onResize(){
-  clearTimeout(rzTimer);
-  rzTimer = setTimeout(() => {
-    if (CURRENT !== 'index.html') return;
-    const unit = MQ_UNIT();
-    document.querySelectorAll('.marquee').forEach(mq => seamless(mq, unit));
-  }, 200);
-}
 
 /* Sıradaki maç rozeti — tıklayınca fikstüre gider */
 function nextChip(){
@@ -4237,27 +4196,228 @@ function nextChip(){
     </button>`;
 }
 
-/* Şeridin temel bloğu — dört büyüğün kartları */
-function MQ_UNIT(){
-  return BIG4.map(c => `
-    <div class="mq-card t-${c.toLowerCase()}">
-      ${crest(c, 60)}<span class="nm">${TEAMS[c].short || TEAMS[c].name}</span>
-    </div>`).join('');
+/* ============================================================
+   ŞİMŞEK DÖNGÜSÜ
+   Beyaz şimşek düşer, düştüğü noktada takımın tek renkli çizgi
+   amblemi anında belirir ve bir sonraki şimşekten ÖNCE tamamen
+   söner. Sıra hep aynı: GS → FB → BJK → TS → baştan.
+
+   NOT: Amblemler kulüplerin resmi armaları değil; halka + monogram
+   biçiminde sade işaretlerdir. Elinde çizgi SVG varsa MARKS içindeki
+   çizim fonksiyonunu değiştirmen yeterli.
+   ============================================================ */
+const BOLT = { cycle:2600, flash:170, hold:520, fade:900 };
+const MONO = { GS:'GS', FB:'FB', BJK:'BJK', TS:'TS' };
+let boltRAF = null;
+
+/* Şimşekte kullanılan gerçek armalar (doğrudan görsel adresleri).
+   Renkleri atılıp beyaza çevrilir; renk hiç kullanılmaz. */
+const MARK_SRC = {
+  GS: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Galatasaray_SK_football_logo.png/960px-Galatasaray_SK_football_logo.png',
+  FB: 'https://upload.wikimedia.org/wikipedia/tr/thumb/8/86/Fenerbah%C3%A7e_SK.png/250px-Fenerbah%C3%A7e_SK.png',
+  BJK:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/BesiktasJK-Logo.svg/250px-BesiktasJK-Logo.svg.png',
+  TS: 'https://upload.wikimedia.org/wikipedia/tr/a/ab/TrabzonsporAmblemi.png',
+};
+
+/* code -> hazırlanmış beyaz canvas | 'mono' (yedek monogram) | null (yükleniyor) */
+const markCache = {};
+
+/* Renkli armayı BEYAZ çizime çevirir.
+   Saydamlık korunur, renk atılır: pikselin PARLAKLIĞI opaklığa dönüşür.
+   Böylece koyu zeminli yuvarlak armalarda içteki açık renkli detaylar
+   (harfler, yaprak, kartal) beyaz kalır, koyu gövde saydamlaşır —
+   yani dolu bir leke yerine gerçek çizim görüntüsü çıkar. */
+function toWhiteArt(im){
+  const S = 256;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const cx = cv.getContext('2d');
+  const s = Math.min(S / im.naturalWidth, S / im.naturalHeight) * 0.94;
+  const w = im.naturalWidth * s, h = im.naturalHeight * s;
+  cx.drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
+
+  let img;
+  try { img = cx.getImageData(0, 0, S, S); }
+  catch(e){ return null; }                    // CORS engeli → monograma dön
+
+  const p = img.data;
+  const LO = 0.30, HI = 0.82;                 // kontrast penceresi
+  for (let i = 0; i < p.length; i += 4){
+    const a = p[i+3];
+    /* ÖNCE parlaklığı oku — sonra pikseli beyaza boya.
+       Sıra ters olursa parlaklık hep 1 çıkar ve arma dolu leke olur. */
+    const lum = a ? (0.2126*p[i] + 0.7152*p[i+1] + 0.0722*p[i+2]) / 255 : 0;
+    const v = Math.min(1, Math.max(0, (lum - LO) / (HI - LO)));
+    p[i] = p[i+1] = p[i+2] = 255;
+    p[i+3] = a ? Math.round(a * v) : 0;
+  }
+  cx.putImageData(img, 0, 0);
+  return cv;
+}
+function prepareMark(code){
+  if (markCache[code] !== undefined) return;
+  markCache[code] = null;                      // yükleniyor
+  const im = new Image();
+  im.crossOrigin = 'anonymous';                // getImageData için şart
+  im.onload  = () => { markCache[code] = toWhiteArt(im) || 'mono'; };
+  im.onerror = () => { markCache[code] = 'mono'; };
+  im.src = MARK_SRC[code];
 }
 
-/* ---- Dikişsiz kaydırma ----
-   Animasyon şeridi -%50, yani tam bir "yarı" kadar kaydırır. Dikiş
-   görünmemesi için YARININ EKRANDAN GENİŞ olması şart; aksi hâlde
-   şerit bitince sağda boşluk kalır ve başa dönerken zıplar.
-   Kart genişliği ekran yüksekliğine bağlı (clamp) olduğundan sayıyı
-   hesaplamak yerine ÖLÇÜP yetene kadar çoğaltıyoruz.               */
-function seamless(mq, unit){
-  const track = mq.querySelector('.marquee-track');
-  if (!track) return;
-  const build = n => { track.innerHTML = unit.repeat(n).repeat(2); };
-  let reps = 2;
-  build(reps);
-  while (track.scrollWidth / 2 <= mq.clientWidth + 48 && reps < 12) build(++reps);
+/* Orta nokta kaydırmasıyla kırık çizgi üretir */
+function boltPath(x0, y0, x1, y1, depth, jag){
+  let pts = [{x:x0,y:y0},{x:x1,y:y1}];
+  for (let d = 0; d < depth; d++){
+    const next = [];
+    for (let i = 0; i < pts.length - 1; i++){
+      const a = pts[i], b = pts[i+1];
+      const dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx,dy) || 1;
+      const off = (Math.random()-0.5) * len * jag;
+      next.push(a, { x:(a.x+b.x)/2 - dy/len*off, y:(a.y+b.y)/2 + dx/len*off });
+    }
+    next.push(pts[pts.length-1]);
+    pts = next;
+  }
+  return pts;
+}
+
+function strokePath(ctx, pts, w, alpha){
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
+  pts.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y));
+  ctx.stroke();
+}
+
+/* Armanın arkasına siyah zemin: beyaz çizim her temada okunsun */
+function drawBacking(ctx, x, y, r, alpha){
+  const g = ctx.createRadialGradient(x, y, r*0.2, x, y, r*1.25);
+  g.addColorStop(0,   `rgba(0,0,0,${0.82*alpha})`);
+  g.addColorStop(0.72,`rgba(0,0,0,${0.68*alpha})`);
+  g.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.save(); ctx.globalAlpha = 1; ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r*1.25, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+/* Gerçek arma (beyaza çevrilmiş) varsa onu, yoksa monogramı çizer */
+function drawMark(ctx, code, x, y, r, alpha){
+  const art = markCache[code];
+  drawBacking(ctx, x, y, r, alpha);
+
+  if (art && art !== 'mono'){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = 'rgba(255,255,255,.5)';
+    ctx.shadowBlur = r * 0.3;
+    const d = r * 1.94;
+    ctx.drawImage(art, x - d/2, y - d/2, d, d);
+    ctx.restore();
+    return;
+  }
+
+  /* Yedek: halka + monogram, tamamen beyaz çizgi */
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = '#fff';
+  ctx.shadowColor = 'rgba(255,255,255,.6)';
+  ctx.shadowBlur = r * 0.4;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+  ctx.lineWidth = Math.max(1.6, r * 0.055);
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+  ctx.lineWidth = Math.max(1, r * 0.03);
+  ctx.beginPath(); ctx.arc(x, y, r * 0.85, 0, Math.PI*2); ctx.stroke();
+
+  /* Monogram kutuya sığana kadar küçült (BJK üç harf) */
+  const txt = MONO[code] || code;
+  let fs = r * 0.74;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let i = 0; i < 8; i++){
+    ctx.font = `${fs.toFixed(1)}px Anton, Impact, sans-serif`;
+    if (ctx.measureText(txt).width <= r * 1.34) break;
+    fs *= 0.9;
+  }
+  ctx.lineWidth = Math.max(1.2, r * 0.042);
+  ctx.strokeText(txt, x, y + r * 0.03);
+  ctx.restore();
+}
+
+function startBolts(canvas){
+  stopBolts();
+  if (!canvas || !canvas.getContext) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  BIG4.forEach(prepareMark);                  // armaları önden hazırla
+
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1;
+  const fit = () => {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  };
+  fit();
+
+  let idx = 0, t0 = performance.now(), shot = null;
+
+  /* Yeni bir şimşek: tepeden aşağı, çarpma noktası alt yarıda */
+  const newShot = () => {
+    const ix = W * (0.14 + Math.random()*0.72);
+    const iy = H * (0.60 + Math.random()*0.26);
+    const sx = ix + (Math.random()-0.5) * W * 0.30;
+    const main = boltPath(sx, -10, ix, iy, 6, 0.34);
+    const forks = [];
+    for (let f = 0; f < 2; f++){
+      const at = main[Math.floor(main.length * (0.35 + Math.random()*0.4))];
+      forks.push(boltPath(at.x, at.y,
+        at.x + (Math.random()-0.5)*W*0.22, at.y + H*0.18*Math.random(), 4, 0.4));
+    }
+    return { ix, iy, main, forks, r: Math.max(46, Math.min(94, Math.min(W,H)*0.115)) };
+  };
+
+  const frame = (now) => {
+    if (!canvas.isConnected){ stopBolts(); return; }
+    if (canvas.clientWidth !== W || canvas.clientHeight !== H) fit();
+
+    let e = now - t0;
+    if (e >= BOLT.cycle){ t0 = now; e = 0; idx = (idx+1) % BIG4.length; shot = null; }
+    if (!shot) shot = newShot();
+
+    ctx.clearRect(0,0,W,H);
+
+    /* Şimşek: kısa, titrek, saf beyaz */
+    if (e < BOLT.flash){
+      const a = e < 42 ? 1 : e < 64 ? 0.28 : e < 112 ? 0.95 : 1 - (e-112)/(BOLT.flash-112);
+      ctx.save();
+      ctx.strokeStyle = '#fff';
+      ctx.shadowColor = 'rgba(255,255,255,.85)'; ctx.shadowBlur = 18;
+      strokePath(ctx, shot.main, 3.2, a);
+      strokePath(ctx, shot.main, 1.2, a);
+      shot.forks.forEach(f => strokePath(ctx, f, 1.6, a*0.7));
+      /* çarpma parlaması */
+      const g = ctx.createRadialGradient(shot.ix, shot.iy, 0, shot.ix, shot.iy, shot.r*1.9);
+      g.addColorStop(0, `rgba(255,255,255,${0.5*a})`);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.globalAlpha = 1; ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(shot.ix, shot.iy, shot.r*1.9, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    /* Amblem: şimşekle birlikte anında, sonra yumuşak sönüş */
+    const a = e < BOLT.hold ? 1
+            : e < BOLT.hold + BOLT.fade ? 1 - (e - BOLT.hold)/BOLT.fade : 0;
+    if (a > 0) drawMark(ctx, BIG4[idx], shot.ix, shot.iy, shot.r, a);
+
+    boltRAF = requestAnimationFrame(frame);
+  };
+  boltRAF = requestAnimationFrame(frame);
+}
+
+function stopBolts(){
+  if (boltRAF) cancelAnimationFrame(boltRAF);
+  boltRAF = null;
 }
 
 /* Fare hareketiyle ışık + hafif paralaks */
@@ -4300,13 +4460,9 @@ function render(){
       style="animation-delay:${(.15 + i++ * .07).toFixed(2)}s">${w}&nbsp;</span>`).join('')
   }</span>`).join('');
 
-  /* Şeridin temel bloğu: dört takım. Kaç kez tekrarlanacağına
-     yerleştirmeden sonra seamless() ölçerek karar verir. */
-  const unit  = MQ_UNIT();
-  const strip = unit.repeat(2).repeat(2);   // başlangıç tahmini
-
   document.getElementById('app').innerHTML = `
   <section class="lander" id="lander">
+    <canvas class="bolt-fx" id="boltFx" aria-hidden="true"></canvas>
     <div class="lander-in">
       <span class="lander-pill">
         <span class="pulse-dot"></span>2026/27 sezonu · ${slCount} lig maçı${
@@ -4337,20 +4493,13 @@ function render(){
       ${nextChip()}
     </div>
 
-    <div class="marquee top"><div class="marquee-track">${strip}</div></div>
-    <div class="marquee bot"><div class="marquee-track">${strip}</div></div>
   </section>`;
 
   const root = document.getElementById('lander');
   if (root) initPointerFx(root);
 
-  /* Şeritleri ekran genişliğine göre doldur */
-  document.querySelectorAll('.marquee').forEach(mq => seamless(mq, unit));
-
-  /* Pencere yeniden boyutlandığında dikiş açılmasın */
-  clearTimeout(rzTimer);
-  window.removeEventListener('resize', onResize);
-  window.addEventListener('resize', onResize);
+  /* Şimşek döngüsü — sayfadan çıkılınca kendini durdurur */
+  startBolts(document.getElementById('boltFx'));
 
   /* Sayaç: sayfa değişince eskisini durdur */
   clearInterval(cdTimer);
