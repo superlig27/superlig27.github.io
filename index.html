@@ -1127,7 +1127,24 @@ body{
 .prog-tip b{ display:block; font-size:11.5px; }
 .prog-tip span{ display:block; font-size:10.5px; color:var(--faint); margin-top:2px; }
 
-/* Liste tipi sezon tahmini (36 takım, gol kralı) */
+/* Çoklu seçim (küme düşecek üç takım) */
+.ms-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px;
+  max-height:290px; overflow-y:auto; padding:2px;
+}
+.ms-grid .team-opt{ padding:10px 5px; gap:6px; }
+.ms-grid .team-opt .lbl{ font-size:9px; letter-spacing:.4px; }
+.ms-count{
+  display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;
+  font-size:11.5px; color:var(--dim); margin-bottom:11px;
+  padding:8px 12px; border-radius:99px;
+  background:rgba(255,255,255,.045); border:1px solid var(--line);
+}
+.ms-count.full{ background:var(--grad-soft); border-color:var(--line-2); color:var(--text); }
+.ms-count .ms-list{ font-size:11px; color:var(--faint); }
+.ms-count.full .ms-list{ color:var(--dim); }
+
+/* Liste tipi sezon tahmini (36 takım) */
 .opt-grid{
   display:flex; flex-wrap:wrap; gap:7px;
   max-height:210px; overflow-y:auto; padding:2px;
@@ -1899,41 +1916,57 @@ function filterFixtures(list, team, comp){
    DİKKAT: 2026/27 kurası çekilene kadar bu liste GEÇİCİDİR.
    Kura belli olunca burayı gerçek 36 takımla değiştir.
    ------------------------------------------------------------ */
+/* Bahisçi oran sırasına göre (favoriden uzağa). Puan hepsinde aynı. */
 const UCL_TEAMS = [
-  'Real Madrid','Barcelona','Atlético Madrid','Manchester City','Arsenal',
-  'Liverpool','Chelsea','Bayern München','Borussia Dortmund','Bayer Leverkusen',
-  'RB Leipzig','Inter','Milan','Juventus','Napoli','Atalanta',
-  'Paris Saint-Germain','Monaco','Marsilya','Benfica','Sporting','Porto',
-  'Ajax','PSV','Feyenoord','Club Brugge','Celtic','Rangers',
-  'Galatasaray','Fenerbahçe','Shakhtar Donetsk','Red Bull Salzburg',
-  'Slavia Praha','Olympiakos','Dinamo Zagreb','Young Boys',
+  'Paris Saint-Germain','FC Bayern München','Arsenal','Manchester City',
+  'Real Madrid','Barcelona','Liverpool','Manchester United','Inter',
+  'Atlético Madrid','Aston Villa','AS Roma','Napoli','Borussia Dortmund',
+  'Villarreal','Real Betis','RB Leipzig','Como','VfB Stuttgart',
+  'Sporting CP','Porto','PSV','Lens','Lille','Fenerbahçe','Celtic',
+  'Galatasaray','Feyenoord','Club Brugge','Lyon','Bodø/Glimt',
+  'Olympiakos','Slavia Praha','Shakhtar Donetsk','AEK Atina','Royale Union SG',
 ];
 
 /* ------------------------------------------------------------
-   GOL KRALI adayları
-   DİKKAT: transfer dönemi bitince bu listeyi güncelle.
+   SEZON BAHİSLERİ — sezon başında bir kez, uzun vadeli
+   Puanlar maç puanlarına göre ölçeklendi: bir sezonda maçlardan
+   ortalama ~1000 puan toplanıyor ve zirvedeki iki oyuncu arasında
+   tipik fark ~50 puan. Buradaki bahisler sıralamayı çevirebilecek
+   kadar ağır, ama sezonu tek başına belirlemeyecek kadar sınırlı.
+   Toplam en fazla 625 puan (150 + 250 + 3×75).
+   Ağırlığı değiştirmek istersen tek yer: aşağıdaki "points".
    ------------------------------------------------------------ */
-const TOP_SCORERS = [
-  'Victor Osimhen','Mauro Icardi','Youssef En-Nesyri','Jhon Durán',
-  'Anderson Talisca','Tammy Abraham','Ciro Immobile','Paul Onuachu',
-  'Simon Banza','Edin Višća','Mario Balotelli','Diğer',
-];
-
 const SEASON_PICKS = {
-  champion: { title:'SÜPER LİG ŞAMPİYONU', emoji:'🏆', points:80, kind:'team',
+  champion: { title:'SÜPER LİG ŞAMPİYONU', emoji:'🏆', points:150, kind:'team',
               desc:'2026/27 kupasını kaldıracak takımı seç.',
               options: BIG4,
               lock:'2027-02-07T19:00:00+03:00' },
-  uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', emoji:'🌍', points:60, kind:'list',
-              desc:'Lig aşamasındaki 36 takımdan kupayı kaldıracak olanı seç.',
+
+  uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', emoji:'🌍', points:250, kind:'list',
+              desc:'36 takımdan biri. Hangisini seçersen seç puan aynı — favoriyi de sürprizi de 250 puan.',
               options: UCL_TEAMS,
               lock:'2027-02-07T19:00:00+03:00' },
-  topScorer:{ title:'SÜPER LİG GOL KRALI', emoji:'👟', points:60, kind:'list',
-              desc:'Sezonu en çok golle kapatacak oyuncu hangisi olacak?',
-              options: TOP_SCORERS,
+
+  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', emoji:'⬇️', points:75, kind:'multi', max:3,
+              desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
+              options: SL_TEAMS,
               lock:'2027-02-07T19:00:00+03:00' },
 };
-const SEASON_RESULT = { champion:null, uclWinner:null, topScorer:null };
+
+/* Sonuçlar sezon sonunda buraya yazılır.
+   relegated bir DİZİ olmalı, örn: ['KON','SAM','COR'] */
+const SEASON_RESULT = { champion:null, uclWinner:null, relegated:null };
+
+/* Bir sezon bahsinin getirdiği puan (çoklu seçimde her isabet ayrı sayılır) */
+function seasonPoints(kind, pick, result){
+  const cfg = SEASON_PICKS[kind];
+  if (!cfg || pick == null || result == null) return 0;
+  if (cfg.kind === 'multi'){
+    if (!Array.isArray(pick) || !Array.isArray(result)) return 0;
+    return pick.filter(x => result.includes(x)).length * cfg.points;
+  }
+  return pick === result ? cfg.points : 0;
+}
 
 /* ============================================================
    ORAN MOTORU
@@ -2199,15 +2232,15 @@ const DEMO_USERS = [
   { uid:'u_onur',  name:'Onur'  },
 ];
 const DEMO_SEASON = {
-  u_sen:  { champion:'GS',  uclWinner:'Real Madrid',    topScorer:'Victor Osimhen' },
-  u_kaan: { champion:'GS',  uclWinner:'Manchester City',topScorer:'Mauro Icardi' },
-  u_emre: { champion:'FB',  uclWinner:'Arsenal',        topScorer:'Youssef En-Nesyri' },
-  u_deniz:{ champion:'FB',  uclWinner:'Real Madrid',    topScorer:'Jhon Durán' },
-  u_selin:{ champion:'BJK', uclWinner:'Bayern München', topScorer:'Tammy Abraham' },
-  u_baris:{ champion:'GS',  uclWinner:'Liverpool',      topScorer:'Victor Osimhen' },
-  u_mert: { champion:'TS',  uclWinner:'Inter',          topScorer:'Paul Onuachu' },
-  u_ece:  { champion:'FB',  uclWinner:'Barcelona',      topScorer:'Anderson Talisca' },
-  u_onur: { champion:'GS',  uclWinner:'Real Madrid',    topScorer:'Victor Osimhen' },
+  u_sen:  { champion:'GS',  uclWinner:'Real Madrid',          relegated:['COR','ERZ','AME'] },
+  u_kaan: { champion:'GS',  uclWinner:'Manchester City',      relegated:['COR','GEN','ERZ'] },
+  u_emre: { champion:'FB',  uclWinner:'Arsenal',              relegated:['ERZ','AME','KAS'] },
+  u_deniz:{ champion:'FB',  uclWinner:'Paris Saint-Germain',  relegated:['COR','AME','RIZ'] },
+  u_selin:{ champion:'BJK', uclWinner:'FC Bayern München',    relegated:['GEN','ERZ','KOC'] },
+  u_baris:{ champion:'GS',  uclWinner:'Liverpool',            relegated:['COR','ERZ','GAZ'] },
+  u_mert: { champion:'TS',  uclWinner:'Inter',                relegated:['AME','KAS','EYU'] },
+  u_ece:  { champion:'FB',  uclWinner:'Barcelona',            relegated:['COR','GEN','AME'] },
+  u_onur: { champion:'GS',  uclWinner:'Real Madrid',          relegated:['ERZ','COR','KOC'] },
 };
 const DEMO_SKILL = { u_sen:.62, u_kaan:.55, u_emre:.5, u_deniz:.47, u_selin:.4,
                      u_baris:.36, u_mert:.44, u_ece:.33, u_onur:.5 };
@@ -2431,7 +2464,7 @@ function leaderboard(){
     });
 
     Object.keys(SEASON_PICKS).forEach(k => {
-      if (SEASON_RESULT[k] && season[k] === SEASON_RESULT[k]) pts += SEASON_PICKS[k].points;
+      pts += seasonPoints(k, season[k], SEASON_RESULT[k]);
     });
 
     return { ...u, points:pts, exact, count, prevPoints:prevPts, derbyPts, euroPts, season };
@@ -3105,9 +3138,13 @@ function openProfile(uid){
 
   const seasonHtml = Object.keys(SEASON_PICKS).map(k => {
     const v = me.season?.[k], cfg = SEASON_PICKS[k];
+    const has = Array.isArray(v) ? v.length > 0 : !!v;
+    const txt = !has ? '<em>seçilmedi</em>'
+      : (Array.isArray(v) ? v : [v]).map(x => TEAMS[x]?.name || x).join(', ');
+    const got = seasonPoints(k, v, SEASON_RESULT[k]);
     return `<div class="pf-season">
       <span class="k">${cfg.emoji} ${cfg.title}</span>
-      <span class="v">${v ? (TEAMS[v]?.name || v) : '<em>seçilmedi</em>'}</span>
+      <span class="v">${txt}${got ? ` <b style="color:var(--cyan)">+${got}p</b>` : ''}</span>
     </div>`;
   }).join('');
 
@@ -3580,14 +3617,26 @@ function seasonBlock(){
   return Object.keys(SEASON_PICKS).map(kind => {
     const cfg = SEASON_PICKS[kind];
     const locked = now >= new Date(cfg.lock);
+    const multi  = cfg.kind === 'multi';
     const picked = my[kind];
+    const chosen = multi ? (Array.isArray(picked) ? picked : []) : null;
     const result = SEASON_RESULT[kind];
+    const isSel  = v => multi ? chosen.includes(v) : picked === v;
+
+    /* Sonuç açıklandığında kaç puan geldi? */
+    const got = seasonPoints(kind, picked, result);
+    const resultTxt = !result ? '' : (
+      multi ? `Düşen takımlar: <b>${result.map(c => TEAMS[c]?.name || c).join(', ')}</b> —
+               ${got ? `<b style="color:var(--cyan)">${chosen.filter(c => result.includes(c)).length} isabet · +${got} puan!</b>`
+                     : 'hiçbirini bilemedin.'}`
+            : `Sonuç: <b>${TEAMS[result]?.name || result}</b> —
+               ${got ? `<b style="color:var(--cyan)">+${got} puan!</b>` : 'puan alamadın.'}`);
 
     return `
     <div class="card reveal">
       <div class="card-head">
         <span class="ico">${cfg.emoji}</span><h2>${cfg.title}</h2>
-        <span class="tail">+${cfg.points}p</span>
+        <span class="tail">${multi ? `her isabet +${cfg.points}p` : `+${cfg.points}p`}</span>
       </div>
       <div class="card-pad">
         <p class="sub" style="margin-bottom:14px">
@@ -3595,33 +3644,59 @@ function seasonBlock(){
           ${locked ? ' <span style="color:var(--red)">· 🔒 Giriş kapandı</span>'
                    : ` <span style="color:var(--cyan)">· ⏱ ${timeLeftShort(new Date(cfg.lock) - now)} kaldı</span>`}
         </p>
-        ${cfg.kind === 'team' ? `
-          <div class="team-grid">
-            ${cfg.options.map(c => `
-              <button class="team-opt t-${c.toLowerCase()} ${picked === c ? 'sel' : ''} ${locked ? 'locked' : ''}"
-                      ${locked ? 'disabled' : ''} onclick="P_tahmin.pickSeason('${kind}','${c}')">
-                ${crest(c, 38)}<span class="lbl">${c}</span>
-              </button>`).join('')}
-          </div>`
-        : `
+
+        ${multi ? `<div class="ms-count ${chosen.length === cfg.max ? 'full' : ''}">
+            ${chosen.length}/${cfg.max} takım seçildi${chosen.length === cfg.max ? ' ✓' : ''}
+            ${chosen.length ? `<span class="ms-list">${chosen.map(c => TEAMS[c]?.name || c).join(' · ')}</span>` : ''}
+          </div>` : ''}
+
+        ${cfg.kind === 'list' ? `
           <div class="opt-grid">
             ${cfg.options.map(o => `
-              <button class="opt ${picked === o ? 'sel' : ''} ${locked ? 'locked' : ''}"
+              <button class="opt ${isSel(o) ? 'sel' : ''} ${locked ? 'locked' : ''}"
                       ${locked ? 'disabled' : ''}
                       onclick="P_tahmin.pickSeason('${kind}', this.dataset.v)" data-v="${o}">${o}</button>`).join('')}
+          </div>`
+        : `
+          <div class="${multi ? 'ms-grid' : 'team-grid'}">
+            ${cfg.options.map(c => `
+              <button class="team-opt t-${c.toLowerCase()} ${isSel(c) ? 'sel' : ''} ${locked ? 'locked' : ''}"
+                      ${locked ? 'disabled' : ''} onclick="P_tahmin.pickSeason('${kind}','${c}')">
+                ${crest(c, multi ? 30 : 38)}
+                <span class="lbl">${multi ? (TEAMS[c]?.short || TEAMS[c]?.name || c) : c}</span>
+              </button>`).join('')}
           </div>`}
+
         ${result ? `<div class="note" style="margin-top:14px"><span>🏁</span>
-          <span>Sonuç: <b>${TEAMS[result]?.name || result}</b> —
-          ${picked === result ? `<b style="color:var(--cyan)">+${cfg.points} puan!</b>` : 'puan alamadın.'}</span>
-        </div>` : ''}
+          <span>${resultTxt}</span></div>` : ''}
       </div>
     </div>`;
   }).join('');
 }
-async function pickSeason(kind, team){
+
+async function pickSeason(kind, val){
   if (!requireLogin()) return;
-  await setMySeason(kind, team);
-  toast(`${SEASON_PICKS[kind].title.replace('?','')} → <b>${TEAMS[team].name}</b>`);
+  const cfg = SEASON_PICKS[kind];
+  const label = v => TEAMS[v]?.name || v;
+
+  if (cfg.kind === 'multi'){
+    const cur = Array.isArray(mySeason()[kind]) ? [...mySeason()[kind]] : [];
+    const at  = cur.indexOf(val);
+    if (at >= 0){
+      cur.splice(at, 1);
+    } else {
+      if (cur.length >= cfg.max){
+        toast(`En fazla <b>${cfg.max} takım</b> seçebilirsin — önce birini kaldır`);
+        return;
+      }
+      cur.push(val);
+    }
+    await setMySeason(kind, cur);
+    toast(cur.length ? `Küme düşme: <b>${cur.map(label).join(', ')}</b>` : 'Seçim temizlendi');
+  } else {
+    await setMySeason(kind, val);
+    toast(`${cfg.title.replace('?','')} → <b>${label(val)}</b>`);
+  }
   render();
 }
 
@@ -4639,15 +4714,19 @@ function seasonPicksBoard(){
   const rows = leaderboard();
   const block = (kind) => {
     const cfg = SEASON_PICKS[kind];
-    /* Yalnızca seçilmiş şıkları göster — 36 takımın çoğu boş kalırdı */
+    /* Yalnızca seçilmiş şıkları göster — 36 takımın çoğu boş kalırdı.
+       Çoklu seçimde (küme düşme) her takım ayrı satır olur.        */
     const tally = {};
     rows.forEach(r => {
       const v = r.season?.[kind];
-      if (!v) return;
-      (tally[v] = tally[v] || []).push(r);
+      if (!v || (Array.isArray(v) && !v.length)) return;
+      (Array.isArray(v) ? v : [v]).forEach(x => (tally[x] = tally[x] || []).push(r));
     });
     const picked = Object.keys(tally).sort((a,b) => tally[b].length - tally[a].length);
-    const voted = rows.filter(r => r.season?.[kind]).length;
+    const voted = rows.filter(r => {
+      const v = r.season?.[kind];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    }).length;
 
     return `
     <div class="card reveal">
