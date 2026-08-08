@@ -987,6 +987,49 @@ body{
 .odds-row .x{ color:var(--cyan); text-align:right; }
 .odds-row .p{ font-family:var(--f-num); font-size:15px; text-align:right; color:var(--gold); }
 
+/* Arma yönetimi */
+.lg-h{
+  display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;
+  font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--faint); margin-bottom:9px;
+}
+.lg-h span{ letter-spacing:.4px; text-transform:none; font-size:11px; color:var(--dim); }
+.lg-list{ border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden; }
+.lg-row{
+  display:flex; align-items:center; gap:11px; padding:9px 12px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.lg-row:last-child{ border-bottom:none; }
+.lg-prev{ width:34px; flex-shrink:0; display:grid; place-items:center; }
+.lg-prev .crest{ margin:0 auto; }
+.lg-bad{
+  display:grid; place-items:center; width:32px; height:32px; border-radius:8px;
+  background:rgba(255,77,109,.12); border:1px solid rgba(255,77,109,.4);
+  color:var(--red); font-size:14px;
+}
+.lg-nm{ width:120px; flex-shrink:0; font-size:12px; }
+.lg-nm em{ display:block; font-style:normal; font-size:9.5px; color:var(--faint); letter-spacing:1px; }
+.lg-in{
+  flex:1; min-width:0; font:inherit; font-size:11.5px;
+  padding:8px 11px; border-radius:9px;
+  background:rgba(0,0,0,.3); border:1px solid var(--line); color:var(--text);
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.lg-in:focus{ outline:none; border-color:var(--iris); }
+@media (max-width:560px){
+  .lg-row{ flex-wrap:wrap; }
+  .lg-nm{ width:auto; flex:1; }
+  .lg-in{ flex-basis:100%; order:3; }
+}
+
+/* Şampiyonlar Ligi bilgi kartı */
+.ucl-note{
+  background:linear-gradient(120deg,
+    color-mix(in srgb, var(--iris) 12%, transparent),
+    color-mix(in srgb, var(--cyan) 8%, transparent));
+  border-color:var(--line-2);
+}
+
 /* ---------- Puan hesaplayıcı (demo.html) ---------- */
 .try-card{ background:var(--grad-soft); border-color:var(--line-2); }
 .dm-lbl{
@@ -1468,12 +1511,13 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
        users [{uid,name}] · predictions uid→{matchId:{h,a}}
        season uid→{champion,derbyKing,euroBest} · results matchId→{h,a} */
     async loadAll(){
-      const [uSnap, pSnap, sSnap, rSnap, oSnap] = await Promise.all([
+      const [uSnap, pSnap, sSnap, rSnap, oSnap, lSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'predictions')),
         getDocs(collection(db, 'season')),
         getDocs(collection(db, 'results')),
         getDocs(collection(db, 'odds')),
+        getDoc(doc(db, 'config', 'logos')),
       ]);
 
       const users = [];
@@ -1495,7 +1539,9 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
       const odds = {};
       oSnap.forEach(d => { const x = d.data(); if (x.scores) odds[d.id] = { scores: x.scores }; });
 
-      return { users, predictions, season, results, odds };
+      const logos = lSnap.exists() ? (lSnap.data().urls || {}) : {};
+
+      return { users, predictions, season, results, odds, logos };
     },
 
     async savePrediction(uid, matchId, val){
@@ -1511,6 +1557,9 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
     /* Oranlar bir kez girilip DONDURULUR: herkes aynı oranla puanlanır */
     async saveOdds(matchId, scores){
       await setDoc(doc(db, 'odds', matchId), { scores, frozenAt: serverTimestamp() });
+    },
+    async saveLogos(urls){
+      await setDoc(doc(db, 'config', 'logos'), { urls, at: serverTimestamp() });
     },
 
     async login(email, pass){ await signInWithEmailAndPassword(auth, email, pass); },
@@ -1856,20 +1905,55 @@ function buildLeague(){
    comp: 'UCL' | 'UEL' | 'UECL'      away: true ise maç deplasmanda
    Takım kodu TEAMS içinde yoksa oraya bir satır eklemen yeterli.
    ------------------------------------------------------------ */
+/* ------------------------------------------------------------
+   AVRUPA MAÇLARI — iki ayrı kural
+
+   1) TÜRK TAKIMLARI: lig (grup) aşamasından itibaren HER maçı.
+      Dört büyükten biri sahadaysa o maç fikstüre girer.
+        { team:'GS', comp:'UCL', stage:'league', md:1, opp:'RMA', away:false,
+          dt:'2026-09-16T22:00:00+03:00' },
+      away:true ise maç deplasmandadır. comp: 'UCL' | 'UEL' | 'UECL'
+
+   2) TÜRK TAKIMI OLMAYAN MAÇLAR: yalnızca ŞAMPİYONLAR LİGİ ve
+      yalnızca ÇEYREK FİNALDEN itibaren. Real – Bayern gibi eşleşmeler
+      de tahmine açılır. Avrupa Ligi / Konferans Ligi'nde Türk takımı
+      yoksa maç EKLENMEZ. Bu satırlarda "team/opp" yerine doğrudan
+      ev sahibi ve deplasman yazılır:
+        { home:'RMA', away:'BAY', comp:'UCL', stage:'qf', md:1,
+          dt:'2027-04-06T22:00:00+03:00' },
+
+   stage: 'league' · 'po' · 'r16' · 'qf' · 'sf' · 'final'
+   Çeyrek ve yarı final çift maçlıdır → her ayak ayrı satır (md:1, md:2).
+   Rakip takım TEAMS içinde yoksa oraya bir satır eklemen yeterli.
+   Puanlama, rozet ve filtreler kendiliğinden çalışır (Avrupa çarpanı ×2).
+   ------------------------------------------------------------ */
 const EURO_FIXTURES = [];
 
+/* Avrupa maçları henüz eklenmediyse bilgilendirme gösterilir */
+const EURO_PENDING = () => !EURO_FIXTURES.length;
+
 function buildEurope(){
-  return EURO_FIXTURES.map((e, i) => ({
-    id: `${e.comp}${e.md || i + 1}${e.team}`,
-    comp: e.comp,
-    stage: e.stage || 'league',
-    md: e.md,
-    home: e.away ? e.opp : e.team,
-    away: e.away ? e.team : e.opp,
-    dt: e.dt,
-    derby: false,
-    official: true,
-  }));
+  return EURO_FIXTURES.map((e, i) => {
+    /* İki yazım biçimi: Türk takımı odaklı (team/opp/away) veya
+       tarafsız eşleşme (home/away doğrudan takım kodu). */
+    const turkish = !!e.team;
+    const home = turkish ? (e.away ? e.opp : e.team) : e.home;
+    const away = turkish ? (e.away ? e.team : e.opp) : e.away;
+    const stage = e.stage || 'league';
+    /* Kural: Türk takımı olmayan maç yalnızca UCL ve yalnızca çeyrek
+       finalden itibaren eklenir. Yanlış satırı sessizce yutmak yerine
+       uyarıyoruz ki fikstürü girerken fark edilsin. */
+    if (!turkish && !isBig(home) && !isBig(away) &&
+        (e.comp !== 'UCL' || !['qf','sf','final'].includes(stage))){
+      console.warn('[Fikstür] Türk takımı olmayan maç yalnızca UCL çeyrek final ve sonrası olabilir:', e);
+    }
+    return {
+      id: `${e.comp}${stage}${e.md || ''}${home}${away}`,
+      comp: e.comp, stage, md: e.md,
+      home, away, dt: e.dt,
+      derby: false, official: true,
+    };
+  });
 }
 
 /* ---------- Tüm fikstür ---------- */
@@ -2132,12 +2216,20 @@ function timeLeftShort(ms){
    ============================================================ */
 const SHIELD = 'M32 2 L60 11 V34 C60 49 47 59.5 32 65 C17 59.5 4 49 4 34 V11 Z';
 
-/* Dört büyükte gerçek arma, diğerlerinde çizilmiş arma.
+/* Bir takımın arma adresi: önce yöneticinin girdiği (buluttan gelen),
+   yoksa dosyadaki varsayılan. Hiçbiri yoksa çizilmiş arma kullanılır. */
+function logoOf(code){
+  if (typeof Store !== 'undefined' && Store.logos && Store.logos[code]) return Store.logos[code];
+  return LOGOS[code] || null;
+}
+
+/* Arma varsa gerçek görsel, yoksa çizilmiş arma.
    Görsel yüklenemezse onerror ile çizilmiş armaya döner. */
 function crest(code, size = 44){
-  if (!LOGOS[code]) return crestShield(code, size);
+  const url = logoOf(code);
+  if (!url) return crestShield(code, size);
   const t = TEAMS[code];
-  return `<img class="crest crest-img" src="${LOGOS[code]}"
+  return `<img class="crest crest-img" src="${url}"
     width="${size}" height="${Math.round(size * 67/64)}" alt="${t ? t.name : code}"
     decoding="async" onerror="this.outerHTML=crestShield('${code}',${size})">`;
 }
@@ -2208,6 +2300,7 @@ const Store = {
   season: {},          // uid -> { champion, derbyKing, euroBest }
   results: {},         // matchId -> { h, a }
   odds: {},            // matchId -> { scores: { "2:1": 8.5, … } }
+  logos: {},           // takım kodu -> arma adresi (yönetici girer)
   ready: false,
 };
 
@@ -2305,6 +2398,7 @@ function loadDemo(){
   Store.results = {};
   Store.predictions = {};
   Store.odds = {};
+  Store.logos = loadLocal().logos || {};
 
   /* Oynanmış maçlar + önümüzdeki iki hafta için oran tablosu */
   const now = NOW().getTime();
@@ -2353,6 +2447,7 @@ async function loadCloud(){
   Store.season = snap.season;
   Store.results = snap.results;
   Store.odds = snap.odds || {};
+  Store.logos = snap.logos || {};
   Store.me = C.currentUser();
   if (Store.me) Store.users.forEach(u => { u.you = u.uid === Store.me.uid; });
   Store.ready = true;
@@ -2424,6 +2519,14 @@ async function setResult(id, h, a){
   const val = { h: parseInt(h), a: parseInt(a) };
   Store.results[id] = val;
   if (Store.mode === 'bulut') await window.Cloud.saveResult(id, val);
+}
+
+/* Yönetici: takım armalarını kaydet (kod → adres) */
+async function setLogos(urls){
+  if (!isAdmin()) throw new Error('Yetki yok');
+  Store.logos = { ...urls };
+  if (Store.mode === 'bulut') await window.Cloud.saveLogos(Store.logos);
+  else { const d = loadLocal(); d.logos = Store.logos; saveLocal(d); }
 }
 
 /* Yönetici: doğru skor oran tablosu gir. Tabloyu girmek maçı AÇAR. */
@@ -3310,7 +3413,7 @@ function statsBlock(){
                   font-size:11.5px;color:var(--faint);margin-top:12px">
         <span>⚔️ Derbilerden <b style="color:var(--gold)">${me.derbyPts}p</b></span>
         <span>🌍 Avrupa'dan <b style="color:#8fb0ff">${me.euroPts}p</b></span>
-        <span>${done} / ${FIXTURES.length} maç oynandı</span>
+        <span>${done} maç oynandı</span>
       </div>
     </div>
   </div>`;
@@ -3351,8 +3454,8 @@ function prizeBlock(){
       </div>
       ${rowsHtml}
       <div class="note" style="margin-top:14px">
-        <span>🌍</span><span>Avrupa maçları <b>kura çekildikten sonra</b> fikstüre eklenecek.
-        Şu an yalnızca Süper Lig maçları listeleniyor.</span>
+        <span>🌍</span><span>Avrupa maçları <b>kura çekildikten sonra</b> fikstüre eklenir.
+        Hangi maçların açılacağı yandaki kartta anlatılıyor.</span>
       </div>
     </div>
   </div>`;
@@ -3821,7 +3924,10 @@ function render(){
           ${FIXTURES.filter(m => matchState(m)==='open' && hasOdds(m)).length} maç açık ·
           ${FIXTURES.filter(m => matchState(m)==='open' && !hasOdds(m)).length} maç oransız
         </span>
-        <button class="btn ghost" onclick="go('oranlar.html')">🛠 Toplu oran gir</button>
+        <span style="display:flex;gap:8px">
+          <button class="btn ghost" onclick="go('logolar.html')">🖼 Armalar</button>
+          <button class="btn ghost" onclick="go('oranlar.html')">🛠 Toplu oran gir</button>
+        </span>
       </div>` : ''}
     ${filterBar()}
     ${matchList()}
@@ -4132,6 +4238,10 @@ function initPointerFx(root){
 
 function render(){
   const derbies = FIXTURES.filter(m => m.derby).length;
+  /* Avrupa maçları kura sonrası eklenecek; sayıları ayrı göster ki
+     "124 maç" sezonun tamamıymış gibi görünmesin. */
+  const slCount = FIXTURES.filter(m => m.comp === 'SL').length;
+  const euCount = FIXTURES.length - slCount;
 
   let i = 0;
   const title = TITLE.map(words => `<span class="ln">${
@@ -4148,7 +4258,8 @@ function render(){
   <section class="lander" id="lander">
     <div class="lander-in">
       <span class="lander-pill">
-        <span class="pulse-dot"></span>2026/27 sezonu · ${FIXTURES.length} maç · ${derbies} derbi
+        <span class="pulse-dot"></span>2026/27 sezonu · ${slCount} lig maçı${
+          euCount ? ` · ${euCount} Avrupa maçı` : ''} · ${derbies} derbi
       </span>
 
       <h1 class="lander-title">${title}</h1>
@@ -4165,7 +4276,8 @@ function render(){
       </div>
 
       <div class="lander-stats">
-        <div><b>${FIXTURES.length}</b><span>Maç</span></div>
+        <div><b>${slCount}</b><span>${euCount ? 'Lig Maçı' : 'Süper Lig Maçı'}</span></div>
+        ${euCount ? `<div><b>${euCount}</b><span>Avrupa Maçı</span></div>` : ''}
         <div><b>${derbies}</b><span>Derbi</span></div>
         <div><b>×3</b><span>Sürpriz Primi</span></div>
         <div><b>${Store.users.length}</b><span>Oyuncu</span></div>
@@ -4416,6 +4528,109 @@ function render(){
 return { render, calc, setMatch };
 })();
 
+/* ===== logolar.html — ARMA YÖNETİMİ (yönetici) ===== */
+window.P_logolar = (function(){
+/* ============================================================
+   Takım armalarını adresle tanımlar. Kod içine gömmek yerine
+   buluta yazılır; yeni sezon takımları ya da Avrupa rakipleri
+   geldiğinde dosyaya dokunmadan eklenebilir.
+   Adres boş bırakılırsa o takım çizilmiş armaya döner.
+   ============================================================ */
+let draft = null;
+
+/* Dosyadaki varsayılanlar + buluttan gelenler; bulut önceliklidir */
+function ensure(){ if (!draft) draft = { ...LOGOS, ...Store.logos }; return draft; }
+
+function onEdit(code, val){
+  const d = ensure();
+  const v = (val || '').trim();
+  if (v) d[code] = v; else delete d[code];
+
+  /* Satırın önizlemesini anında tazele */
+  const box = document.getElementById('lg-prev-' + code);
+  if (!box) return;
+  if (!v){ box.innerHTML = crestShield(code, 34); return; }
+  box.innerHTML = `<img class="crest crest-img" src="${v}" width="34" height="36"
+    alt="" onerror="this.outerHTML='<span class=\\'lg-bad\\' title=\\'Görsel yüklenemedi\\'>✕</span>'">`;
+}
+
+function resetOne(code){
+  const d = ensure();
+  delete d[code];
+  render();
+}
+
+async function saveAll(){
+  try { await setLogos(ensure()); }
+  catch(e){ toast('Kaydedilemedi: ' + (e.message || '')); return; }
+  const n = Object.keys(ensure()).length;
+  draft = null;
+  toast(`<b>${n} arma</b> kaydedildi`);
+  render();
+}
+
+function row(code){
+  const t = TEAMS[code];
+  const url = ensure()[code] || '';
+  return `
+    <div class="lg-row">
+      <span class="lg-prev" id="lg-prev-${code}">${crest(code, 34)}</span>
+      <span class="lg-nm">${t.name}<em>${code}</em></span>
+      <input class="lg-in" type="url" spellcheck="false" placeholder="https://… (boş = çizilmiş arma)"
+             value="${url.replace(/"/g,'&quot;')}"
+             oninput="P_logolar.onEdit('${code}', this.value)">
+      ${url ? `<button class="linkbtn" style="margin:0" onclick="P_logolar.resetOne('${code}')">sil</button>` : ''}
+    </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  const head = `<div class="sec-title" style="margin-top:26px"><h3>Takım Armaları</h3>
+                  <span class="rule"></span></div>`;
+  if (!isAdmin()){
+    app.innerHTML = head + `<div class="card"><div class="empty"><span class="em">🔒</span>
+      Bu sayfa yalnızca yöneticiye açık.</div></div>`;
+    return;
+  }
+  ensure();
+  const others = Object.keys(TEAMS).filter(c => !SL_TEAMS.includes(c));
+  const have = SL_TEAMS.filter(c => draft[c]).length;
+
+  app.innerHTML = head + `
+    <div class="card reveal">
+      <div class="card-pad">
+        <div class="note" style="margin-bottom:14px">
+          <span>🖼</span>
+          <span>Bir takımın arma adresini yapıştır — sitedeki <b>her yerde</b> anında kullanılır.
+          Wikipedia'da armanın olduğu sayfada görsele sağ tık → <b>Resim adresini kopyala</b>.
+          Boş bırakılan takımlar çizilmiş armayı kullanmaya devam eder.</span>
+        </div>
+        <div class="note" style="margin-bottom:16px">
+          <span>⚠️</span>
+          <span>Adresler dış sitelere bağlıdır. Görsel yüklenemezse o takım
+          sessizce çizilmiş armaya döner — sayfa bozulmaz.</span>
+        </div>
+
+        <div class="lg-h">Süper Lig <span>${have}/${SL_TEAMS.length} arma girili</span></div>
+        <div class="lg-list">${SL_TEAMS.map(row).join('')}</div>
+
+        <div class="lg-h" style="margin-top:20px">Avrupa rakipleri ve diğerleri</div>
+        <div class="lg-list">${others.map(row).join('')}</div>
+
+        <button class="btn" style="width:100%;margin-top:16px"
+                onclick="P_logolar.saveAll()">Armaları kaydet</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn ghost" onclick="go('tahminler.html')">← Maçlara dön</button>
+    </div>`;
+  initReveal();
+}
+
+return { render, onEdit, resetOne, saveAll };
+})();
+
 /* ===== oranlar.html — TOPLU ORAN GİRİŞİ (yönetici) ===== */
 window.P_oranlar = (function(){
 /* ============================================================
@@ -4626,6 +4841,41 @@ function render(){
 
     ${P_tahmin.rulesBlock()}
 
+    <div class="sec-title"><h3>Avrupa Maçları</h3><span class="rule"></span></div>
+    <div class="card reveal ucl-note">
+      <div class="card-pad">
+        <div class="rules" style="grid-template-columns:auto 1fr">
+          <div class="pbadge pb-10" style="font-size:15px">🇹🇷</div>
+          <div class="d"><b>Dört büyüğün bütün Avrupa maçları</b> —
+            <b>lig (grup) aşamasından itibaren</b>. Şampiyonlar Ligi, Avrupa Ligi
+            ve Konferans Ligi; hangisinde oynarlarsa oynasınlar her maçları girer.</div>
+
+          <div class="pbadge pb-8" style="font-size:15px">🏆</div>
+          <div class="d"><b>Şampiyonlar Ligi'nde çeyrek finalden itibaren</b> —
+            Türk takımı olmasa bile. Real Madrid – Bayern gibi eşleşmeler de
+            o turdan sonra tahmine açılır.</div>
+
+          <div class="pbadge pb-0" style="font-size:15px">✕</div>
+          <div class="d" style="color:var(--faint)">Avrupa Ligi ve Konferans Ligi'nde
+            <b>Türk takımı yoksa</b> o maç eklenmez.</div>
+        </div>
+
+        <div class="note" style="margin-top:14px">
+          <span>✖️</span>
+          <span>Bütün Avrupa maçları <b style="color:var(--gold)">×2 önem çarpanı</b> taşır,
+          üstüne her zamanki oran çarpanı biner — yani bir Avrupa maçından
+          en fazla <b>60 puan</b> çıkabilir.</span>
+        </div>
+
+        ${EURO_PENDING() ? `
+        <div class="note" style="margin-top:10px">
+          <span>🗓</span>
+          <span>Henüz Avrupa maçı eklenmedi. Kuralar çekilip eşleşmeler
+          belli oldukça fikstüre girecek ve burada görünecek.</span>
+        </div>` : ''}
+      </div>
+    </div>
+
     <div class="sec-title"><h3>Puan Çarpanları ve Ödül</h3><span class="rule"></span></div>
     ${P_tahmin.prizeBlock()}
 
@@ -4680,7 +4930,7 @@ function fullBoard(){
   <div class="card reveal">
     <div class="card-head">
       <span class="ico">🏅</span><h2>Genel Sıralama</h2>
-      <span class="tail">${FIXTURES.filter(isFinished).length} / ${FIXTURES.length} maç</span>
+      <span class="tail">${FIXTURES.filter(isFinished).length} maç oynandı</span>
     </div>
     <div class="card-pad">
       ${rows.map(r => `
@@ -4955,10 +5205,12 @@ function summary(list){
   const scored = done.filter(m => RESULTS[m.id]);          // sonucu girilmemiş maçlar sayılmaz
   const goals = scored.reduce((s,m) => s + RESULTS[m.id].h + RESULTS[m.id].a, 0);
   const avg = scored.length ? (goals / scored.length).toFixed(1) : '0';
-  const bigWins = scored.filter(m => {
+  /* Tarafsız Avrupa eşleşmelerinde (ör. Real – Bayern) dört büyükten
+     kimse sahada değil; bu sayım yalnızca büyüklerin maçlarını kapsar. */
+  const bigGames = scored.filter(m => m.big.length);
+  const bigWins = bigGames.filter(m => {
     const r = RESULTS[m.id];
-    const big = m.big[0];
-    const home = m.home === big;
+    const home = m.home === m.big[0];
     return (home ? r.h - r.a : r.a - r.h) > 0;
   }).length;
   return `
@@ -4970,7 +5222,7 @@ function summary(list){
         <div class="stat"><b>${avg}</b><span>Maç Başı Gol</span></div>
       </div>
       <div style="text-align:center;font-size:11.5px;color:var(--faint);margin-top:12px">
-        ${bigWins} maçta büyük takım kazandı
+        ${bigGames.length ? `${bigWins} / ${bigGames.length} maçta büyük takım kazandı` : '—'}
       </div>
     </div>
   </div>`;
@@ -5019,6 +5271,7 @@ const ROUTES = {
   'nasil-oynanir.html': P_nasil.render,
   'demo.html':          P_demo.render,      // puan hesaplayıcı
   'oranlar.html':       P_oranlar.render,   // yönetici — navigasyonda yok
+  'logolar.html':       P_logolar.render,   // yönetici — navigasyonda yok
 };
 const HOME = 'index.html';
 let CURRENT = HOME;
