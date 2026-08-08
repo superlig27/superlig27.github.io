@@ -1850,7 +1850,7 @@ const SEASON_RESULT = { champion:null, uclWinner:null, topScorer:null };
    favori skoru) = ×1.00 kabul edilir. Böylece 0:1 tahmini dengeli
    bir maçta ×1.19, tek taraflı bir maçta ×3.00 edebilir.
    ============================================================ */
-const ODDS_EXP = 0.60;   // 0 = oran etkisiz · 1 = tüm seçimler eşit değerde
+const ODDS_EXP = 0.45;   // 0 = oran etkisiz · 1 = tüm seçimler eşit değerde
 const ODDS_CAP = 3.00;   // tek bir uzun atış sezonu belirlemesin
 const OUT_CAP  = 2.00;   // sonuç (1/X/2) çarpanı tavanı
 
@@ -1884,7 +1884,12 @@ function oddsInfo(id){
 
 const hasOdds = m => !!oddsInfo(m.id);
 
-/* Seçilen SKORUN çarpanı — tam isabet ve 1 gol sapma için */
+/* Bir SKORUN çarpanı — tam isabet ve 1 gol sapma için.
+   DİKKAT: her zaman GERÇEKLEŞEN skorla çağrılır, tahmin edilenle değil.
+   Nedeni: tahmin edilen skorla çağrılırsa uçuk skor yazmak bedava
+   çarpan kazandırır (8-2 yaz, ıskala, yine de büyük çarpanlı
+   "1 gol sapma" biletin olsun). Çarpan artık yazdığına değil,
+   maçın nasıl bittiğine bağlı — kimse şişirerek çarpan avlayamaz. */
 function scoreMult(m, h, a){
   const i = oddsInfo(m.id);
   if (!i || !i.min) return 1;
@@ -1919,10 +1924,15 @@ function scorePrediction(p, r, m){
   const rr = rH > rA ? 'H' : rH < rA ? 'A' : 'D';
   const diff = Math.abs(pH - rH) + Math.abs(pA - rA);
 
+  /* Çarpanlar HEP gerçekleşen sonuçtan gelir:
+       10 / 8 → o SKORUN ne kadar beklenmedik olduğu
+       6      → o SONUCUN (1/X/2) ne kadar beklenmedik olduğu
+       2      → düz
+     Böylece yazdığın skoru şişirerek çarpan büyütemezsin. */
   let tier, mult;
-  if (pH === rH && pA === rA)   { tier = 10; mult = scoreMult(m, pH, pA); }
-  else if (pr === rr && diff===1){ tier = 8;  mult = scoreMult(m, pH, pA); }
-  else if (pr === rr)            { tier = 6;  mult = outcomeMult(m, pr); }
+  if (pH === rH && pA === rA)   { tier = 10; mult = scoreMult(m, rH, rA); }
+  else if (pr === rr && diff===1){ tier = 8;  mult = scoreMult(m, rH, rA); }
+  else if (pr === rr)            { tier = 6;  mult = outcomeMult(m, rr); }
   else if (diff === 1)           { tier = 2;  mult = 1; }
   else return none;
 
@@ -3597,9 +3607,11 @@ function rulesBlock(){
 
       <div class="rules" style="margin-top:12px">
         <div class="pbadge pb-10" style="font-size:11px">1</div>
-        <div class="d"><b>Tahminin ne kadar cesur?</b> — oran çarpanı
+        <div class="d"><b>Sonuç ne kadar beklenmedikti?</b> — oran çarpanı
           <b style="color:var(--gold)">×1 ile ×3</b> arası.
-          Bahisçinin en olası skoru ×1; ondan saptıkça artar.</div>
+          Bahisçinin en olası skoru ×1; ondan uzaklaştıkça artar.
+          <em>Çarpan <b>maçın nasıl bittiğine</b> bakar, senin ne yazdığına değil —
+          uçuk skor yazarak çarpan büyütülemez.</em></div>
         <div class="pbadge pb-6" style="font-size:11px">2</div>
         <div class="d"><b>Maç ne kadar önemli?</b> — lig maçı <b>×1</b>,
           derbi <b>×2</b>, Avrupa maçı <b>×2</b>.</div>
