@@ -41,6 +41,11 @@
   --gold:      #f7c95a;
   --red:       #ff4d6d;
 
+  /* Durum renkleri — her temada aynı kalır ki anlamları karışmasın.
+     --alert: tahmin girilmemiş · --ok: tahmin girilmiş            */
+  --alert:     #ff5470;
+  --ok:        #35d68a;
+
   --au1: #4b3ce0;  --au2: #0e7d94;  --au3: #9c1f66;
   --au-op: .5;
 
@@ -411,6 +416,48 @@ body{
 .state-live  { color:var(--red);   background:rgba(255,77,109,.12); border:1px solid rgba(255,77,109,.3); }
 .state-done  { color:var(--faint); background:rgba(255,255,255,.04);border:1px solid var(--line); }
 .state-live .pulse-dot{ background:var(--red); box-shadow:0 0 0 0 rgba(255,77,109,.6); }
+
+/* ---------- Tahmin durumu: kırmızı = eksik, yeşil = girildi ---------- */
+.state-todo{
+  color:var(--alert); background:color-mix(in srgb, var(--alert) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--alert) 38%, transparent);
+}
+.state-todo .dot{
+  width:6px; height:6px; border-radius:50%; background:var(--alert);
+  box-shadow:0 0 0 0 color-mix(in srgb, var(--alert) 60%, transparent);
+  animation:pulse 2s infinite;
+}
+.state-ok{
+  color:var(--ok); background:color-mix(in srgb, var(--ok) 13%, transparent);
+  border:1px solid color-mix(in srgb, var(--ok) 34%, transparent);
+}
+
+/* Kartın sol kenarında ince durum şeridi */
+.derby.st-todo, .derby.st-ok{ position:relative; }
+.derby.st-todo::after, .derby.st-ok::after{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  pointer-events:none; z-index:3;
+}
+.derby.st-todo::after{ background:var(--alert); }
+.derby.st-ok::after  { background:var(--ok); }
+.derby.st-todo{ border-color:color-mix(in srgb, var(--alert) 30%, var(--line)); }
+
+/* Liste üstündeki özet */
+.pick-summary{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  margin:0 2px 12px; font-size:12px;
+}
+.pick-summary span{ display:inline-flex; align-items:center; gap:7px; }
+.pick-summary .s-todo{ color:var(--alert); font-weight:600; }
+.pick-summary .s-todo .dot{
+  width:7px; height:7px; border-radius:50%; background:var(--alert);
+  box-shadow:0 0 0 0 color-mix(in srgb, var(--alert) 60%, transparent);
+  animation:pulse 2s infinite;
+}
+.pick-summary .s-ok{ color:var(--ok); }
+
+/* Toplu kayıt düğmesi */
+.btn.bulk{ background:linear-gradient(100deg, var(--ok), var(--cyan)); color:var(--ink); font-weight:700; }
 
 .derby-body{ padding:18px 16px 16px; }
 
@@ -1461,7 +1508,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
          signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp }
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1550,6 +1597,13 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
     async savePrediction(uid, matchId, val){
       await setDoc(doc(db, 'predictions', `${uid}__${matchId}`),
         { uid, matchId, h: val.h, a: val.a, at: serverTimestamp() });
+    },
+    /* Toplu kayıt: tek turda hepsi ya yazılır ya hiçbiri (batch sınırı 500) */
+    async savePredictions(uid, list){
+      const b = writeBatch(db);
+      list.forEach(p => b.set(doc(db, 'predictions', `${uid}__${p.id}`),
+        { uid, matchId: p.id, h: p.h, a: p.a, at: serverTimestamp() }));
+      await b.commit();
     },
     async saveSeasonPick(uid, kind, team){
       await setDoc(doc(db, 'season', uid), { [kind]: team, at: serverTimestamp() }, { merge: true });
@@ -2508,6 +2562,22 @@ async function setMyPrediction(id, h, a){
   } else {
     const d = loadLocal(); d.preds = d.preds || {};
     d.preds[id] = val; saveLocal(d);
+  }
+}
+
+/* Birden çok tahmini tek seferde kaydeder */
+async function setMyPredictions(list){
+  const uid = Store.me?.uid;
+  if (!uid || !list.length) return;
+  Store.predictions[uid] = Store.predictions[uid] || {};
+  list.forEach(p => { Store.predictions[uid][p.id] = { h:p.h, a:p.a }; });
+
+  if (Store.mode === 'bulut'){
+    await window.Cloud.savePredictions(uid, list);
+  } else {
+    const d = loadLocal(); d.preds = d.preds || {};
+    list.forEach(p => { d.preds[p.id] = { h:p.h, a:p.a }; });
+    saveLocal(d);
   }
 }
 
@@ -3521,17 +3591,26 @@ function matchCard(m){
   const open = st === 'open';
   const feat = isFeatured(m);
 
+  const oddsReady = hasOdds(m);
+  /* Tahmin girilebilir mi, girilmiş mi? Kart rengi buna göre. */
+  const actionable = open && oddsReady && isLoggedIn();
+  const status = !actionable ? '' : (my ? 'ok' : 'todo');
+
   const stateChip = open
     ? `<span class="state state-open">⏱ ${timeLeftShort(new Date(m.dt) - NOW())}</span>`
     : st === 'live'
       ? `<span class="state state-live"><span class="pulse-dot"></span>CANLI${r?.minute ? ' ' + r.minute + "'" : ''}</span>`
       : `<span class="state state-done">🔒 BİTTİ</span>`;
 
+  const pickChip = status === 'todo'
+    ? `<span class="state state-todo"><span class="dot"></span>TAHMİN YOK</span>`
+    : status === 'ok'
+      ? `<span class="state state-ok">✓ TAHMİNİN VAR</span>`
+      : '';
+
   const center = (st !== 'open' && r)
     ? `<div class="score tint">${r.h} — ${r.a}</div>`
     : `<div class="vs-lite">VS</div>`;
-
-  const oddsReady = hasOdds(m);
 
   let pickArea = '';
   if (open && !oddsReady){
@@ -3557,9 +3636,8 @@ function matchCard(m){
         <input class="num ${my ? 'filled' : ''}" id="a_${m.id}" type="number" inputmode="numeric"
                min="0" max="20" placeholder="–" value="${my?.a ?? ''}" aria-label="${A.name} golü"
                oninput="P_tahmin.hintOdds('${m.id}')">
-        <button class="btn ${my ? 'saved' : ''}" onclick="P_tahmin.savePick('${m.id}', event)">
-          ${my ? 'Güncelle' : 'Kaydet'}
-        </button>
+        <button class="btn ${my ? 'saved' : ''}" data-save="${m.id}"
+                onclick="P_tahmin.savePick('${m.id}', event)">${my ? 'Güncelle' : 'Kaydet'}</button>
         <button class="btn ghost odds-btn" onclick="openOddsView('${m.id}')"
                 title="Bu maçın tüm oranları">📊</button>
       </div>
@@ -3601,13 +3679,15 @@ function matchCard(m){
   }
 
   return `
-  <article class="derby reveal ${st === 'live' ? 'live' : ''} ${feat ? '' : 'plain'} ${m.derby ? 'hero-match' : ''}"
+  <article class="derby reveal ${st === 'live' ? 'live' : ''} ${feat ? '' : 'plain'} ${m.derby ? 'hero-match' : ''}
+           ${status ? 'st-' + status : ''}"
            ${feat ? 'data-tilt' : ''} style="--hc:${H.c1};--ac:${A.c1}">
     <div class="derby-top">
       <span class="tier ${b.cls}">${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
       <span class="when">${fmtTime(m.dt)}</span>
       ${m.comp === 'SL' && !m.official ? '<span class="prov" title="Resmi fikstür girilene kadar geçici eşleşme">geçici</span>' : ''}
+      ${pickChip}
       ${stateChip}
     </div>
     <div class="derby-body">
@@ -3672,27 +3752,68 @@ function oddsHintText(m, h, a){
 }
 function hintOdds(id){
   const el = document.getElementById('hint_' + id);
-  if (!el) return;
-  el.innerHTML = oddsHintText(FIXTURE_BY_ID[id],
+  if (el) el.innerHTML = oddsHintText(FIXTURE_BY_ID[id],
     document.getElementById('h_' + id).value,
     document.getElementById('a_' + id).value);
+  refreshSaveButtons();
+}
+
+/* Bekleyen tahmin sayısını düğmelere yansıt — toplu kayıt görünür olsun */
+function refreshSaveButtons(){
+  const n = collectPicks().ready.length;
+  document.querySelectorAll('button[data-save]').forEach(b => {
+    const own = b.dataset.save;
+    b.textContent = n > 1 ? `${n} tahmini kaydet`
+                  : (myPredictions()[own] ? 'Güncelle' : 'Kaydet');
+    b.classList.toggle('bulk', n > 1);
+  });
+}
+
+/* ---------------- Toplu kaydetme ----------------
+   Ekranda doldurulmuş BÜTÜN skor kutuları taranır. Hangi kartın
+   düğmesine basıldığı fark etmez: on maça skor girip birine
+   basarsan onu da diğer dokuzu da tek seferde kaydeder.        */
+function collectPicks(){
+  const my = myPredictions();
+  const ready = [], bad = [];
+  document.querySelectorAll('.pick input.num[id^="h_"]').forEach(hEl => {
+    const id  = hEl.id.slice(2);
+    const aEl = document.getElementById('a_' + id);
+    if (!aEl) return;
+    const hv = hEl.value.trim(), av = aEl.value.trim();
+    if (hv === '' && av === '') return;               // hiç dokunulmamış
+    const h = parseInt(hv), a = parseInt(av);
+    if (isNaN(h) || isNaN(a)){ bad.push(id); return; } // yarım bırakılmış
+    if (h < 0 || a < 0 || h > 20 || a > 20){ bad.push(id); return; }
+    const cur = my[id];
+    if (cur && cur.h === h && cur.a === a) return;      // zaten kayıtlı
+    ready.push({ id, h, a });
+  });
+  return { ready, bad };
 }
 
 async function savePick(id, ev){
   if (!requireLogin()) return;
-  const h = document.getElementById('h_' + id).value;
-  const a = document.getElementById('a_' + id).value;
-  if (h === '' || a === ''){ toast('Önce iki skoru da gir 🙂'); return; }
-  if (+h < 0 || +a < 0 || +h > 20 || +a > 20){ toast('Skor 0 ile 20 arasında olmalı'); return; }
+  const { ready, bad } = collectPicks();
 
-  const x = ev.clientX, y = ev.clientY;
+  if (!ready.length){
+    toast(bad.length ? 'Önce iki skoru da gir 🙂' : 'Kaydedilecek yeni tahmin yok');
+    return;
+  }
+
+  const x = ev?.clientX, y = ev?.clientY;
   try {
-    await setMyPrediction(id, h, a);
+    await setMyPredictions(ready);
   } catch(e){ toast('Kaydedilemedi: ' + (e.message || 'bağlantı hatası')); return; }
 
-  const m = FIXTURE_BY_ID[id];
-  confetti(x, y);
-  toast(`<b>${TEAMS[m.home].name} ${h}–${a} ${TEAMS[m.away].name}</b> kaydedildi`);
+  if (x != null) confetti(x, y, ready.length > 3 ? 40 : 26);
+
+  if (ready.length === 1){
+    const p = ready[0], m = FIXTURE_BY_ID[p.id];
+    toast(`<b>${TEAMS[m.home].name} ${p.h}–${p.a} ${TEAMS[m.away].name}</b> kaydedildi`);
+  } else {
+    toast(`<b>${ready.length} tahmin</b> kaydedildi${bad.length ? ` · ${bad.length} maç eksik` : ''}`);
+  }
   render();
 }
 
@@ -3830,44 +3951,20 @@ async function pickSeason(kind, val){
   render();
 }
 
-/* ---------------- Mini sıralama ---------------- */
-function miniBoard(){
-  const rows = leaderboard();
-  const me = rows.find(r => r.you);
-  const top = rows.slice(0, 5);
-  /* "me" yoksa (giriş yapılmamış ya da henüz hiç oyuncu yok) alt satır çizilmez */
-  const showMe = !!me && !top.some(r => r.you);
-
-  const row = (r) => `
-    <div class="lb-row clickable ${r.you ? 'me' : ''} ${r.rank <= 3 ? 'top' + r.rank : ''}"
-         onclick="openProfile('${r.uid}')" role="button" tabindex="0"
-         onkeydown="if(event.key==='Enter')openProfile('${r.uid}')"
-         title="${r.name} — gelişimini gör">
-      <div class="rank">${r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank}</div>
-      <div class="lb-name">
-        <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.name}${r.you ? ' (sen)' : ''}</div>
-        <div class="s">${r.exact} tam isabet · ${r.count} tahmin</div>
-      </div>
-      <div class="trend ${r.delta > 0 ? 'up' : r.delta < 0 ? 'down' : 'flat'}">
-        ${r.delta > 0 ? '▲' + r.delta : r.delta < 0 ? '▼' + Math.abs(r.delta) : '–'}
-      </div>
-      <div class="lb-pts">${r.points}</div>
-    </div>`;
-
+/* ---------------- Tahmin durumu özeti ---------------- */
+function pickSummary(){
+  if (!isLoggedIn()) return '';
+  const openable = FIXTURES.filter(m => matchState(m) === 'open' && hasOdds(m));
+  if (!openable.length) return '';
+  const my = myPredictions();
+  const done = openable.filter(m => my[m.id]).length;
+  const todo = openable.length - done;
   return `
-  <div class="card reveal">
-    <div class="card-head"><span class="ico">📊</span><h2>Puan Tablosu</h2>
-      <span class="tail">${rows.length} oyuncu</span></div>
-    <div class="card-pad">
-      ${rows.length ? '' : `<div class="empty"><span class="em">🏁</span>
-        Henüz kimse katılmadı — ilk tahmini sen gir.</div>`}
-      ${top.map(row).join('')}
-      ${showMe ? `<div style="text-align:center;color:var(--faint);font-size:14px;margin:4px 0">⋯</div>${row(me)}` : ''}
-      <a class="btn ghost" href="javascript:void(0)" onclick="go('puan-tablosu.html')"
-         style="display:block;text-align:center;text-decoration:none;margin-top:12px">
-        Tüm sıralamayı gör →</a>
-    </div>
-  </div>`;
+    <div class="pick-summary">
+      ${todo ? `<span class="s-todo"><span class="dot"></span>${todo} maç tahmin bekliyor</span>`
+             : `<span class="s-ok">✓ Açık maçların hepsini tahmin ettin</span>`}
+      ${todo && done ? `<span class="s-ok">✓ ${done} tamam</span>` : ''}
+    </div>`;
 }
 
 /* ---------------- Kurallar ---------------- */
@@ -3956,17 +4053,12 @@ function render(){
           <button class="btn ghost" onclick="go('oranlar.html')">🛠 Toplu oran gir</button>
         </span>
       </div>` : ''}
+    ${pickSummary()}
     ${filterBar()}
     ${matchList()}
 
     <div class="sec-title"><h3>Sezon Tahminleri</h3><span class="rule"></span></div>
     ${seasonBlock()}
-
-    <div class="sec-title"><h3>Ödül</h3><span class="rule"></span></div>
-    ${prizeCard()}
-
-    <div class="sec-title"><h3>Sıralama</h3><span class="rule"></span></div>
-    ${miniBoard()}
   `;
 
   const next = upcomingFixtures().find(f => matchState(f) === 'open');
@@ -3978,7 +4070,7 @@ function render(){
   }
   initReveal(); initTilt(); initCounters();
 }
-return { heroBlock, statsBlock, prizeCard, multBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, hintOdds, savePick, saveResult, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
+return { heroBlock, statsBlock, prizeCard, multBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, hintOdds, savePick, saveResult, matchList, seasonBlock, pickSeason, pickSummary, rulesBlock, render };
 })();
 
 /* ============================================================
