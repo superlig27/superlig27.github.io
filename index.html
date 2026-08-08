@@ -961,79 +961,142 @@ body{
 }
 
 /* ============================================================
-   AÇILIŞ BÖLÜMÜ — sayfanın en üstündeki tanıtım alanı
-   Metinler sırayla belirir, altta takım kartları kayar.
+   AÇILIŞ SAYFASI (index.html) — tam ekran tanıtım
+   Kendi sayfası olduğu için giriş animasyonu her ziyarette oynar.
    ============================================================ */
+
+/* Açılış sayfasında .wrap genişlik sınırını bırakır */
+.wrap-full{ max-width:none; padding-left:0; padding-right:0; padding-bottom:0; }
+
 .lander{
   position:relative; overflow:hidden;
-  border-radius:var(--r-xl); border:1px solid var(--line);
-  margin:22px 0 26px; padding:46px 20px 0;
-  min-height:min(78vh, 600px);
+  min-height:calc(100svh - var(--nav-h));
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center;
+  text-align:center; padding:34px 20px 0;
   background:
-    radial-gradient(ellipse 100% 70% at 50% -12%, color-mix(in srgb, var(--iris) 26%, transparent), transparent 60%),
-    radial-gradient(ellipse 85% 55% at 50% 112%, color-mix(in srgb, var(--magenta) 17%, transparent), transparent 60%),
+    radial-gradient(ellipse 90% 62% at 50% -10%, color-mix(in srgb, var(--iris) 30%, transparent), transparent 62%),
+    radial-gradient(ellipse 80% 50% at 50% 108%, color-mix(in srgb, var(--magenta) 20%, transparent), transparent 60%),
     linear-gradient(180deg, var(--bg-2), var(--bg));
-  box-shadow:var(--shadow-lg);
-}
-.lander-in{
-  position:relative; z-index:2;
-  display:flex; flex-direction:column; align-items:center; padding-bottom:24px;
 }
 
-@keyframes landIn{ from{ opacity:0; transform:translateY(15px); } to{ opacity:1; transform:none; } }
-.lander-pill, .lander-desc, .lander-cta, .lander-stats, .lander-title .w{
+/* İmleci izleyen ışık — JS --mx/--my değişkenlerini günceller */
+.lander::before{
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:1;
+  background:radial-gradient(540px circle at var(--mx,50%) var(--my,34%),
+             color-mix(in srgb, var(--cyan) 15%, transparent), transparent 62%);
+  opacity:0; transition:opacity .55s ease;
+}
+.lander.lit::before{ opacity:1; }
+
+/* Saha çizgisi dokusu */
+.lander::after{
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:1;
+  background-image:linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:92px 100%;
+  -webkit-mask-image:radial-gradient(ellipse 68% 58% at 50% 46%, #000, transparent 76%);
+          mask-image:radial-gradient(ellipse 68% 58% at 50% 46%, #000, transparent 76%);
+}
+
+.lander-in{
+  position:relative; z-index:3;
+  display:flex; flex-direction:column; align-items:center; padding-bottom:22px;
+  /* fareye göre çok hafif paralaks */
+  transform:translate3d(var(--px,0px), var(--py,0px), 0);
+  transition:transform .6s cubic-bezier(.2,.7,.3,1);
+}
+
+@keyframes landIn{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:none; } }
+.lander-pill, .lander-desc, .lander-cta, .lander-stats, .lander-next, .lander-title .w{
   opacity:0; animation:landIn .75s cubic-bezier(.2,.7,.3,1) forwards;
 }
-.lander-desc { animation-delay:.50s; }
-.lander-cta  { animation-delay:.58s; }
-.lander-stats{ animation-delay:.66s; }
+.lander-desc { animation-delay:.52s; }
+.lander-cta  { animation-delay:.60s; }
+.lander-stats{ animation-delay:.68s; }
+.lander-next { animation-delay:.76s; }
 
 .lander-pill{
   display:inline-flex; align-items:center; gap:8px;
-  font-size:11px; font-weight:600; letter-spacing:.3px; color:var(--dim);
+  font-size:11.5px; font-weight:600; letter-spacing:.3px; color:var(--dim);
   background:rgba(var(--pane),.55); border:1px solid var(--line-2);
-  padding:7px 15px; border-radius:99px;
+  padding:8px 17px; border-radius:99px;
   backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
 }
 .lander-title{
-  margin:18px 0 0; font-family:var(--f-head); font-weight:400;
-  font-size:clamp(38px, 8.6vw, 72px); line-height:.95; letter-spacing:-.5px;
+  margin:22px 0 0; font-family:var(--f-head); font-weight:400;
+  /* hem genişliğe hem YÜKSEKLİĞE göre ölçeklenir; kısa ekranlarda taşmaz */
+  font-size:clamp(40px, min(11vw, 13vh), 112px);
+  line-height:.92; letter-spacing:-1px;
   text-transform:uppercase; color:var(--text);
+  text-shadow:0 18px 60px rgba(0,0,0,.55);
 }
 .lander-title .ln{ display:block; }
 .lander-title .w{ display:inline-block; }
-.lander-title .grad{
-  background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+.lander-title .w.grad{
+  background:linear-gradient(100deg, var(--cyan), var(--iris) 34%, var(--magenta) 62%, var(--cyan));
+  background-size:260% 100%;
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+  animation:landIn .75s cubic-bezier(.2,.7,.3,1) forwards, shimmer 7s linear infinite;
 }
+@keyframes shimmer{ to{ background-position:-260% 0; } }
 .lander-desc{
-  margin:20px 0 0; max-width:560px; font-size:14.5px; line-height:1.75; color:var(--dim);
+  margin:22px 0 0; max-width:580px; font-size:15px; line-height:1.78; color:var(--dim);
 }
 .lander-desc b{ color:var(--text); font-weight:600; }
-.lander-cta{ display:flex; gap:11px; flex-wrap:wrap; justify-content:center; margin-top:26px; }
-.lander-cta .btn{ border-radius:99px; padding:13px 26px; font-size:13.5px; }
-.lander-stats{ display:flex; gap:26px; flex-wrap:wrap; justify-content:center; margin-top:28px; }
+.lander-cta{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:30px; }
+.lander-cta .btn{ border-radius:99px; padding:14px 30px; font-size:14px; }
+.lander-stats{ display:flex; gap:30px; flex-wrap:wrap; justify-content:center; margin-top:32px; }
 .lander-stats div{ display:flex; flex-direction:column; gap:3px; }
 .lander-stats b{
-  font-family:var(--f-num); font-size:27px; letter-spacing:1px; line-height:1; color:var(--text);
+  font-family:var(--f-num); font-size:30px; letter-spacing:1px; line-height:1; color:var(--text);
 }
 .lander-stats span{
   font-size:9.5px; letter-spacing:1.6px; text-transform:uppercase; color:var(--faint);
 }
 
-/* Kayan takım şeridi */
-.marquee{
-  position:relative; width:100%; margin-top:auto; padding-bottom:28px;
-  -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-          mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+/* Sıradaki maç rozeti — tıklayınca fikstüre gider */
+.lander-next{
+  display:inline-flex; align-items:center; gap:11px; margin-top:26px;
+  padding:9px 9px 9px 16px; border-radius:99px; cursor:pointer;
+  font:inherit; color:var(--dim); text-align:left;
+  background:rgba(var(--pane),.5); border:1px solid var(--line-2);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  transition:border-color .25s, transform .25s, background .25s;
 }
-.marquee-track{ display:flex; gap:14px; width:max-content; animation:mqSlide 34s linear infinite; }
+.lander-next:hover{ border-color:var(--line-2); transform:translateY(-2px);
+  background:rgba(var(--pane),.75); }
+.lander-next .lbl{
+  font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--faint);
+}
+.lander-next .mt{ display:flex; align-items:center; gap:7px; }
+.lander-next .mt b{ font-family:var(--f-head); font-size:13px; letter-spacing:.6px; color:var(--text); }
+.lander-next .mt em{ font-style:normal; color:var(--faint); font-size:12px; }
+.lander-next .cd{
+  font-family:var(--f-num); font-size:15px; letter-spacing:.8px; color:var(--ink);
+  background:var(--grad); padding:5px 13px; border-radius:99px; white-space:nowrap;
+}
+
+/* Kayan takım şeritleri — iki sıra, ters yönlerde */
+.marquee{
+  position:relative; width:100%;
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.marquee.top{ margin-top:auto; padding-bottom:30px; }
+/* İkinci şerit yalnızca yüksek ekranlarda; alçak ekranda tek sıra sığar */
+.marquee.bot{ display:none; margin-top:14px; padding-bottom:30px; }
+@media (min-height:1120px){
+  .marquee.top{ padding-bottom:0; }
+  .marquee.bot{ display:block; }
+}
+.marquee-track{ display:flex; gap:14px; width:max-content; animation:mqSlide 36s linear infinite; }
+.marquee.bot .marquee-track{ animation:mqSlideRev 48s linear infinite; }
 .marquee:hover .marquee-track{ animation-play-state:paused; }
-@keyframes mqSlide{ to{ transform:translateX(-50%); } }
+@keyframes mqSlide{ from{ transform:translateX(0); }     to{ transform:translateX(-50%); } }
+@keyframes mqSlideRev{ from{ transform:translateX(-50%); } to{ transform:translateX(0); } }
 
 .mq-card{
-  flex:0 0 auto; width:124px; aspect-ratio:3/4; border-radius:var(--r-lg);
+  flex:0 0 auto; width:clamp(92px, 11.5vh, 132px); aspect-ratio:3/4; border-radius:var(--r-lg);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:11px;
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 16px 34px -16px rgba(0,0,0,.85);
@@ -1048,16 +1111,29 @@ body{
   color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.65);
 }
 
-/* Yeniden çizimlerde giriş animasyonu tekrarlanmasın */
-.lander.no-anim .lander-pill, .lander.no-anim .lander-desc,
-.lander.no-anim .lander-cta,  .lander.no-anim .lander-stats,
-.lander.no-anim .lander-title .w{ opacity:1; animation:none; }
+@media (max-width:640px){
+  .lander{ padding-top:26px; }
+  .lander-title{ margin-top:16px; }
+  .lander-desc{ margin-top:16px; font-size:13.5px; line-height:1.7; }
+  .lander-cta{ margin-top:22px; }
+  .lander-cta .btn{ padding:12px 22px; font-size:13px; }
+  .lander-stats{ gap:20px; margin-top:24px; }
+  .lander-stats b{ font-size:23px; }
+  .lander-next{ margin-top:20px; padding-left:13px; }
+  .lander-next .mt b{ font-size:12px; }
+  .mq-card{ width:clamp(88px, 10vh, 108px); }
+}
 
-@media (max-width:560px){
-  .lander{ padding-top:36px; min-height:auto; }
-  .lander-stats{ gap:18px; }
-  .lander-stats b{ font-size:22px; }
-  .mq-card{ width:98px; }
+/* Alçak ekranlarda dikey boşlukları kıs */
+@media (max-height:820px){
+  .lander      { padding-top:24px; }
+  .lander-desc { margin-top:16px; font-size:13.5px; line-height:1.65; }
+  .lander-cta  { margin-top:20px; }
+  .lander-stats{ margin-top:22px; }
+  .lander-stats b{ font-size:24px; }
+  .lander-next { margin-top:18px; }
+  .marquee.top { padding-bottom:22px; }
+  .lander-in   { padding-bottom:14px; }
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -1073,6 +1149,142 @@ body{
 <div class="wrap">
   <main id="app"></main>
 </div>
+
+<script type="module" data-cloud>
+/* ============================================================
+   BULUT KATMANI — Firebase
+   store.js yalnızca window.Cloud üzerinden konuşur.
+   Yapılandırma girilmezse site demo modunda çalışmaya devam eder.
+
+   YAPILANDIRMAYI NEREDEN ALIRSIN:
+     Firebase Console → ⚙ Project settings → Your apps
+     → Web app (yoksa </> ikonuyla oluştur) → SDK setup → Config
+   Oradaki firebaseConfig nesnesini aşağıdakinin üstüne yapıştır.
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB19WvlnrJxQhlH9HjkT_DnJCgJlt40FgU",
+  authDomain:        "superlig27-4bc76.firebaseapp.com",
+  projectId:         "superlig27-4bc76",
+  storageBucket:     "superlig27-4bc76.firebasestorage.app",
+  messagingSenderId: "481187628168",
+  appId:             "1:481187628168:web:648fce3a7b9f67d1720b3d",
+  measurementId:     "G-H6EWXTF3WX",
+};
+
+/* Bulut verisini yeniden yükle ve açık sayfayı tazele */
+const refresh = async () => {
+  try { await initStore(); } catch(e){ console.warn('[Cloud] tazeleme başarısız:', e); return; }
+  window.refreshAuthChip?.();
+  window.render?.();
+};
+
+/* boot() bu olayı bekler; iki durumda da gönderilmeli.
+
+   ÖNEMLİ: boot() bulut için yalnızca 3,5 sn bekler. Firebase
+   modülleri gstatic'ten ağ üzerinden geldiği için ilk açılışta
+   bu süre aşılabilir; o durumda uygulama demo moduna düşer.
+   Aşağıdaki kontrol, geç kalındığında sessizce buluta geçirir. */
+const ready = () => {
+  window.__cloudReady = true;
+  window.dispatchEvent(new Event('cloud-auth'));
+  if (typeof Store !== 'undefined' && Store.ready && Store.mode !== 'bulut') refresh();
+};
+
+/* Yapılandırma boşsa demo modunda kal (yer tutucu bırakılırsa) */
+if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
+  console.info('[Cloud] Firebase yapılandırması girilmedi — demo modunda devam ediliyor.');
+  ready();
+} else {
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let me = null, changeCb = null, firstAuth = true;
+
+  /* window.Cloud, onAuthStateChanged'den ÖNCE atanmalı */
+  window.Cloud = {
+    enabled: true,
+    currentUser: () => me,
+    onChange(cb){ changeCb = cb; },
+
+    /* store.js'in beklediği biçim:
+       users [{uid,name}] · predictions uid→{matchId:{h,a}}
+       season uid→{champion,derbyKing,euroBest} · results matchId→{h,a} */
+    async loadAll(){
+      const [uSnap, pSnap, sSnap, rSnap] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'predictions')),
+        getDocs(collection(db, 'season')),
+        getDocs(collection(db, 'results')),
+      ]);
+
+      const users = [];
+      uSnap.forEach(d => users.push({ uid: d.id, name: d.data().name || 'Oyuncu' }));
+
+      const predictions = {};
+      pSnap.forEach(d => {
+        const x = d.data();
+        if (!x.uid || !x.matchId) return;
+        (predictions[x.uid] ||= {})[x.matchId] = { h: x.h, a: x.a };
+      });
+
+      const season = {};
+      sSnap.forEach(d => season[d.id] = d.data());
+
+      const results = {};
+      rSnap.forEach(d => { const x = d.data(); results[d.id] = { h: x.h, a: x.a }; });
+
+      return { users, predictions, season, results };
+    },
+
+    async savePrediction(uid, matchId, val){
+      await setDoc(doc(db, 'predictions', `${uid}__${matchId}`),
+        { uid, matchId, h: val.h, a: val.a, at: serverTimestamp() });
+    },
+    async saveSeasonPick(uid, kind, team){
+      await setDoc(doc(db, 'season', uid), { [kind]: team, at: serverTimestamp() }, { merge: true });
+    },
+    async saveResult(matchId, val){
+      await setDoc(doc(db, 'results', matchId), { h: val.h, a: val.a, at: serverTimestamp() });
+    },
+
+    async login(email, pass){ await signInWithEmailAndPassword(auth, email, pass); },
+    async signup(email, pass, name){
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      /* users belgesi herkese açık okunur — e-posta BURAYA YAZILMAZ */
+      await setDoc(doc(db, 'users', cred.user.uid), { name, createdAt: serverTimestamp() });
+    },
+    async logout(){ await signOut(auth); },
+    async resetPassword(email){ await sendPasswordResetEmail(auth, email); },
+  };
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user){
+      let admin = false, name = user.displayName || '';
+      try { admin = (await getDoc(doc(db, 'admins', user.uid))).exists(); } catch(e){}
+      if (!name){
+        try { name = (await getDoc(doc(db, 'users', user.uid))).data()?.name || user.email; }
+        catch(e){ name = user.email; }
+      }
+      me = { uid: user.uid, name, email: user.email, admin };
+    } else {
+      me = null;
+    }
+    if (firstAuth){ firstAuth = false; ready(); }
+    else if (changeCb) changeCb();
+    /* boot() zaman aşımına uğradıysa onChange hiç kaydedilmemiş olur */
+    else refresh();
+  });
+}
+</script>
 
 <script>
 /* ============================================================
@@ -1892,9 +2104,10 @@ function teamForm(code, n = 5){
    ============================================================ */
 
 const PAGES = [
-  { href:'index.html',        label:'Tahminler',       short:'Tahmin' },
-  { href:'puan-tablosu.html', label:'Puan Tablosu',    short:'Puan'   },
-  { href:'gecmis.html',       label:'Geçmiş Maçlar',   short:'Geçmiş' },
+  { href:'tahminler.html',     label:'Tahminler',     short:'Tahmin'  },
+  { href:'puan-tablosu.html',  label:'Puan Tablosu',  short:'Puan'    },
+  { href:'gecmis.html',        label:'Geçmiş Maçlar', short:'Geçmiş'  },
+  { href:'nasil-oynanir.html', label:'Nasıl Oynanır', short:'Kurallar'},
 ];
 
 /* ---------- Arkaplan + üst çubuk ---------- */
@@ -1907,7 +2120,7 @@ function mountChrome(active){
     </div>
     <nav class="nav" id="nav">
       <div class="nav-inner">
-        <a class="brand" href="index.html">
+        <a class="brand" href="javascript:void(0)" onclick="go('index.html')">
           <span class="brand-mark">4B</span>
           <span class="brand-txt">DÖRT BÜYÜK<small>2026 / 27 FANTAZİ</small></span>
         </a>
@@ -1931,7 +2144,9 @@ function mountFooter(){
   document.querySelector('.wrap').insertAdjacentHTML('beforeend', `
     <div class="foot">
       Dört Büyük Fantazi Ligi · 2026/27 · GS · FB · BJK · TS — tüm maçlar<br>
-      Bu bir <b style="color:var(--dim)">demo</b>&nbsp;— tahminler tarayıcında saklanır, sunucuya gitmez.<br>
+      ${Store.mode === 'bulut'
+        ? 'Tahminler hesabına kayıtlı; her cihazdan aynı sıralamayı görürsün.'
+        : 'Bu bir <b style="color:var(--dim)">demo</b>&nbsp;— tahminler tarayıcında saklanır, sunucuya gitmez.'}<br>
       <a href="https://dunyakupasi26.github.io/" target="_blank" rel="noopener">← Dünya Kupası 2026</a>
     </div>
   `);
@@ -2414,70 +2629,6 @@ window.P_tahmin = (function(){
    ============================================================ */
 
 let fTeam = 'ALL', fComp = 'ALL', shown = 14;
-let landed = false;               // açılış animasyonu yalnızca ilk çizimde oynar
-
-/* ---------------- Açılış bölümü ---------------- */
-/* Başlık kelimeleri tek tek belirir; son kelime degrade renkli.
-   Yazıyı değiştirmek için aşağıdaki iki satır yeterli.        */
-const LANDER_TITLE = [['DÖRT', 'BÜYÜK,'], ['TEK', 'TAHMİN', 'LİGİ']];
-const LANDER_GRAD_WORD = 'LİGİ';
-
-function landingHero(){
-  const derbies = FIXTURES.filter(m => m.derby).length;
-
-  let i = 0;
-  const title = LANDER_TITLE.map(words => `<span class="ln">${
-    words.map(w => `<span class="w ${w === LANDER_GRAD_WORD ? 'grad' : ''}"
-      style="animation-delay:${(.15 + i++ * .07).toFixed(2)}s">${w}&nbsp;</span>`).join('')
-  }</span>`).join('');
-
-  /* Şerit: dört büyüğün kartları. Kesintisiz dönmesi için iki kez basılır. */
-  const tiles = [...BIG4, ...BIG4].map(c => `
-    <div class="mq-card t-${c.toLowerCase()}">
-      ${crest(c, 58)}<span class="nm">${TEAMS[c].short || TEAMS[c].name}</span>
-    </div>`).join('');
-
-  return `
-  <section class="lander ${landed ? 'no-anim' : ''}">
-    <div class="lander-in">
-      <span class="lander-pill">
-        <span class="pulse-dot"></span>2026/27 sezonu · ${FIXTURES.length} maç · ${derbies} derbi
-      </span>
-
-      <h1 class="lander-title">${title}</h1>
-
-      <p class="lander-desc">
-        Galatasaray, Fenerbahçe, Beşiktaş ve Trabzonspor'un oynadığı <b>her maç</b> —
-        Süper Lig ve Avrupa kupaları tek yerde. Skoru tahmin et, derbilerde
-        <b style="color:var(--gold)">beş kat</b> puan topla, sezonu zirvede bitir.
-      </p>
-
-      <div class="lander-cta">
-        <button class="btn" onclick="P_tahmin.startCta()">
-          ${isLoggedIn() ? 'Maçlara Geç' : 'Hemen Başla'}
-        </button>
-        <button class="btn ghost" onclick="P_tahmin.jumpTo('bolum-kurallar')">Nasıl Oynanır?</button>
-      </div>
-
-      <div class="lander-stats">
-        <div><b>${FIXTURES.length}</b><span>Maç</span></div>
-        <div><b>${derbies}</b><span>Derbi</span></div>
-        <div><b>×5</b><span>Derbi Puanı</span></div>
-        <div><b>${Store.users.length}</b><span>Oyuncu</span></div>
-      </div>
-    </div>
-
-    <div class="marquee"><div class="marquee-track">${tiles}${tiles}</div></div>
-  </section>`;
-}
-
-function jumpTo(id){
-  document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function startCta(){
-  if (!isLoggedIn()){ openAuth('signup'); return; }
-  jumpTo('bolum-maclar');
-}
 
 /* ---------------- Hero: sıradaki / oynanan maç ---------------- */
 function heroBlock(){
@@ -2868,7 +3019,8 @@ function miniBoard(){
   const rows = leaderboard();
   const me = rows.find(r => r.you);
   const top = rows.slice(0, 5);
-  const showMe = !top.some(r => r.you);
+  /* "me" yoksa (giriş yapılmamış ya da henüz hiç oyuncu yok) alt satır çizilmez */
+  const showMe = !!me && !top.some(r => r.you);
 
   const row = (r) => `
     <div class="lb-row ${r.you ? 'me' : ''} ${r.rank <= 3 ? 'top' + r.rank : ''}">
@@ -2888,6 +3040,8 @@ function miniBoard(){
     <div class="card-head"><span class="ico">📊</span><h2>Puan Tablosu</h2>
       <span class="tail">${rows.length} oyuncu</span></div>
     <div class="card-pad">
+      ${rows.length ? '' : `<div class="empty"><span class="em">🏁</span>
+        Henüz kimse katılmadı — ilk tahmini sen gir.</div>`}
       ${top.map(row).join('')}
       ${showMe ? `<div style="text-align:center;color:var(--faint);font-size:14px;margin:4px 0">⋯</div>${row(me)}` : ''}
       <a class="btn ghost" href="javascript:void(0)" onclick="go('puan-tablosu.html')"
@@ -2932,10 +3086,8 @@ function rulesBlock(){
 /* ---------------- Çiz ---------------- */
 function render(){
   document.getElementById('app').innerHTML = `
-    ${landingHero()}
     ${heroBlock()}
     ${statsBlock()}
-    ${prizeBlock()}
 
     <div class="sec-title" id="bolum-maclar"><h3>Yaklaşan Maçlar</h3><span class="rule"></span></div>
     ${filterBar()}
@@ -2946,11 +3098,7 @@ function render(){
 
     <div class="sec-title"><h3>Sıralama</h3><span class="rule"></span></div>
     ${miniBoard()}
-
-    <div class="sec-title" id="bolum-kurallar"><h3>Kurallar</h3><span class="rule"></span></div>
-    ${rulesBlock()}
   `;
-  landed = true;
 
   const next = upcomingFixtures().find(f => matchState(f) === 'open');
   if (next && document.getElementById('cd-d')){
@@ -2961,7 +3109,149 @@ function render(){
   }
   initReveal(); initTilt(); initCounters();
 }
-return { landingHero, jumpTo, startCta, heroBlock, statsBlock, prizeBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, savePick, saveResult, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
+return { heroBlock, statsBlock, prizeBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, savePick, saveResult, matchList, seasonBlock, pickSeason, miniBoard, rulesBlock, render };
+})();
+
+/* ===== index.html — AÇILIŞ SAYFASI ===== */
+window.P_ana = (function(){
+/* ============================================================
+   Tam ekran tanıtım sayfası.
+   Başlığı değiştirmek için aşağıdaki iki satır yeterli.
+   ============================================================ */
+const TITLE      = [['DÖRT', 'BÜYÜK,'], ['TEK', 'TAHMİN', 'LİGİ']];
+const GRAD_WORD  = 'LİGİ';
+
+let cdTimer = null;      // sıradaki maç sayacı
+
+/* Sıradaki maç rozeti — tıklayınca fikstüre gider */
+function nextChip(){
+  const m = upcomingFixtures().find(f => matchState(f) === 'open');
+  if (!m) return '';
+  const H = TEAMS[m.home], A = TEAMS[m.away];
+  return `
+    <button class="lander-next" onclick="go('tahminler.html')"
+            title="${H.name} – ${A.name} · ${fmtDate(m.dt)}">
+      <span class="lbl">Sıradaki</span>
+      <span class="mt">
+        ${crest(m.home, 22)}<b>${H.short || H.name}</b>
+        <em>–</em>
+        <b>${A.short || A.name}</b>${crest(m.away, 22)}
+      </span>
+      <span class="cd" id="lander-cd">${timeLeftShort(new Date(m.dt) - NOW())}</span>
+    </button>`;
+}
+
+/* Fare hareketiyle ışık + hafif paralaks */
+function initPointerFx(root){
+  if (window.matchMedia('(hover: none)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let raf = null;
+  root.addEventListener('pointermove', (e) => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const r = root.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top)  / r.height;
+      root.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+      root.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+      root.style.setProperty('--px', ((x - .5) * -14).toFixed(1) + 'px');
+      root.style.setProperty('--py', ((y - .5) * -10).toFixed(1) + 'px');
+      root.classList.add('lit');
+    });
+  });
+  root.addEventListener('pointerleave', () => {
+    root.classList.remove('lit');
+    root.style.setProperty('--px', '0px');
+    root.style.setProperty('--py', '0px');
+  });
+}
+
+function render(){
+  const derbies = FIXTURES.filter(m => m.derby).length;
+
+  let i = 0;
+  const title = TITLE.map(words => `<span class="ln">${
+    words.map(w => `<span class="w ${w === GRAD_WORD ? 'grad' : ''}"
+      style="animation-delay:${(.15 + i++ * .07).toFixed(2)}s">${w}&nbsp;</span>`).join('')
+  }</span>`).join('');
+
+  /* Şerit: kesintisiz dönmesi için takım seti iki kez basılır */
+  const tiles = [...BIG4, ...BIG4].map(c => `
+    <div class="mq-card t-${c.toLowerCase()}">
+      ${crest(c, 60)}<span class="nm">${TEAMS[c].short || TEAMS[c].name}</span>
+    </div>`).join('');
+  const strip = tiles + tiles;
+
+  document.getElementById('app').innerHTML = `
+  <section class="lander" id="lander">
+    <div class="lander-in">
+      <span class="lander-pill">
+        <span class="pulse-dot"></span>2026/27 sezonu · ${FIXTURES.length} maç · ${derbies} derbi
+      </span>
+
+      <h1 class="lander-title">${title}</h1>
+
+      <p class="lander-desc">
+        Galatasaray, Fenerbahçe, Beşiktaş ve Trabzonspor'un oynadığı <b>her maç</b> —
+        Süper Lig ve Avrupa kupaları tek yerde. Skoru tahmin et, derbilerde
+        <b style="color:var(--gold)">beş kat</b> puan topla, sezonu zirvede bitir.
+      </p>
+
+      <div class="lander-cta">
+        <button class="btn" onclick="go('tahminler.html')">Maçlara Geç</button>
+        <button class="btn ghost" onclick="go('nasil-oynanir.html')">Nasıl Oynanır?</button>
+      </div>
+
+      <div class="lander-stats">
+        <div><b>${FIXTURES.length}</b><span>Maç</span></div>
+        <div><b>${derbies}</b><span>Derbi</span></div>
+        <div><b>×5</b><span>Derbi Puanı</span></div>
+        <div><b>${Store.users.length}</b><span>Oyuncu</span></div>
+      </div>
+
+      ${nextChip()}
+    </div>
+
+    <div class="marquee top"><div class="marquee-track">${strip}</div></div>
+    <div class="marquee bot"><div class="marquee-track">${strip}</div></div>
+  </section>`;
+
+  const root = document.getElementById('lander');
+  if (root) initPointerFx(root);
+
+  /* Sayaç: sayfa değişince eskisini durdur */
+  clearInterval(cdTimer);
+  cdTimer = setInterval(() => {
+    const el = document.getElementById('lander-cd');
+    const m  = upcomingFixtures().find(f => matchState(f) === 'open');
+    if (!el || !m){ clearInterval(cdTimer); return; }
+    el.textContent = timeLeftShort(new Date(m.dt) - NOW());
+  }, 30000);
+}
+
+return { render, nextChip };
+})();
+
+/* ===== nasil-oynanir.html — KURALLAR SAYFASI ===== */
+window.P_nasil = (function(){
+function render(){
+  document.getElementById('app').innerHTML = `
+    <div class="sec-title" style="margin-top:26px"><h3>Nasıl Oynanır</h3><span class="rule"></span></div>
+    ${P_tahmin.rulesBlock()}
+
+    <div class="sec-title"><h3>Puan Çarpanları ve Ödül</h3><span class="rule"></span></div>
+    ${P_tahmin.prizeBlock()}
+
+    <div style="text-align:center;margin-top:26px">
+      <button class="btn" style="border-radius:99px;padding:13px 28px"
+              onclick="go('tahminler.html')">Tahmin girmeye başla →</button>
+    </div>
+  `;
+  initReveal(); initTilt(); initCounters();
+}
+return { render };
 })();
 
 /* ===== puan-tablosu.html ===== */
@@ -3048,7 +3338,7 @@ function seasonPicksBoard(){
       <div class="card-pad">
         ${BIG4.map(c => {
           const t = TEAMS[c], list = tally[c];
-          const pct = Math.round(list.length / rows.length * 100);
+          const pct = Math.round(list.length / Math.max(1, rows.length) * 100);
           return `
           <div class="t-${c.toLowerCase()}" style="display:flex;align-items:center;gap:12px;padding:10px 0;
                border-bottom:1px solid rgba(255,255,255,.04)">
@@ -3322,21 +3612,33 @@ return { recordsBlock, derbyStandings, filterBar, setTeam, setComp, showMore, hi
 
 /* ===== Tek dosya yönlendirici ===== */
 const ROUTES = {
-  'index.html':        P_tahmin.render,
-  'puan-tablosu.html': P_puan.render,
-  'gecmis.html':       P_gecmis.render,
+  'index.html':         P_ana.render,      // tam ekran açılış
+  'tahminler.html':     P_tahmin.render,
+  'puan-tablosu.html':  P_puan.render,
+  'gecmis.html':        P_gecmis.render,
+  'nasil-oynanir.html': P_nasil.render,
 };
-let CURRENT = 'index.html';
-function go(href){
-  CURRENT = href;
+const HOME = 'index.html';
+let CURRENT = HOME;
+
+/* Açılış sayfası tam genişlik; diğerleri 860px kolonda kalır */
+function setActive(href){
+  document.querySelector('.wrap')?.classList.toggle('wrap-full', href === HOME);
   document.querySelectorAll('.nav-links a').forEach(a =>
     a.classList.toggle('on', a.dataset.href === href));
-  ROUTES[href]();
-  window.scrollTo({ top:0, behavior:'smooth' });
 }
-/* auth-ui.js açık sayfayı yeniden çizmek için global render() bekler */
-window.render = () => ROUTES[CURRENT]();
-boot('index.html', P_tahmin.render);
+
+function go(href){
+  if (!ROUTES[href]) return;
+  CURRENT = href;
+  setActive(href);
+  ROUTES[href]();
+  window.scrollTo({ top:0, behavior: href === HOME ? 'auto' : 'smooth' });
+}
+
+/* auth-ui açık sayfayı yeniden çizmek için global render() bekler */
+window.render = () => { setActive(CURRENT); ROUTES[CURRENT](); };
+boot(HOME, window.render);
 
 </script>
 </body>
