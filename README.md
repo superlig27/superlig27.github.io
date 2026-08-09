@@ -1,4 +1,6 @@
-## Hi there 👋
+## Bu projede gerçek parayla bahis yapılmamakta olup, içerik tamamen eğlence amaçlıdır. 👋
+
+No real money betting is involved in this project, it is strictly for entertainment purposes.
 
 <!--
 **superlig27/superlig27** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
