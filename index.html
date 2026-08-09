@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#06060c">
-<meta name="description" content="Galatasaray, Fenerbahçe, Beşiktaş ve Trabzonspor'un tüm maçları için tahmin ligi demosu.">
-<title>Dört Büyük 26/27 — Fantazi Ligi (Demo)</title>
+<meta name="description" content="Galatasaray, Fenerbahçe, Beşiktaş ve Trabzonspor'un tüm maçları için tahmin ligi.">
+<title>Dört Büyük 26/27 — Fantazi Ligi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -229,12 +229,6 @@ body{
   border-radius:2px; background:var(--grad);
 }
 .nav-links a .sm{ display:none; }
-
-.demo-chip{
-  flex-shrink:0; font-size:9px; font-weight:700; letter-spacing:1.6px;
-  padding:4px 9px; border-radius:20px; color:var(--cyan);
-  background:rgba(41,214,238,.1); border:1px solid rgba(41,214,238,.28);
-}
 
 /* ---------- Genel kart ---------- */
 .card{
@@ -1035,7 +1029,6 @@ body{
   .card-pad{ padding:16px; }
   .rules{ grid-template-columns:auto 1fr; gap:8px 10px; }
   .lb-pts{ font-size:24px; }
-  .demo-chip{ display:none; }
 }
 @media (max-width:380px){
   .num{ width:52px; height:47px; font-size:24px; }
@@ -1111,7 +1104,7 @@ body{
   border-color:var(--line-2);
 }
 
-/* ---------- Puan hesaplayıcı (demo.html) ---------- */
+/* ---------- Puan hesaplayıcı (hesaplayici.html) ---------- */
 .try-card{ background:var(--grad-soft); border-color:var(--line-2); }
 .dm-lbl{
   font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
@@ -2750,7 +2743,7 @@ function mountFooter(){
       Dört Büyük Fantazi Ligi · 2026/27 · GS · FB · BJK · TS — tüm maçlar<br>
       ${Store.mode === 'bulut'
         ? 'Tahminler hesabına kayıtlı; her cihazdan aynı sıralamayı görürsün.'
-        : 'Bu bir <b style="color:var(--dim)">demo</b>&nbsp;— tahminler tarayıcında saklanır, sunucuya gitmez.'}<br>
+        : '<b style="color:var(--gold)">Sunucuya ulaşılamıyor</b>&nbsp;— gösterilen veriler örnektir ve kaydedilmez.'}<br>
       <a href="https://dunyakupasi26.github.io/" target="_blank" rel="noopener">← Dünya Kupası 2026</a>
     </div>
   `);
@@ -3080,8 +3073,9 @@ function authModalHtml(){
 
     <div class="modal-body">
       ${demo ? `<div class="note" style="margin-bottom:16px">
-        <span>🧪</span><span><b>Demo modu.</b> Sunucu bağlantısı yok; girdiğin ad yalnızca
-        bu tarayıcıda saklanır. Yayına alındığında burası gerçek hesapla çalışacak.</span>
+        <span>⚠️</span><span><b>Sunucuya bağlanılamadı.</b> Girdiğin ad yalnızca bu
+        tarayıcıda saklanır ve puan tablosuna işlenmez. Bağlantı gelince
+        sayfayı yenile.</span>
       </div>` : ''}
       ${body}
       <div id="au-msg" class="au-msg"></div>
@@ -3200,7 +3194,7 @@ function openAccount(){
       <span class="brand-mark" style="font-size:16px">${(me.name||'?').charAt(0).toLocaleUpperCase('tr')}</span>
       <div>
         <div class="modal-title">${me.name}</div>
-        <div class="modal-sub">${me.demo ? 'Demo hesabı' : me.email}</div>
+        <div class="modal-sub">${me.demo ? 'Çevrimdışı — kaydedilmiyor' : me.email}</div>
       </div>
     </div>
     <div class="modal-body">
@@ -4616,8 +4610,8 @@ function render(){
 return { render, nextChip };
 })();
 
-/* ===== demo.html — PUAN HESAPLAYICI ===== */
-window.P_demo = (function(){
+/* ===== hesaplayici.html — PUAN HESAPLAYICI ===== */
+window.P_hesap = (function(){
 /* ============================================================
    Sistemi anlatmak için kum havuzu. Hiçbir şey kaydedilmez.
    Oranı girilmiş GERÇEK maçlar üzerinde çalışır; böylece hem
@@ -4773,7 +4767,7 @@ function render(){
         </div>
 
         <div class="dm-lbl">Maç</div>
-        <select class="dm-sel" onchange="P_demo.setMatch(this.value)">
+        <select class="dm-sel" onchange="P_hesap.setMatch(this.value)">
           ${list.map(f => `<option value="${f.id}" ${f.id === m.id ? 'selected' : ''}>
             ${TEAMS[f.home].name} – ${TEAMS[f.away].name} · ${fmtDateShort(f.dt)}${f.derby ? ' · derbi' : ''}
           </option>`).join('')}
@@ -4815,7 +4809,7 @@ function render(){
         ${real ? `<div style="font-size:11px;color:var(--faint);margin-top:8px">
           Bu maç <b style="color:var(--dim)">${real.h}-${real.a}</b> bitti.</div>` : ''}
 
-        <button class="btn" style="width:100%;margin-top:16px" onclick="P_demo.calc()">Hesapla</button>
+        <button class="btn" style="width:100%;margin-top:16px" onclick="P_hesap.calc()">Hesapla</button>
 
         <div id="d-out">${done ? resultPanel() : ''}</div>
       </div>
@@ -5137,7 +5131,7 @@ function render(){
           <div style="font-size:11.5px;color:var(--faint);margin-top:2px">
             Bir tahmin ve bir sonuç yaz, kaç puan geleceğini anında gör.</div>
         </div>
-        <button class="btn" onclick="go('demo.html')">Dene →</button>
+        <button class="btn" onclick="go('hesaplayici.html')">Dene →</button>
       </div>
     </div>
 
@@ -5574,7 +5568,7 @@ const ROUTES = {
   'puan-tablosu.html':  P_puan.render,
   'gecmis.html':        P_gecmis.render,
   'nasil-oynanir.html': P_nasil.render,
-  'demo.html':          P_demo.render,      // puan hesaplayıcı
+  'hesaplayici.html':          P_hesap.render,      // puan hesaplayıcı
   'oranlar.html':       P_oranlar.render,   // yönetici — navigasyonda yok
   'logolar.html':       P_logolar.render,   // yönetici — navigasyonda yok
 };
