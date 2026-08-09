@@ -3603,7 +3603,8 @@ function matchCard(m){
       : `<span class="state state-done">🔒 BİTTİ</span>`;
 
   const pickChip = status === 'todo'
-    ? `<span class="state state-todo"><span class="dot"></span>TAHMİN YOK</span>`
+    ? `<span class="state state-todo" title="Bu maça henüz tahmin yapmadın">
+         <span class="dot"></span>TAHMİNİN YOK</span>`
     : status === 'ok'
       ? `<span class="state state-ok">✓ TAHMİNİN VAR</span>`
       : '';
