@@ -1273,6 +1273,13 @@ body{
 .sn-row .in{ display:flex; align-items:center; gap:7px; flex-shrink:0; }
 .sn-row .in .num{ width:44px; height:38px; font-size:19px; }
 
+/* Şıkkın altındaki puan rozeti (oranlı sezon bahsi) */
+.opt-pts{
+  font-family:var(--f-num); font-size:14px; letter-spacing:.5px;
+  color:var(--gold); line-height:1; margin-top:2px;
+}
+.team-opt.sel .opt-pts{ color:var(--text); }
+
 /* Kilitli sezon bahsi kutusu */
 .locked-box{
   display:flex; align-items:flex-start; gap:13px; padding:16px 4px;
@@ -1319,6 +1326,11 @@ body{
   box-shadow:0 0 0 1px rgba(124,108,255,.35);
 }
 .opt.locked{ opacity:.45; cursor:not-allowed; }
+.opt b{
+  font-family:var(--f-num); font-size:13px; letter-spacing:.5px;
+  color:var(--gold); margin-left:7px; font-weight:400;
+}
+.opt.sel b{ color:var(--text); }
 .opt-dot{
   width:32px; height:32px; border-radius:50%; flex-shrink:0;
   display:grid; place-items:center; font-family:var(--f-head); font-size:14px;
@@ -2091,16 +2103,24 @@ function filterFixtures(list, team, comp){
    DİKKAT: 2026/27 kurası çekilene kadar bu liste GEÇİCİDİR.
    Kura belli olunca burayı gerçek 36 takımla değiştir.
    ------------------------------------------------------------ */
-/* Bahisçi oran sırasına göre (favoriden uzağa). Puan hepsinde aynı. */
-const UCL_TEAMS = [
-  'Paris Saint-Germain','FC Bayern München','Arsenal','Manchester City',
-  'Real Madrid','Barcelona','Liverpool','Manchester United','Inter',
-  'Atlético Madrid','Aston Villa','AS Roma','Napoli','Borussia Dortmund',
-  'Villarreal','Real Betis','RB Leipzig','Como','VfB Stuttgart',
-  'Sporting CP','Porto','PSV','Lens','Lille','Fenerbahçe','Celtic',
-  'Galatasaray','Feyenoord','Club Brugge','Lyon','Bodø/Glimt',
-  'Olympiakos','Slavia Praha','Shakhtar Donetsk','AEK Atina','Royale Union SG',
-];
+/* Şampiyonlar Ligi kupa oranları — favoriden uzağa sıralı.
+   Puan bu oranlardan hesaplanır: favoriyi seçmek az, sürprizi
+   tutturmak çok kazandırır. Oranlar değişirse tek yer burası. */
+const UCL_ODDS = {
+  'Paris Saint-Germain':6.00, 'FC Bayern München':7.50, 'Arsenal':7.50,
+  'Barcelona':8.00, 'Manchester City':8.00, 'Real Madrid':8.00,
+  'Liverpool':11.00, 'Manchester United':17.00, 'Inter':29.00,
+  'Aston Villa':34.00, 'Atlético Madrid':34.00, 'Napoli':41.00,
+  'Borussia Dortmund':41.00, 'AS Roma':41.00, 'Real Betis':51.00,
+  'RB Leipzig':51.00, 'Villarreal':51.00, 'Como':66.00,
+  'VfB Stuttgart':76.00, 'Sporting CP':101.00, 'Porto':101.00,
+  'Lens':126.00, 'Lille':126.00, 'PSV':126.00, 'Feyenoord':151.00,
+  'Fenerbahçe':151.00, 'Celtic':151.00, 'Galatasaray':151.00,
+  'Bodø/Glimt':201.00, 'Club Brugge':201.00, 'Lyon':201.00,
+  'AEK Atina':251.00, 'Royale Union SG':251.00, 'Slavia Praha':251.00,
+  'Olympiakos':251.00, 'Shakhtar Donetsk':251.00,
+};
+const UCL_TEAMS = Object.keys(UCL_ODDS);
 
 /* ------------------------------------------------------------
    SEZON BAHİSLERİ — sezon başında bir kez, uzun vadeli
@@ -2127,14 +2147,20 @@ const SL_LOCK  = slDate(2, 0);                   // 2. haftanın ilk maçı
 const UCL_LOCK = '2026-09-10T21:00:00+03:00';
 
 const SEASON_PICKS = {
+  /* Şampiyonluk oranları eşit değil: GS/FB favori, BJK/TS uzun atış.
+     Bu yüzden puan da eşit değil — oranlar buraya yazılır, çarpanı
+     seasonPickPoints() maç puanlamasıyla AYNI formülle hesaplar.
+     Oran güncellemek istersen tek yer burası.                      */
   champion: { title:'SÜPER LİG ŞAMPİYONU', emoji:'🏆', points:120, kind:'team',
-              desc:'2026/27 kupasını kaldıracak takımı seç.',
+              desc:'2026/27 kupasını kaldıracak takımı seç. Sürpriz seçim daha çok kazandırır.',
               options: BIG4,
+              odds: { GS:2.00, FB:2.00, BJK:9.50, TS:10.00 },
               lock: SL_LOCK },
 
   uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', emoji:'🌍', points:150, kind:'list',
-              desc:'36 takımdan biri. Hangisini seçersen seç puan aynı — favoriyi de sürprizi de 150 puan.',
+              desc:'36 takımdan biri. Favori az, uzun atış çok kazandırır — puanlar oranlardan gelir.',
               options: UCL_TEAMS,
+              odds: UCL_ODDS,
               lock: UCL_LOCK },
 
   relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', emoji:'⬇️', points:40, kind:'multi', max:3,
@@ -2153,6 +2179,22 @@ function seasonLocked(kind){
    relegated bir DİZİ olmalı, örn: ['KON','SAM','COR'] */
 const SEASON_RESULT = { champion:null, uclWinner:null, relegated:null };
 
+/* Bir şıkkın puanı. Bahiste oran tanımlıysa favoriden uzaklaştıkça
+   artar; maç puanlamasıyla aynı sıkıştırma (ODDS_EXP) kullanılır ki
+   sistem tek bir mantıkla çalışsın. Oran yoksa herkes eşit puan alır. */
+function seasonPickPoints(kind, value){
+  const cfg = SEASON_PICKS[kind];
+  if (!cfg) return 0;
+  if (!cfg.odds || value == null || !cfg.odds[value]) return cfg.points;
+
+  let tot = 0;
+  Object.values(cfg.odds).forEach(o => tot += 1 / o);
+  const p    = (1 / cfg.odds[value]) / tot;              // marj atılmış olasılık
+  const favP = Math.max(...Object.values(cfg.odds).map(o => (1 / o) / tot));
+  const mult = clampMult(Math.pow(favP / p, ODDS_EXP), 1, 2.5);
+  return Math.round(cfg.points * mult / 5) * 5;          // 5'in katına yuvarla
+}
+
 /* Bir sezon bahsinin getirdiği puan (çoklu seçimde her isabet ayrı sayılır) */
 function seasonPoints(kind, pick, result){
   const cfg = SEASON_PICKS[kind];
@@ -2161,7 +2203,18 @@ function seasonPoints(kind, pick, result){
     if (!Array.isArray(pick) || !Array.isArray(result)) return 0;
     return pick.filter(x => result.includes(x)).length * cfg.points;
   }
-  return pick === result ? cfg.points : 0;
+  return pick === result ? seasonPickPoints(kind, pick) : 0;
+}
+
+/* Kartın başlığında gösterilecek puan aralığı */
+function seasonPointsLabel(kind){
+  const cfg = SEASON_PICKS[kind];
+  if (!cfg) return '';
+  if (cfg.kind === 'multi') return `her isabet +${cfg.points}p`;
+  if (!cfg.odds) return `+${cfg.points}p`;
+  const all = cfg.options.map(o => seasonPickPoints(kind, o));
+  const lo = Math.min(...all), hi = Math.max(...all);
+  return lo === hi ? `+${lo}p` : `${lo}–${hi}p`;
 }
 
 /* ============================================================
@@ -3939,7 +3992,7 @@ function seasonBlock(){
     <div class="card reveal">
       <div class="card-head">
         <span class="ico">${cfg.emoji}</span><h2>${cfg.title}</h2>
-        <span class="tail">${multi ? `her isabet +${cfg.points}p` : `+${cfg.points}p`}</span>
+        <span class="tail">${seasonPointsLabel(kind)}</span>
       </div>
       <div class="card-pad">
         <p class="sub" style="margin-bottom:14px">
@@ -3958,7 +4011,8 @@ function seasonBlock(){
             ${cfg.options.map(o => `
               <button class="opt ${isSel(o) ? 'sel' : ''} ${locked ? 'locked' : ''}"
                       ${locked ? 'disabled' : ''}
-                      onclick="P_tahmin.pickSeason('${kind}', this.dataset.v)" data-v="${o}">${o}</button>`).join('')}
+                      onclick="P_tahmin.pickSeason('${kind}', this.dataset.v)" data-v="${o}">${o}${
+                cfg.odds ? `<b>${seasonPickPoints(kind, o)}p</b>` : ''}</button>`).join('')}
           </div>`
         : `
           <div class="${multi ? 'ms-grid' : 'team-grid'}">
@@ -3967,6 +4021,7 @@ function seasonBlock(){
                       ${locked ? 'disabled' : ''} onclick="P_tahmin.pickSeason('${kind}','${c}')">
                 ${crest(c, multi ? 30 : 38)}
                 <span class="lbl">${multi ? (TEAMS[c]?.short || TEAMS[c]?.name || c) : c}</span>
+                ${!multi && cfg.odds ? `<span class="opt-pts">${seasonPickPoints(kind, c)}p</span>` : ''}
               </button>`).join('')}
           </div>`}
 
