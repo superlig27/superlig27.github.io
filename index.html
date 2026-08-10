@@ -1244,6 +1244,47 @@ body{
 .prog-tip b{ display:block; font-size:11.5px; }
 .prog-tip span{ display:block; font-size:10.5px; color:var(--faint); margin-top:2px; }
 
+/* Sonuç giriş sayfası */
+.sn-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; margin-bottom:10px; font-size:12px;
+}
+.sn-head span{ display:inline-flex; align-items:center; gap:7px; }
+.sn-head .s-todo{ color:var(--alert); font-weight:600; }
+.sn-head .s-todo .dot{ width:7px; height:7px; border-radius:50%; background:var(--alert);
+  box-shadow:0 0 0 0 color-mix(in srgb, var(--alert) 60%, transparent); animation:pulse 2s infinite; }
+.sn-head .s-ok{ color:var(--ok); }
+
+.sn-list{ border:1px solid var(--line); border-radius:var(--r-md); overflow:hidden;
+  max-height:60vh; overflow-y:auto; }
+.sn-row{
+  display:flex; align-items:center; gap:11px; padding:9px 12px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.sn-row:last-child{ border-bottom:none; }
+.sn-row.todo{ background:color-mix(in srgb, var(--alert) 7%, transparent); }
+.sn-row.dirty{ background:color-mix(in srgb, var(--ok) 10%, transparent); }
+.sn-row .st{ width:14px; flex-shrink:0; text-align:center; font-size:12px; }
+.sn-row.todo .st{ color:var(--alert); }
+.sn-row.done .st{ color:var(--ok); }
+.sn-row .nm{ flex:1; min-width:0; }
+.sn-row .nm b{ display:block; font-size:12.5px; }
+.sn-row .nm em{ display:block; font-style:normal; font-size:10.5px; color:var(--faint); margin-top:2px; }
+.sn-row .in{ display:flex; align-items:center; gap:7px; flex-shrink:0; }
+.sn-row .in .num{ width:44px; height:38px; font-size:19px; }
+
+/* Kilitli sezon bahsi kutusu */
+.locked-box{
+  display:flex; align-items:flex-start; gap:13px; padding:16px 4px;
+}
+.locked-box .ico{ font-size:22px; flex-shrink:0; opacity:.8; }
+.locked-box b{ display:block; font-size:13px; }
+.locked-box em{
+  display:block; font-style:normal; font-size:11.5px;
+  color:var(--faint); margin-top:4px; line-height:1.6;
+}
+.locked-box em.sub{ font-size:10.5px; opacity:.75; margin-top:2px; }
+
 /* Çoklu seçim (küme düşecek üç takım) */
 .ms-grid{
   display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px;
@@ -2079,22 +2120,34 @@ const UCL_TEAMS = [
    Toplam en fazla 390 puan (120 + 150 + 3×40).
    Ağırlığı değiştirmek istersen tek yer: aşağıdaki "points".
    ------------------------------------------------------------ */
+/* Kilit anları
+   Süper Lig bahisleri: 2. hafta başlarken (ilk haftadan sonra)
+   Şampiyonlar Ligi   : 10 Eylül akşamı, lig aşaması kurası sonrası */
+const SL_LOCK  = slDate(2, 0);                   // 2. haftanın ilk maçı
+const UCL_LOCK = '2026-09-10T21:00:00+03:00';
+
 const SEASON_PICKS = {
   champion: { title:'SÜPER LİG ŞAMPİYONU', emoji:'🏆', points:120, kind:'team',
               desc:'2026/27 kupasını kaldıracak takımı seç.',
               options: BIG4,
-              lock:'2027-02-07T19:00:00+03:00' },
+              lock: SL_LOCK },
 
   uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', emoji:'🌍', points:150, kind:'list',
-              desc:'36 takımdan biri. Hangisini seçersen seç puan aynı — favoriyi de sürprizi de 250 puan.',
+              desc:'36 takımdan biri. Hangisini seçersen seç puan aynı — favoriyi de sürprizi de 150 puan.',
               options: UCL_TEAMS,
-              lock:'2027-02-07T19:00:00+03:00' },
+              lock: UCL_LOCK },
 
   relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', emoji:'⬇️', points:40, kind:'multi', max:3,
               desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
               options: SL_TEAMS,
-              lock:'2027-02-07T19:00:00+03:00' },
+              lock: SL_LOCK },
 };
+
+/* Kilit açıldı mı? Açılana kadar kimse başkasının seçimini göremez. */
+function seasonLocked(kind){
+  const cfg = SEASON_PICKS[kind];
+  return !!cfg && NOW() >= new Date(cfg.lock);
+}
 
 /* Sonuçlar sezon sonunda buraya yazılır.
    relegated bir DİZİ olmalı, örn: ['KON','SAM','COR'] */
@@ -3316,10 +3369,14 @@ function openProfile(uid){
   const best = [...progRows].sort((a,b) => b.got - a.got)[0];
   const recent = [...progRows].reverse().slice(0, 8);
 
+  /* Başkasının sezon seçimi kilit açılana kadar gizli; kendi profilinde görünür */
+  const mine = Store.me && Store.me.uid === uid;
   const seasonHtml = Object.keys(SEASON_PICKS).map(k => {
     const v = me.season?.[k], cfg = SEASON_PICKS[k];
     const has = Array.isArray(v) ? v.length > 0 : !!v;
-    const txt = !has ? '<em>seçilmedi</em>'
+    const hidden = !mine && !seasonLocked(k);
+    const txt = hidden ? `<em>🔒 ${has ? 'seçildi' : 'seçilmedi'}</em>`
+      : !has ? '<em>seçilmedi</em>'
       : (Array.isArray(v) ? v : [v]).map(x => TEAMS[x]?.name || x).join(', ');
     const got = seasonPoints(k, v, SEASON_RESULT[k]);
     return `<div class="pf-season">
@@ -4043,9 +4100,12 @@ function render(){
           ${FIXTURES.filter(m => matchState(m)==='open' && hasOdds(m)).length} maç açık ·
           ${FIXTURES.filter(m => matchState(m)==='open' && !hasOdds(m)).length} maç oransız
         </span>
-        <span style="display:flex;gap:8px">
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" onclick="go('sonuclar.html')">⚽ Sonuç gir${
+            (n => n ? ` (${n})` : '')(FIXTURES.filter(m => matchState(m)!=='open' && !Store.results[m.id]).length)
+          }</button>
+          <button class="btn ghost" onclick="go('oranlar.html')">🛠 Oran gir</button>
           <button class="btn ghost" onclick="go('logolar.html')">🖼 Armalar</button>
-          <button class="btn ghost" onclick="go('oranlar.html')">🛠 Toplu oran gir</button>
         </span>
       </div>` : ''}
     ${pickSummary()}
@@ -4824,6 +4884,120 @@ function render(){
 return { render, calc, setMatch };
 })();
 
+/* ===== sonuclar.html — MAÇ SONUCU GİRİŞİ (yönetici) ===== */
+window.P_sonuc = (function(){
+/* ============================================================
+   Başlamış bütün maçlar burada listelenir; sonucu girilmemiş
+   olanlar en üstte. Sonuç kaydedilir kaydedilmez puanlama
+   kendiliğinden işler — ayrıca bir "hesapla" adımı yoktur.
+   ============================================================ */
+let draft = {};      // matchId -> {h,a}
+
+function started(){
+  return FIXTURES.filter(m => matchState(m) !== 'open')
+    .sort((a,b) => new Date(b.dt) - new Date(a.dt));   // en yeni önce
+}
+function val(id, which){
+  if (draft[id] && draft[id][which] != null) return draft[id][which];
+  const r = Store.results[id];
+  return r ? r[which] : '';
+}
+function onEdit(id, which, v){
+  draft[id] = draft[id] || {};
+  const n = v.trim() === '' ? null : parseInt(v);
+  draft[id][which] = (n == null || isNaN(n)) ? null : Math.max(0, Math.min(20, n));
+  const row = document.getElementById('sn-' + id);
+  if (row) row.classList.toggle('dirty', isReady(id));
+  const btn = document.getElementById('sn-save');
+  if (btn){ const n2 = readyList().length;
+    btn.textContent = n2 ? `${n2} sonucu kaydet` : 'Kaydedilecek sonuç yok';
+    btn.disabled = !n2; }
+}
+function isReady(id){
+  const d = draft[id]; if (!d) return false;
+  if (d.h == null || d.a == null) return false;
+  const cur = Store.results[id];
+  return !cur || cur.h !== d.h || cur.a !== d.a;
+}
+function readyList(){ return Object.keys(draft).filter(isReady); }
+
+async function saveAll(){
+  const list = readyList();
+  if (!list.length) return;
+  let ok = 0, fail = 0;
+  for (const id of list){
+    try { await setResult(id, draft[id].h, draft[id].a); ok++; }
+    catch(e){ fail++; console.warn('sonuç kaydedilemedi', id, e); }
+  }
+  draft = {};
+  toast(fail ? `<b>${ok} sonuç</b> kaydedildi · ${fail} başarısız`
+             : `<b>${ok} sonuç</b> kaydedildi — puanlar güncellendi`);
+  render();
+}
+
+function row(m){
+  const r = Store.results[m.id];
+  const H = TEAMS[m.home], A = TEAMS[m.away];
+  return `
+    <div class="sn-row ${r ? 'done' : 'todo'}" id="sn-${m.id}">
+      <span class="st">${r ? '✓' : '●'}</span>
+      <span class="nm">
+        <b>${H.short || H.name} – ${A.short || A.name}</b>
+        <em>${fmtDate(m.dt)} · ${m.comp === 'SL' ? m.wk + '. hafta' : COMPS[m.comp].short}</em>
+      </span>
+      <span class="in">
+        <input class="num" type="number" min="0" max="20" placeholder="–"
+               value="${val(m.id,'h')}" oninput="P_sonuc.onEdit('${m.id}','h',this.value)">
+        <span class="dash">—</span>
+        <input class="num" type="number" min="0" max="20" placeholder="–"
+               value="${val(m.id,'a')}" oninput="P_sonuc.onEdit('${m.id}','a',this.value)">
+      </span>
+    </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  const head = `<div class="sec-title" style="margin-top:26px"><h3>Maç Sonuçları</h3>
+                  <span class="rule"></span></div>`;
+  if (!isAdmin()){
+    app.innerHTML = head + `<div class="card"><div class="empty"><span class="em">🔒</span>
+      Bu sayfa yalnızca yöneticiye açık.</div></div>`;
+    return;
+  }
+  const list = started();
+  const eksik = list.filter(m => !Store.results[m.id]);
+
+  app.innerHTML = head + `
+    <div class="card reveal">
+      <div class="card-pad">
+        <div class="note" style="margin-bottom:14px">
+          <span>⚽</span>
+          <span>Başlamış maçlar burada. Skoru yaz, <b>kaydet</b> — puanlar
+          anında hesaplanır, ayrıca bir işlem gerekmez.</span>
+        </div>
+        ${list.length ? `
+          <div class="sn-head">
+            ${eksik.length ? `<span class="s-todo"><span class="dot"></span>${eksik.length} maçın sonucu girilmedi</span>`
+                           : `<span class="s-ok">✓ Bütün sonuçlar girildi</span>`}
+            <span style="color:var(--faint);font-size:11px">${list.length} maç oynandı</span>
+          </div>
+          <div class="sn-list">${list.map(row).join('')}</div>
+          <button class="btn" id="sn-save" disabled style="width:100%;margin-top:14px"
+                  onclick="P_sonuc.saveAll()">Kaydedilecek sonuç yok</button>
+        ` : `<div class="empty" style="padding:26px"><span class="em">🗓</span>
+              Henüz oynanmış maç yok.</div>`}
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn ghost" onclick="go('tahminler.html')">← Maçlara dön</button>
+    </div>`;
+  initReveal();
+}
+
+return { render, onEdit, saveAll };
+})();
+
 /* ===== logolar.html — ARMA YÖNETİMİ (yönetici) ===== */
 window.P_logolar = (function(){
 /* ============================================================
@@ -5274,6 +5448,30 @@ function seasonPicksBoard(){
       return Array.isArray(v) ? v.length > 0 : !!v;
     }).length;
 
+    /* Kilit açılana kadar kimin ne seçtiği gizli — yalnızca kaç kişinin
+       seçim yaptığı görünür. Yoksa geç seçen, erken seçeni kopyalar. */
+    if (!seasonLocked(kind)){
+      const kalan = timeLeftShort(new Date(cfg.lock) - NOW());
+      return `
+      <div class="card reveal">
+        <div class="card-head">
+          <span class="ico">${cfg.emoji}</span><h2>${cfg.title}</h2>
+          <span class="tail">+${cfg.points}p</span>
+        </div>
+        <div class="card-pad">
+          <div class="locked-box">
+            <span class="ico">🔒</span>
+            <div>
+              <b>Seçimler gizli</b>
+              <em>${voted}/${rows.length} oyuncu seçimini yaptı ·
+                  <b style="color:var(--cyan)">${kalan}</b> sonra herkese açılacak</em>
+              <em class="sub">${fmtDate(cfg.lock)}</em>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
     return `
     <div class="card reveal">
       <div class="card-head">
@@ -5571,6 +5769,7 @@ const ROUTES = {
   'hesaplayici.html':          P_hesap.render,      // puan hesaplayıcı
   'oranlar.html':       P_oranlar.render,   // yönetici — navigasyonda yok
   'logolar.html':       P_logolar.render,   // yönetici — navigasyonda yok
+  'sonuclar.html':      P_sonuc.render,     // yönetici — navigasyonda yok
 };
 const HOME = 'index.html';
 let CURRENT = HOME;
