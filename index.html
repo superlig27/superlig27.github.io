@@ -1280,6 +1280,32 @@ body{
 }
 .team-opt.sel .opt-pts{ color:var(--text); }
 
+/* Yapay zekâ oyuncu rozeti */
+.ai-tag{
+  display:inline-block; margin-left:7px; vertical-align:middle;
+  font-family:var(--f-body); font-size:8.5px; font-weight:700; letter-spacing:1.2px;
+  padding:2.5px 7px; border-radius:20px;
+  color:var(--cyan); background:rgba(41,214,238,.12);
+  border:1px solid rgba(41,214,238,.32);
+}
+.note.ai-note{ background:rgba(41,214,238,.07); border-color:rgba(41,214,238,.28); }
+
+/* Eksik sezon tahmini uyarısı */
+.season-cta{
+  display:flex; align-items:flex-start; gap:11px;
+  margin:0 2px 12px; padding:12px 15px; border-radius:var(--r-md);
+  font-size:12.5px; line-height:1.6; color:var(--dim);
+  background:color-mix(in srgb, var(--alert) 10%, transparent);
+  border:1px solid color-mix(in srgb, var(--alert) 32%, transparent);
+}
+.season-cta b{ color:var(--text); }
+.season-cta .dot{
+  width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0;
+  background:var(--alert);
+  box-shadow:0 0 0 0 color-mix(in srgb, var(--alert) 60%, transparent);
+  animation:pulse 2s infinite;
+}
+
 /* Kilitli sezon bahsi kutusu */
 .locked-box{
   display:flex; align-items:flex-start; gap:13px; padding:16px 4px;
@@ -2510,6 +2536,74 @@ function simulateResult(m){
   const ea = Math.max(.20, 0.95 + (strength(m.away) - strength(m.home) - 4) / 26);
   return { h: poisson(eh, r), a: poisson(ea, r) };
 }
+/* ============================================================
+   YAPAY ZEKÂ OYUNCULAR
+   Puan tablosunda gerçek oyuncularla yarışan iki bot. Tahminleri
+   Firestore'da tutulmaz; oran tablosundan HER SEFERİNDE AYNI
+   şekilde türetilir (rng tohumu maç kimliği), yoksa puanları
+   her yenilemede oynardı.
+   ============================================================ */
+const AI_PLAYERS = [
+  { uid:'ai_robot', name:'Robot', emoji:'🤖', ai:true,
+    note:'Her maçta bahisçinin en olası gördüğü skoru oynar — hep banko.' },
+  { uid:'ai_deli',  name:'Deli',  emoji:'🎲', ai:true,
+    note:'Her maçta oranı 15.00 ve üzeri olan skorlardan rastgele birini oynar.' },
+];
+const DELI_MIN_ODDS = 15;
+
+function aiPrediction(uid, m){
+  const i = oddsInfo(m.id);
+  if (!i) return null;                       // oran yoksa tahmin de yok
+  const keys = Object.keys(i.scores);
+  if (!keys.length) return null;
+
+  let key;
+  if (uid === 'ai_robot'){
+    key = keys.reduce((b, x) => i.scores[x] < i.scores[b] ? x : b);   // en kısa oran
+  } else {
+    const wild = keys.filter(k => i.scores[k] >= DELI_MIN_ODDS);
+    const pool = wild.length ? wild : keys;                            // 15+ yoksa hepsi
+    key = pool[Math.floor(rng(hashStr('deli' + m.id))() * pool.length)];
+  }
+  const [h, a] = key.split(':').map(Number);
+  return { h, a };
+}
+
+function aiSeason(uid){
+  const robot = uid === 'ai_robot';
+  const out = {};
+  ['champion','uclWinner'].forEach(k => {
+    const cfg = SEASON_PICKS[k];
+    if (!cfg?.odds) return;
+    const sorted = Object.entries(cfg.odds).sort((a,b) => a[1] - b[1]);
+    out[k] = (robot ? sorted[0] : sorted[sorted.length - 1])[0];
+  });
+  /* Küme düşmede oran yok: Robot en zayıf üçü, Deli rastgele üçü seçer */
+  const pool = SL_TEAMS.filter(c => !BIG4.includes(c));
+  if (robot){
+    out.relegated = [...pool].sort((a,b) => strength(a) - strength(b)).slice(0,3);
+  } else {
+    const r = rng(hashStr('deli-kume')), c = [...pool], out3 = [];
+    while (out3.length < 3 && c.length) out3.push(c.splice(Math.floor(r() * c.length), 1)[0]);
+    out.relegated = out3;
+  }
+  return out;
+}
+
+/* Botları Store'a ekler — hem demo hem bulut modunda çağrılır */
+function injectAI(){
+  AI_PLAYERS.forEach(p => {
+    if (!Store.users.some(u => u.uid === p.uid)) Store.users.push({ ...p });
+    const preds = {};
+    FIXTURES.forEach(m => {
+      const pick = aiPrediction(p.uid, m);
+      if (pick) preds[m.id] = pick;
+    });
+    Store.predictions[p.uid] = preds;
+    Store.season[p.uid] = aiSeason(p.uid);
+  });
+}
+
 /* Demo modda oran tablosu üretir (bulut yokken de oyun çalışsın).
    Poisson gol dağılımından skor olasılıkları, üstüne bahisçi marjı. */
 function simulateOdds(m){
@@ -2596,6 +2690,7 @@ function loadDemo(){
   const local = loadLocal();
   Object.assign(Store.predictions.u_sen, local.preds || {});
   Object.assign(Store.season.u_sen, local.season || {});
+  injectAI();
   Store.ready = true;
 }
 
@@ -2615,6 +2710,7 @@ async function loadCloud(){
   Store.logos = snap.logos || {};
   Store.me = C.currentUser();
   if (Store.me) Store.users.forEach(u => { u.you = u.uid === Store.me.uid; });
+  injectAI();
   Store.ready = true;
 }
 
@@ -3441,13 +3537,20 @@ function openProfile(uid){
   el.innerHTML = `<div class="modal-card" style="max-width:480px">
     <button class="modal-x" onclick="closeProfile()" aria-label="Kapat">✕</button>
     <div class="modal-head">
-      <span class="brand-mark" style="font-size:16px">${(me.name||'?').charAt(0).toLocaleUpperCase('tr')}</span>
+      <span class="brand-mark" style="font-size:16px">${
+        me.ai ? me.emoji : (me.name||'?').charAt(0).toLocaleUpperCase('tr')}</span>
       <div>
-        <div class="modal-title">${me.name}${me.you ? ' (sen)' : ''}</div>
+        <div class="modal-title">${me.name}${me.you ? ' (sen)' : ''}${
+          me.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}</div>
         <div class="modal-sub">${me.rank}. sıra · ${rows.length} oyuncu arasında</div>
       </div>
     </div>
     <div class="modal-body">
+      ${me.ai ? `<div class="note ai-note" style="margin-bottom:14px">
+        <span>${me.emoji}</span><span><b>Bu bir yapay zekâ oyuncu.</b>
+        ${AI_PLAYERS.find(p => p.uid === me.uid)?.note || ''}
+        Ödül için yarışmaz — sadece kıyas içindir.</span>
+      </div>` : ''}
       <div class="stat-row" style="margin-bottom:6px">
         <div class="stat"><b>${me.points}</b><span>Puan</span></div>
         <div class="stat"><b>${me.exact}</b><span>Tam isabet</span></div>
@@ -3776,7 +3879,7 @@ function matchCard(m){
       <div class="picks" id="picks_${m.id}">
         ${rows.map(({u,p,pts,tier}) => `
           <div class="prow ${u.you ? 'me' : ''}">
-            <span class="who">${u.name}${u.you ? ' (sen)' : ''}</span>
+            <span class="who">${u.ai ? u.emoji + ' ' : ''}${u.name}${u.you ? ' (sen)' : ''}</span>
             <span class="sc">${p.h} — ${p.a}</span>
             ${pts !== null ? `<span class="pt ${ptsClass(tier)}">${pts}p</span>` : ''}
           </div>`).join('')}
@@ -4032,6 +4135,34 @@ function seasonBlock(){
   }).join('');
 }
 
+/* Sezon tahminlerinin hepsi yapıldı mı? Yapılmadıysa bölüm sayfanın
+   EN ÜSTÜNE çıkar; tamamlanınca eski yerine, en alta iner. */
+function seasonDone(){
+  const my = mySeason();
+  return Object.keys(SEASON_PICKS).every(k => {
+    if (seasonLocked(k)) return true;              // kilitliyse yapacak bir şey yok
+    const cfg = SEASON_PICKS[k], v = my[k];
+    return cfg.kind === 'multi' ? Array.isArray(v) && v.length === cfg.max : !!v;
+  });
+}
+
+function seasonSection(top){
+  const eksik = Object.keys(SEASON_PICKS).filter(k => {
+    if (seasonLocked(k)) return false;
+    const cfg = SEASON_PICKS[k], v = mySeason()[k];
+    return cfg.kind === 'multi' ? !(Array.isArray(v) && v.length === cfg.max) : !v;
+  }).length;
+
+  return `
+    <div class="sec-title"><h3>Sezon Tahminleri</h3><span class="rule"></span></div>
+    ${top && eksik ? `<div class="season-cta">
+        <span class="dot"></span>
+        <span><b>${eksik} sezon tahminin eksik.</b> Bunlar sezon başında bir kez
+        yapılır ve kilitlendikten sonra değiştirilemez — kaçırma.</span>
+      </div>` : ''}
+    ${seasonBlock()}`;
+}
+
 async function pickSeason(kind, val){
   if (!requireLogin()) return;
   const cfg = SEASON_PICKS[kind];
@@ -4144,8 +4275,12 @@ function rulesBlock(){
 
 /* ---------------- Çiz ---------------- */
 function render(){
+  /* Eksik sezon tahmini varsa bölüm en üste alınır */
+  const seasonTop = isLoggedIn() && !seasonDone();
+
   document.getElementById('app').innerHTML = `
     ${heroBlock()}
+    ${seasonTop ? seasonSection(true) : ''}
     ${statsBlock()}
 
     <div class="sec-title" id="bolum-maclar"><h3>Yaklaşan Maçlar</h3><span class="rule"></span></div>
@@ -4167,8 +4302,7 @@ function render(){
     ${filterBar()}
     ${matchList()}
 
-    <div class="sec-title"><h3>Sezon Tahminleri</h3><span class="rule"></span></div>
-    ${seasonBlock()}
+    ${seasonTop ? '' : seasonSection(false)}
   `;
 
   const next = upcomingFixtures().find(f => matchState(f) === 'open');
@@ -4180,7 +4314,7 @@ function render(){
   }
   initReveal(); initTilt(); initCounters();
 }
-return { heroBlock, statsBlock, prizeCard, multBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, hintOdds, savePick, saveResult, matchList, seasonBlock, pickSeason, pickSummary, rulesBlock, render };
+return { heroBlock, statsBlock, prizeCard, multBlock, filterBar, setTeam, setComp, showMore, matchCard, togglePicks, hintOdds, savePick, saveResult, matchList, seasonBlock, seasonSection, seasonDone, pickSeason, pickSummary, rulesBlock, render };
 })();
 
 /* ============================================================
@@ -5465,7 +5599,8 @@ function fullBoard(){
              title="${r.name} — gelişimini gör">
           <div class="rank">${r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank}</div>
           <div class="lb-name">
-            <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.name}${r.you ? ' (sen)' : ''}</div>
+            <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.ai ? r.emoji + ' ' : ''}${r.name}${
+              r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
             <div class="s">${r.exact} tam isabet · ⚔️ ${r.derbyPts}p · 🌍 ${r.euroPts}p</div>
             <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
               <span style="display:block;height:100%;width:${Math.round(r.points / maxPts * 100)}%;
@@ -5736,7 +5871,7 @@ function historyCard(m){
       <div class="picks" id="picks_${m.id}">
         ${rows.map(({u,p,pts,tier}) => `
           <div class="prow ${u.you ? 'me' : ''}">
-            <span class="who">${u.name}${u.you ? ' (sen)' : ''}</span>
+            <span class="who">${u.ai ? u.emoji + ' ' : ''}${u.name}${u.you ? ' (sen)' : ''}</span>
             <span class="sc">${p.h} — ${p.a}</span>
             ${pts !== null ? `<span class="pt ${ptsClass(tier)}">${pts}p</span>`
                            : `<span class="pt pt-2" style="font-size:11px">bekliyor</span>`}
