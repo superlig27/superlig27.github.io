@@ -251,6 +251,13 @@ body{
 .medal.m2{ background:linear-gradient(150deg,#f2f5f8,#c3ccd6 55%,#8f9aa6); }
 .medal.m3{ background:linear-gradient(150deg,#f0c197,#cd7f42 55%,#95561f); }
 
+/* Çizilmiş madalya (SVG) — saydam, jeton/zemin gerektirmez.
+   Gölge border-shadow yerine drop-shadow ile: kurdele de gölge alsın. */
+.medal-img{
+  display:inline-block; vertical-align:middle; overflow:visible;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.55));
+}
+
 /* ---------- Genel kart ---------- */
 .card{
   position:relative;
@@ -1148,8 +1155,21 @@ body{
   display:inline-block; vertical-align:-.22em; margin-right:5px;
   object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));
 }
-/* Kart başlığındaki büyük hâli */
-.comp-mark.ico{ margin-right:10px; vertical-align:-.35em; }
+/* Kart başlığındaki büyük hâli.
+   Açık renkli yuvarlak bir altlık üstünde durur: UCL yıldız topu gibi
+   koyu lacivert logolar koyu temada zemine karışıp kayboluyordu.     */
+.comp-mark.ico{
+  margin-right:10px; vertical-align:-.45em;
+  background:rgba(255,255,255,.94); border-radius:50%;
+  padding:3px; box-sizing:content-box;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 2px 8px -2px rgba(0,0,0,.6);
+  filter:none;
+}
+/* Logosu olmayan bahisler emoji ile işaretlenir — altlık gerekmez */
+.comp-mark.ico.emoji{
+  background:none; box-shadow:none; padding:0;
+  display:inline-grid; place-items:center; line-height:1;
+}
 .lg-none{ color:var(--faint); font-size:16px; }
 
 /* Toplu oran satırındaki durum işareti */
@@ -1940,6 +1960,16 @@ function compMark(code, size = 14, cls = ''){
     alt="" loading="lazy" onerror="this.remove()">` : '';
 }
 
+/* Sezon bahsi başlığının işareti: logosu varsa logo, yoksa emoji.
+   Tek yerden geçmesi, üç ayrı başlığın da aynı hizada durmasını sağlar. */
+function seasonMark(cfg, size = 22){
+  if (!cfg) return '';
+  if (cfg.logoKey) return compMark(cfg.logoKey, size, 'ico');
+  if (!cfg.emoji) return '';
+  return `<span class="comp-mark ico emoji" aria-hidden="true"
+    style="width:${size + 6}px;height:${size + 6}px;font-size:${size - 2}px">${cfg.emoji}</span>`;
+}
+
 const STAGE_NAMES = {
   league:'Lig Aşaması', po:'Play-off', r16:'Son 16', qf:'Çeyrek Final',
   sf:'Yarı Final', final:'FİNAL',
@@ -2300,7 +2330,9 @@ const SEASON_PICKS = {
               odds: UCL_ODDS,
               lock: UCL_LOCK },
 
-  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, points:40, kind:'multi', max:3,
+  /* Küme düşmenin ortak bir logosu yok — başlıktaki işaret emoji.
+     Değiştirmek istersen tek yer burası (bkz. seasonMark).          */
+  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, emoji:'😩', points:40, kind:'multi', max:3,
               desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
               options: SL_TEAMS,
               lock: SL_LOCK },
@@ -2546,6 +2578,44 @@ const BANNERS = {
 function banner(key, h = 90){
   const u = BANNERS[key];
   return u ? `<div class="card-banner" style="height:${h}px;background-image:url('${u}')"></div>` : '';
+}
+
+/* ============================================================
+   DERECE MADALYALARI
+   Yerinde çizilen SVG. Eskiden dışarıdan JPEG çekiliyordu; JPEG
+   saydam olmadığı için her madalyanın arkasında beyaz bir kare
+   kalıyordu ve açık renkli bir "jeton" ile örtmek gerekiyordu.
+   SVG saydam olduğu için zemin de, jeton da gerekmiyor; üstelik
+   ağ bağlantısı gerektirmediğinden her boyutta net görünüyor.
+   Renkleri değiştirmek istersen MEDAL_TONES yeter.
+   ============================================================ */
+const MEDAL_TONES = {
+  1:{ a:'#fff3c4', b:'#f0b429', c:'#b97d0c', ring:'#fff8dc', num:'#5a3d05', rib:'#e8479f', rib2:'#a82a6e' },
+  2:{ a:'#ffffff', b:'#c3ccd6', c:'#87919d', ring:'#ffffff', num:'#39424c', rib:'#5b8cff', rib2:'#2f52ad' },
+  3:{ a:'#f7d3b0', b:'#cd7f42', c:'#8a4f18', ring:'#ffe0c0', num:'#4a2708', rib:'#2ee0c8', rib2:'#159485' },
+};
+function medal(place, size = 28){
+  const t = MEDAL_TONES[place];
+  if (!t) return `<span class="medal m${place}">${place}</span>`;
+  const g = `mdlG${place}`;
+  return `<svg class="medal-img m${place}" width="${size}" height="${size}" viewBox="0 0 64 64"
+    role="img" aria-label="${place}. sıra">
+    <defs>
+      <linearGradient id="${g}" x1=".2" y1="0" x2=".8" y2="1">
+        <stop offset="0" stop-color="${t.a}"/>
+        <stop offset=".52" stop-color="${t.b}"/>
+        <stop offset="1" stop-color="${t.c}"/>
+      </linearGradient>
+    </defs>
+    <path d="M17 1 H29 L23 27 H9 Z"  fill="${t.rib}"/>
+    <path d="M47 1 H35 L41 27 H55 Z" fill="${t.rib2}"/>
+    <circle cx="32" cy="41" r="21.5" fill="url(#${g})"/>
+    <circle cx="32" cy="41" r="21.5" fill="none" stroke="${t.ring}" stroke-opacity=".6" stroke-width="1.4"/>
+    <circle cx="32" cy="41" r="16"   fill="none" stroke="${t.c}"    stroke-opacity=".45" stroke-width="1.4"/>
+    <text x="32" y="41.5" text-anchor="middle" dominant-baseline="central"
+          font-family="var(--f-num), system-ui, sans-serif" font-size="21"
+          font-weight="700" fill="${t.num}">${place}</text>
+  </svg>`;
 }
 
 const SHIELD = 'M32 2 L60 11 V34 C60 49 47 59.5 32 65 C17 59.5 4 49 4 34 V11 Z';
@@ -3685,7 +3755,7 @@ function openProfile(uid){
       : (Array.isArray(v) ? v : [v]).map(x => TEAMS[x]?.name || x).join(', ');
     const got = seasonPoints(k, v, SEASON_RESULT[k]);
     return `<div class="pf-season">
-      <span class="k">${ic(cfg.icon,13)} ${cfg.title}</span>
+      <span class="k">${seasonMark(cfg, 13)} ${cfg.title}</span>
       <span class="v">${txt}${got ? ` <b style="color:var(--cyan)">+${got}p</b>` : ''}</span>
     </div>`;
   }).join('');
@@ -4264,7 +4334,7 @@ function seasonBlock(){
     return `
     <div class="card reveal">
       <div class="card-head">
-        ${compMark(cfg.logoKey, 22, 'ico')}<h2>${cfg.title}</h2>
+        ${seasonMark(cfg, 22)}<h2>${cfg.title}</h2>
         <span class="tail">${seasonPointsLabel(kind)}</span>
       </div>
       <div class="card-pad">
@@ -5745,7 +5815,7 @@ function podium(rows){
   if (!p1) return '';
   const col = (r, h, place) => r ? `
     <div style="display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;min-width:0">
-      <span class="medal m${place}">${place}</span>
+      ${medal(place, 46)}
       <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;
                   text-overflow:ellipsis;max-width:100%;${r.you ? 'color:var(--iris)' : ''}">${r.name}</div>
       <div style="width:100%;height:${h}px;border-radius:12px 12px 0 0;position:relative;
@@ -5784,8 +5854,7 @@ function fullBoard(){
              onclick="openProfile('${r.uid}')" role="button" tabindex="0"
              onkeydown="if(event.key==='Enter')openProfile('${r.uid}')"
              title="${r.name} — gelişimini gör">
-          <div class="rank">${r.rank <= 3
-            ? `<span class="medal m${r.rank}">${r.rank}</span>` : r.rank}</div>
+          <div class="rank">${r.rank <= 3 ? medal(r.rank, 28) : r.rank}</div>
           <div class="lb-name">
             <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.ai ? r.emoji + ' ' : ''}${r.name}${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
@@ -5834,7 +5903,7 @@ function seasonPicksBoard(){
       return `
       <div class="card reveal">
         <div class="card-head">
-          ${compMark(cfg.logoKey, 22, 'ico')}<h2>${cfg.title}</h2>
+          ${seasonMark(cfg, 22)}<h2>${cfg.title}</h2>
           <span class="tail">${seasonPointsLabel(kind)}</span>
         </div>
         <div class="card-pad">
@@ -5859,7 +5928,7 @@ function seasonPicksBoard(){
     return `
     <div class="card reveal">
       <div class="card-head">
-        ${compMark(cfg.logoKey, 22, 'ico')}<h2>${cfg.title}</h2>
+        ${seasonMark(cfg, 22)}<h2>${cfg.title}</h2>
         <span class="tail">${seasonPointsLabel(kind)}</span>
       </div>
       <div class="card-pad">
