@@ -1022,12 +1022,16 @@ body{
 .admin-box .num{ width:52px; height:42px; font-size:22px; }
 
 /* ---------- Geçici fikstür işareti ---------- */
+/* Saati açıklanmamış maçın rozeti — kesikli çerçeve "henüz kesin
+   değil" demek. Tarih kesindir, yalnızca saat bekleniyor. */
 .prov{
   font-size:9.5px; letter-spacing:1.2px; text-transform:uppercase;
   padding:2.5px 7px; border-radius:5px; white-space:nowrap;
   color:var(--faint); background:rgba(255,255,255,.045);
   border:1px dashed var(--line-2);
 }
+/* Saat yerine geçen soru işareti */
+.when .q{ color:var(--faint); font-weight:700; letter-spacing:0; }
 
 /* ---------- Tema seçici ---------- */
 .theme-dock{
@@ -2110,108 +2114,176 @@ function isoIstanbul(utcMs, hh, mm){
 }
 
 const SEASON_START = ymd('2026-08-14');            // 1. hafta, Cuma (resmi açılış)
-/* Hafta içi maç saatleri: [gün kayması, saat] */
-const SL_SLOTS = [[0,'21:30'],[1,'19:00'],[1,'21:30'],[2,'16:00'],[2,'19:00'],
-                  [2,'21:30'],[3,'19:00'],[3,'21:30'],[1,'16:00']];
 
-function slDate(week, idx){
-  const [off, time] = SL_SLOTS[idx % SL_SLOTS.length];
-  const [hh, mm] = time.split(':').map(Number);
-  return isoIstanbul(SEASON_START + ((week - 1) * 7 + off) * DAY_MS, hh, mm);
-}
+/* TFF saati açıklamadığında kullanılan varsayılan başlama saati.
+   Tarih kesindir, saat değildir; maç kartında saat "?" ile gösterilir
+   ve tahminler bu saatte kilitlenir. Süper Lig'in en yaygın son
+   başlama saati seçildi — açıklanan saat bundan erken olursa
+   fikstüre yazılıp kilit öne çekilir.                              */
+const TBD_KICKOFF = '21:30';
 
 /* ------------------------------------------------------------
-   RESMİ FİKSTÜR — TFF çekilişinden doğrulanan eşleşmeler
-   [hafta, ev sahibi, deplasman].  İkinci devre simetriktir:
-   aynı eşleşme (hafta + 17) haftasında sahalar değişerek tekrarlar.
-   Yeni bilgi geldikçe buraya satır eklemen yeterli; eklenen her
-   satır üretilen geçici eşleşmenin yerini alır.
+   RESMİ FİKSTÜR — TFF 2026/27 Trendyol Süper Lig fikstürü
+   Kaynak: tff.org · Süper Lig Fikstürü ve Puan Cetveli
+
+   [hafta, ev sahibi, deplasman, 'YYYY-AA-GG', 'SS:DD' | null]
+
+   Yalnızca DÖRT BÜYÜĞÜN maçları listelenir; ligin geri kalanı bu
+   oyunun konusu değil. Derbi tek satırdır (iki takımda da sayılmaz).
+
+   Beşinci alan saattir. TFF yalnızca oynanmak üzere olan haftaların
+   saatini açıklıyor; ilerideki haftalarda TARİH kesin, SAAT belli
+   değildir. Böyle satırlarda saat null bırakılır: maç kartında saat
+   yerine "?" çıkar ve kilit TBD_KICKOFF saatine kurulur.
+
+   Saat açıklandıkça null yerine 'SS:DD' yazman yeterli — başka
+   hiçbir yeri değiştirmeye gerek yok.
    ------------------------------------------------------------ */
-const VERIFIED_SL = [
-  [1,'GS','COR'], [1,'GEN','FB'], [1,'BJK','EYU'], [1,'KAS','TS'],
-  [2,'ERZ','GS'], [2,'FB','KON'], [2,'ALA','BJK'],
-  [3,'GS','GOZ'], [3,'SAM','FB'], [3,'BJK','COR'],
-  [4,'BAS','GS'], [4,'FB','BJK'],
-  [5,'GS','KOC'], [5,'GAZ','FB'],
-  [6,'TS','GS'],
-  [8,'TS','BJK'],
-  [9,'GS','FB'],
-  [13,'BJK','GS'],
-  [15,'FB','TS'],
+const SL_FIXTURES = [
+  [ 1,'GS','COR','2026-08-14','21:30'],
+  [ 1,'KAS','TS','2026-08-15','19:00'],
+  [ 1,'GEN','FB','2026-08-15','21:30'],
+  [ 1,'BJK','EYU','2026-08-16','21:30'],
+  [ 2,'ERZ','GS','2026-08-21','21:30'],
+  [ 2,'FB','KON','2026-08-22','21:30'],
+  [ 2,'TS','BAS','2026-08-23','19:00'],
+  [ 2,'ALA','BJK','2026-08-23','21:30'],
+  [ 3,'GS','GOZ','2026-08-29','21:30'],
+  [ 3,'SAM','FB','2026-08-30','21:30'],
+  [ 3,'AME','TS','2026-08-31','21:30'],
+  [ 3,'BJK','COR','2026-08-31','21:30'],
+  [ 4,'FB','BJK','2026-09-06',null],
+  [ 4,'TS','GEN','2026-09-06',null],
+  [ 4,'BAS','GS','2026-09-06',null],
+  [ 5,'BJK','ERZ','2026-09-13',null],
+  [ 5,'GAZ','FB','2026-09-13',null],
+  [ 5,'KON','TS','2026-09-13',null],
+  [ 5,'GS','KOC','2026-09-13',null],
+  [ 6,'FB','EYU','2026-09-20',null],
+  [ 6,'TS','GS','2026-09-20',null],
+  [ 6,'AME','BJK','2026-09-20',null],
+  [ 7,'BJK','KOC','2026-10-11',null],
+  [ 7,'SAM','TS','2026-10-11',null],
+  [ 7,'RIZ','FB','2026-10-11',null],
+  [ 7,'GS','KAS','2026-10-11',null],
+  [ 8,'FB','ALA','2026-10-18',null],
+  [ 8,'TS','BJK','2026-10-18',null],
+  [ 8,'GEN','GS','2026-10-18',null],
+  [ 9,'BJK','BAS','2026-10-25',null],
+  [ 9,'RIZ','TS','2026-10-25',null],
+  [ 9,'GS','FB','2026-10-25',null],
+  [10,'FB','GOZ','2026-11-01',null],
+  [10,'TS','GAZ','2026-11-01',null],
+  [10,'KAS','BJK','2026-11-01',null],
+  [10,'KON','GS','2026-11-01',null],
+  [11,'BJK','GEN','2026-11-08',null],
+  [11,'ALA','TS','2026-11-08',null],
+  [11,'COR','FB','2026-11-08',null],
+  [11,'GS','AME','2026-11-08',null],
+  [12,'KOC','FB','2026-11-22',null],
+  [12,'TS','EYU','2026-11-22',null],
+  [12,'KON','BJK','2026-11-22',null],
+  [12,'GS','SAM','2026-11-22',null],
+  [13,'FB','ERZ','2026-11-29',null],
+  [13,'BJK','GS','2026-11-29',null],
+  [13,'GOZ','TS','2026-11-29',null],
+  [14,'BJK','SAM','2026-12-06',null],
+  [14,'TS','COR','2026-12-06',null],
+  [14,'BAS','FB','2026-12-06',null],
+  [14,'GS','RIZ','2026-12-06',null],
+  [15,'EYU','GS','2026-12-13',null],
+  [15,'FB','TS','2026-12-13',null],
+  [15,'GAZ','BJK','2026-12-13',null],
+  [16,'BJK','RIZ','2026-12-20',null],
+  [16,'TS','KOC','2026-12-20',null],
+  [16,'KAS','FB','2026-12-20',null],
+  [16,'GS','ALA','2026-12-20',null],
+  [17,'FB','AME','2027-01-17',null],
+  [17,'GAZ','GS','2027-01-17',null],
+  [17,'GOZ','BJK','2027-01-17',null],
+  [17,'ERZ','TS','2027-01-17',null],
+  [18,'FB','GEN','2027-01-24',null],
+  [18,'TS','KAS','2027-01-24',null],
+  [18,'COR','GS','2027-01-24',null],
+  [18,'EYU','BJK','2027-01-24',null],
+  [19,'BJK','ALA','2027-01-31',null],
+  [19,'BAS','TS','2027-01-31',null],
+  [19,'KON','FB','2027-01-31',null],
+  [19,'GS','ERZ','2027-01-31',null],
+  [20,'FB','SAM','2027-02-07',null],
+  [20,'TS','AME','2027-02-07',null],
+  [20,'GOZ','GS','2027-02-07',null],
+  [20,'COR','BJK','2027-02-07',null],
+  [21,'BJK','FB','2027-02-14',null],
+  [21,'GEN','TS','2027-02-14',null],
+  [21,'GS','BAS','2027-02-14',null],
+  [22,'FB','GAZ','2027-02-21',null],
+  [22,'KOC','GS','2027-02-21',null],
+  [22,'TS','KON','2027-02-21',null],
+  [22,'ERZ','BJK','2027-02-21',null],
+  [23,'BJK','AME','2027-02-28',null],
+  [23,'GS','TS','2027-02-28',null],
+  [23,'EYU','FB','2027-02-28',null],
+  [24,'FB','RIZ','2027-03-07',null],
+  [24,'KOC','BJK','2027-03-07',null],
+  [24,'KAS','GS','2027-03-07',null],
+  [24,'TS','SAM','2027-03-07',null],
+  [25,'BJK','TS','2027-03-14',null],
+  [25,'GS','GEN','2027-03-14',null],
+  [25,'ALA','FB','2027-03-14',null],
+  [26,'FB','GS','2027-03-21',null],
+  [26,'TS','RIZ','2027-03-21',null],
+  [26,'BAS','BJK','2027-03-21',null],
+  [27,'BJK','KAS','2027-04-04',null],
+  [27,'GAZ','TS','2027-04-04',null],
+  [27,'GS','KON','2027-04-04',null],
+  [27,'GOZ','FB','2027-04-04',null],
+  [28,'FB','COR','2027-04-11',null],
+  [28,'TS','ALA','2027-04-11',null],
+  [28,'AME','GS','2027-04-11',null],
+  [28,'GEN','BJK','2027-04-11',null],
+  [29,'BJK','KON','2027-04-18',null],
+  [29,'SAM','GS','2027-04-18',null],
+  [29,'FB','KOC','2027-04-18',null],
+  [29,'EYU','TS','2027-04-18',null],
+  [30,'TS','GOZ','2027-04-25',null],
+  [30,'ERZ','FB','2027-04-25',null],
+  [30,'GS','BJK','2027-04-25',null],
+  [31,'FB','BAS','2027-05-02',null],
+  [31,'SAM','BJK','2027-05-02',null],
+  [31,'COR','TS','2027-05-02',null],
+  [31,'RIZ','GS','2027-05-02',null],
+  [32,'BJK','GAZ','2027-05-09',null],
+  [32,'GS','EYU','2027-05-09',null],
+  [32,'TS','FB','2027-05-09',null],
+  [33,'KOC','TS','2027-05-16',null],
+  [33,'FB','KAS','2027-05-16',null],
+  [33,'ALA','GS','2027-05-16',null],
+  [33,'RIZ','BJK','2027-05-16',null],
+  [34,'BJK','GOZ','2027-05-23',null],
+  [34,'GS','GAZ','2027-05-23',null],
+  [34,'AME','FB','2027-05-23',null],
+  [34,'TS','ERZ','2027-05-23',null],
 ];
 
 const HALF = 17;                       // 18 takım → devre başı 17 hafta
 
-/* Dört büyüğün sezon programını kurar.
-   Resmi eşleşmeler sabit tutulur; boş kalan haftalara, aynı hafta
-   içinde iki büyük takım aynı rakibe düşmeyecek şekilde rakip atanır. */
-function buildSchedule(){
-  const fixed = {};
-  VERIFIED_SL.forEach(([wk, h, a]) => {
-    if (isBig(h)) fixed[wk + '|' + h] = { opp:a, home:true,  official:true };
-    if (isBig(a)) fixed[wk + '|' + a] = { opp:h, home:false, official:true };
-  });
-
-  for (let attempt = 0; attempt < 60; attempt++){
-    const r = rng(hashStr('fikstur' + attempt));
-    const pools = {}, sched = {};
-    BIG4.forEach(c => {
-      sched[c] = {};
-      pools[c] = SL_TEAMS.filter(x => x !== c);
-      for (let w = 1; w <= HALF; w++){
-        const f = fixed[w + '|' + c];
-        if (f) pools[c] = pools[c].filter(x => x !== f.opp);
-      }
-    });
-
-    let ok = true;
-    for (let w = 1; w <= HALF && ok; w++){
-      const used = new Set();
-      BIG4.forEach(c => {
-        const f = fixed[w + '|' + c];
-        if (f){ sched[c][w] = f; used.add(c); used.add(f.opp); }
-      });
-      for (const c of BIG4){
-        if (sched[c][w]) continue;
-        const cand = pools[c].filter(x => !used.has(x));
-        if (!cand.length){ ok = false; break; }
-        const opp = cand[Math.floor(r() * cand.length)];
-        sched[c][w] = { opp, home:(w + hashStr(c + opp)) % 2 === 0, official:false };
-        pools[c] = pools[c].filter(x => x !== opp);
-        used.add(c); used.add(opp);
-      }
-    }
-    if (ok && BIG4.every(c => Object.keys(sched[c]).length === HALF)) return sched;
-  }
-  throw new Error('Fikstür üretilemedi — VERIFIED_SL satırlarında çakışma olabilir.');
-}
-
 /* ---------- Süper Lig ---------- */
+/* Fikstür artık üretilmiyor, doğrudan TFF listesinden kuruluyor:
+   eşleşme de tarih de gerçek. Saati açıklanmamış maçlarda tarih
+   korunur, saat TBD_KICKOFF'a düşer ve tbd:true ile işaretlenir. */
 function buildLeague(){
-  const sched = buildSchedule();
-  const out = [], seen = new Set();
-
-  for (let w = 1; w <= HALF * 2; w++){
-    const base = w > HALF ? w - HALF : w;      // ikinci devre birincinin aynası
-    const mirror = w > HALF;
-    let slot = 0;
-    BIG4.forEach(c => {
-      const e = sched[c][base];
-      const home = mirror ? !e.home : e.home;
-      const H = home ? c : e.opp;
-      const A = home ? e.opp : c;
-      const id = 'SL' + String(w).padStart(2,'0') + H;
-      if (seen.has(id)) return;                // derbiler iki takımda da var
-      seen.add(id);
-      out.push({
-        id, comp:'SL', stage:'league', wk:w, home:H, away:A,
-        dt: slDate(w, slot++),
-        derby: isBig(H) && isBig(A),
-        official: e.official,
-      });
-    });
-  }
-  return out;
+  return SL_FIXTURES.map(([wk, H, A, gun, saat]) => {
+    const [hh, mm] = (saat || TBD_KICKOFF).split(':').map(Number);
+    return {
+      id: 'SL' + String(wk).padStart(2,'0') + H,
+      comp:'SL', stage:'league', wk, home:H, away:A,
+      dt: isoIstanbul(ymd(gun), hh, mm),
+      derby: isBig(H) && isBig(A),
+      official: true,
+      tbd: !saat,
+    };
+  });
 }
 
 /* ---------- Avrupa kupaları ---------- */
@@ -4213,8 +4285,10 @@ function matchCard(m){
     <div class="derby-top">
       <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
-      <span class="when">${fmtTime(m.dt)}</span>
-      ${m.comp === 'SL' && !m.official ? '<span class="prov" title="Resmi fikstür girilene kadar geçici eşleşme">geçici</span>' : ''}
+      <span class="when">${m.tbd ? '<b class="q">?</b>' : fmtTime(m.dt)}</span>
+      ${m.tbd ? `<span class="prov"
+        title="Tarih kesin, saat henüz TFF tarafından açıklanmadı. Tahminler ${TBD_KICKOFF}'da kilitlenir."
+        >saat belli değil</span>` : ''}
       ${pickChip}
       ${stateChip}
     </div>
@@ -6223,7 +6297,6 @@ function historyCard(m){
     <div class="derby-top">
       <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
-      ${m.comp === 'SL' && !m.official ? '<span class="prov">geçici</span>' : ''}
       <span class="state ${live ? 'state-live' : 'state-done'}">
         ${live ? `<span class="pulse-dot"></span>CANLI${r?.minute ? ' ' + r.minute + "'" : ''}` : fmtDateShort(m.dt)}
       </span>
