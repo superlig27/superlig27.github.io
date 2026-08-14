@@ -792,6 +792,24 @@ body{
 .filterbar .row::-webkit-scrollbar{ display:none; }
 .filterbar .row + .row{ margin-top:6px; }
 
+/* Kaydırma çubuğu gizli olduğundan şeridin devamı olduğunu kenardaki
+   solma anlatır. Sınıflar syncFilterFade() ile takılır: gerçekten
+   taşan yönde solar, yoksa hiç görünmez. */
+.filterbar .row.fd-e{
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px), transparent);
+          mask-image:linear-gradient(90deg,#000 calc(100% - 36px), transparent);
+}
+.filterbar .row.fd-s{
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 36px);
+          mask-image:linear-gradient(90deg, transparent, #000 36px);
+}
+.filterbar .row.fd-s.fd-e{
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 36px,
+                                     #000 calc(100% - 36px), transparent);
+          mask-image:linear-gradient(90deg, transparent, #000 36px,
+                                     #000 calc(100% - 36px), transparent);
+}
+
 /* ---------- Takım karne kartı ---------- */
 .rec{
   display:flex; align-items:center; gap:12px; padding:12px 0;
@@ -815,10 +833,28 @@ body{
   padding:7px 14px; border-radius:20px; color:var(--dim);
   background:rgba(255,255,255,.03); border:1px solid var(--line);
   transition:all .2s;
+  /* Kayan şeritte sarmasın: "Tüm Takımlar" iki satıra düşünce o pil
+     sıradaki hepsinden uzun oluyordu. */
+  white-space:nowrap; flex-shrink:0;
 }
 .pill:hover{ color:var(--text); border-color:var(--line-2); }
 .pill.on{ color:var(--ink); background:var(--grad); border-color:transparent; font-weight:700;
   box-shadow:0 6px 18px -8px rgba(124,108,255,.8); }
+
+/* ---------- Derbi tablosu ızgarası ---------- */
+.dt-row{
+  display:grid; grid-template-columns:22px 1fr repeat(5,26px) 34px;
+  gap:6px; align-items:center;
+}
+.dt-row .tm-short{ display:none; }
+/* Dar ekranda AV sütunu düşer, takım adı kısasına iner: altı sayı
+   sütunu genişliği yiyince adlar "Galat…" diye kesiliyordu. */
+@media (max-width:520px){
+  .dt-row{ grid-template-columns:20px 1fr repeat(4,24px) 32px; gap:4px; }
+  .dt-row .av{ display:none; }
+  .dt-row .tm-full{ display:none; }
+  .dt-row .tm-short{ display:inline; }
+}
 
 /* ---------- Boş durum ---------- */
 .empty{ text-align:center; padding:44px 20px; color:var(--faint); font-size:13px; }
@@ -1051,10 +1087,15 @@ body{
   .brand-mark{ width:27px; height:27px; font-size:13px; border-radius:8px; }
   .nav{ padding:0 10px; gap:8px; }
   .nav-inner{ gap:8px; }
-  .nav-links a{ padding:7px 8px; font-size:12px; }
-  .nav-links a.on::after{ left:8px; right:8px; }
+  .nav-links a{ padding:7px 7px; font-size:12px; }
+  .nav-links a.on::after{ left:7px; right:7px; }
   .nav-links a .lg{ display:none; }
   .nav-links a .sm{ display:inline; }
+  /* Giriş çipi yalnızca simge: "Giriş yap" etiketi dört sekmeyle
+     birlikte üst çubuğa sığmıyor, çip ekranın dışına taşıyordu.
+     Düğmenin adını aria-label taşır (bkz. authChipHtml).        */
+  .auth-chip{ padding:4px; gap:0; }
+  .auth-chip .lb{ display:none; }
   .hero-in{ padding:22px 15px 20px; }
   .hero-side .nm{ font-size:12.5px; }
   .cd-cell{ min-width:0; flex:1; }
@@ -1067,6 +1108,13 @@ body{
   .card-pad{ padding:16px; }
   .rules{ grid-template-columns:auto 1fr; gap:8px 10px; }
   .lb-pts{ font-size:24px; }
+}
+/* Dar telefonlarda marka yazısı düşer, "4B" işareti logo olarak kalır:
+   dört sekme + giriş çipi ile birlikte yazıya yer kalmıyor. */
+@media (max-width:420px){
+  .brand-txt{ display:none; }
+  .nav-links a{ padding:7px 6px; font-size:11.5px; }
+  .nav-links a.on::after{ left:6px; right:6px; }
 }
 @media (max-width:380px){
   .num{ width:52px; height:47px; font-size:24px; }
@@ -3221,8 +3269,36 @@ function mountThemeDock(){
   });
 }
 
+/* ---------- Kayan filtre şeritlerinin kenar solması ----------
+   Şerit gerçekten taşıyorsa taştığı yönde solar; sığıyorsa hiç solmaz.
+   Dinleyici doğrudan şeridin kendisine takılır — şeritler her çizimde
+   yeniden yaratıldığından işaret düğümün üstünde tutulur.            */
+function paintFilterFade(row){
+  const more = row.scrollWidth - row.clientWidth;
+  row.classList.toggle('fd-s', row.scrollLeft > 6);
+  row.classList.toggle('fd-e', more > 6 && row.scrollLeft < more - 6);
+}
+function syncFilterFade(root = document){
+  root.querySelectorAll('.filterbar .row').forEach(row => {
+    if (!row.__fade){
+      row.__fade = true;
+      row.addEventListener('scroll', () => paintFilterFade(row), { passive:true });
+    }
+    paintFilterFade(row);
+  });
+}
+function initFilterFade(root = document){
+  syncFilterFade(root);
+  if (initFilterFade.hazir) return;
+  initFilterFade.hazir = true;
+  /* Pencere boyu değişince taşma durumu da değişir */
+  window.addEventListener('resize', () => syncFilterFade());
+}
+
 /* ---------- Görünüme girince belirme ---------- */
+/* Her sayfa çiziminden sonra çağrılan ortak kanca */
 function initReveal(root = document){
+  initFilterFade(root);
   const els = root.querySelectorAll('.reveal:not(.in)');
   if (!('IntersectionObserver' in window)){ els.forEach(e => e.classList.add('in')); return; }
   const io = new IntersectionObserver((entries) => {
@@ -3411,14 +3487,18 @@ function waitForCloud(){
 let authTab = 'login';   // 'login' | 'signup' | 'reset'
 
 /* ---------- Üst çubuktaki kullanıcı alanı ---------- */
+/* Mobilde yalnızca yuvarlak simge kalır (etiket üst çubuğu taşırıyordu),
+   bu yüzden düğmenin adı aria-label ile ayrıca yazılır. */
 function authChipHtml(){
   const me = Store.me;
   if (!me || me.anon){
-    return `<button class="auth-chip" onclick="openAuth()">
+    return `<button class="auth-chip" onclick="openAuth()" aria-label="Giriş yap" title="Giriş yap">
       <span class="av">?</span><span class="lb">Giriş yap</span></button>`;
   }
   const initial = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
-  return `<button class="auth-chip on" onclick="openAccount()">
+  const ad = `${me.name}${me.admin ? ' (yönetici)' : ''}`;
+  return `<button class="auth-chip on" onclick="openAccount()"
+    aria-label="Hesabım — ${ad}" title="${ad}">
     <span class="av">${initial}</span>
     <span class="lb">${me.name}${me.admin ? ' <b>YÖNETİCİ</b>' : ''}</span>
   </button>`;
@@ -4948,10 +5028,51 @@ function startBolts(canvas){
 
   let idx = 0, t0 = performance.now(), shot = null;
 
-  /* Yeni bir şimşek: tepeden aşağı, çarpma noktası alt yarıda */
+  /* Metin sütununun canvas koordinatındaki yeri (her atışta yeniden
+     ölçülür: pencere boyu ve paralaks onu oynatabiliyor). */
+  const textBox = () => {
+    const c = canvas.parentElement && canvas.parentElement.querySelector('.lander-in');
+    if (!c) return null;
+    const cr = canvas.getBoundingClientRect(), br = c.getBoundingClientRect();
+    const pad = 16;
+    return { l:br.left - cr.left - pad, r:br.right - cr.left + pad,
+             t:br.top  - cr.top  - pad, b:br.bottom - cr.top + pad };
+  };
+  /* Noktanın dikdörtgene uzaklığı (içerideyse 0) */
+  const gap = (b, x, y) =>
+    Math.hypot(Math.max(b.l - x, 0, x - b.r), Math.max(b.t - y, 0, y - b.b));
+
+  /* Yeni bir şimşek.
+     Çarpma noktası YAZININ DIŞINDA kalmalı: amblem ve çarpma parlaması
+     başlığın ya da butonların üstüne binince metin okunmaz oluyordu.
+     Rastgele adaylar denenir, yazıya en uzak olan seçilir; yeterince
+     uzak bir aday bulununca aramayı sürdürmeye gerek kalmaz. */
   const newShot = () => {
-    const ix = W * (0.14 + Math.random()*0.72);
-    const iy = H * (0.60 + Math.random()*0.26);
+    const rMax = Math.max(46, Math.min(94, Math.min(W,H)*0.115));
+    const box  = textBox();
+    let ix = W * 0.5, iy = H * 0.7, best = -1;
+
+    /* Aday alanı tüm sahneyi tarar. Geniş ekranda yazının sağı solu
+       boştur, dar ekranda ise yalnızca altı — arama ikisini de kendi
+       bulur, ayrı bir kırılma noktası tanımlamaya gerek kalmaz. */
+    for (let i = 0; i < 24; i++){
+      const cx = W * (0.07 + Math.random()*0.86);
+      const cy = H * (0.30 + Math.random()*0.66);
+      const d  = box ? gap(box, cx, cy) : Infinity;
+      if (d > best){ best = d; ix = cx; iy = cy; }
+      if (best > rMax * 1.6) break;
+    }
+    /* Hiçbir aday yazının dışına düşmediyse (dar ekranda olabiliyor)
+       çarpmayı yazının hemen altına indir: orası her zaman boştur. */
+    if (box && best < 18){
+      iy = Math.min(H - 14, box.b + rMax * 0.55);
+      ix = W * (0.18 + Math.random()*0.64);
+      best = gap(box, ix, iy);
+    }
+    /* Kalan boşluk amblemden darsa amblem sığdığı kadar küçülür;
+       kaybolmaktansa ufak görünsün. */
+    const r = box ? Math.max(26, Math.min(rMax, best * 0.85)) : rMax;
+
     const sx = ix + (Math.random()-0.5) * W * 0.30;
     const main = boltPath(sx, -10, ix, iy, 6, 0.34);
     const forks = [];
@@ -4960,7 +5081,7 @@ function startBolts(canvas){
       forks.push(boltPath(at.x, at.y,
         at.x + (Math.random()-0.5)*W*0.22, at.y + H*0.18*Math.random(), 4, 0.4));
     }
-    return { ix, iy, main, forks, r: Math.max(46, Math.min(94, Math.min(W,H)*0.115)) };
+    return { ix, iy, main, forks, r };
   };
 
   const frame = (now) => {
@@ -6026,19 +6147,17 @@ function derbyStandings(){
     <div class="card-head"><h2>Derbi Tablosu</h2>
       <span class="tail">${played} / 12 derbi</span></div>
     <div class="card-pad">
-      <div style="display:grid;grid-template-columns:22px 1fr repeat(5,26px) 34px;gap:6px;
-                  font-size:9.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;
-                  padding:0 6px 8px;border-bottom:1px solid var(--line)">
+      <div class="dt-row" style="font-size:9.5px;letter-spacing:1px;color:var(--faint);
+                  text-transform:uppercase;padding:0 6px 8px;border-bottom:1px solid var(--line)">
         <span></span><span>Takım</span><span style="text-align:center">O</span>
         <span style="text-align:center">G</span><span style="text-align:center">B</span>
-        <span style="text-align:center">M</span><span style="text-align:center">AV</span>
+        <span style="text-align:center">M</span><span class="av" style="text-align:center">AV</span>
         <span style="text-align:right">P</span>
       </div>
       ${t.map((row, i) => {
-        const av = row.gf - row.ga;
+        const av = row.gf - row.ga, T = TEAMS[row.code];
         return `
-        <div class="t-${row.code.toLowerCase()}" style="display:grid;
-             grid-template-columns:22px 1fr repeat(5,26px) 34px;gap:6px;align-items:center;
+        <div class="dt-row t-${row.code.toLowerCase()}" style="
              padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.035);
              ${i === 0 ? 'background:linear-gradient(90deg, rgba(247,201,90,.09), transparent 70%);border-radius:8px' : ''}">
           <span style="font-family:var(--f-num);font-size:16px;text-align:center;
@@ -6046,13 +6165,14 @@ function derbyStandings(){
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             ${crest(row.code, 24)}
             <span style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;
-                         text-overflow:ellipsis">${TEAMS[row.code].name}</span>
+                         text-overflow:ellipsis"><span class="tm-full">${T.name}</span><span
+                         class="tm-short">${T.short || T.name}</span></span>
           </span>
           <span style="text-align:center;font-size:12px;color:var(--dim)">${row.played}</span>
           <span style="text-align:center;font-size:12px;color:var(--cyan)">${row.w}</span>
           <span style="text-align:center;font-size:12px;color:var(--dim)">${row.d}</span>
           <span style="text-align:center;font-size:12px;color:var(--faint)">${row.l}</span>
-          <span style="text-align:center;font-size:12px;color:var(--dim)">${av > 0 ? '+' : ''}${av}</span>
+          <span class="av" style="text-align:center;font-size:12px;color:var(--dim)">${av > 0 ? '+' : ''}${av}</span>
           <span style="text-align:right;font-family:var(--f-num);font-size:19px;
                        color:${i === 0 ? 'var(--gold)' : 'var(--text)'}">${row.pts}</span>
         </div>`;
