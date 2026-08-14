@@ -232,13 +232,13 @@ body{
 
 /* ---------- Çizgi simgeler ----------
    Emoji yerine kullanılır; bulunduğu yazının rengini alır. */
-.ic{
-  display:inline-block; vertical-align:-.18em; flex-shrink:0;
-  stroke:currentColor; fill:none;
+
+
+
 }
-.note .ic{ opacity:.9; }
-.card-head .ic.ico{ color:var(--cyan); }
-.empty .ic{ opacity:.5; margin-bottom:2px; }
+
+
+
 
 /* ---------- Derece madalyası (emoji yerine) ---------- */
 .medal{
@@ -1127,6 +1127,39 @@ body{
   .lg-in{ flex-basis:100%; order:3; }
 }
 
+/* ---------- Kart üstü fotoğraf şeridi ----------
+   Alta doğru kart zeminine eriyerek biter; sert kesim olmaz. */
+.card-banner{
+  position:relative; width:100%;
+  background-size:cover; background-position:center 42%;
+  filter:saturate(.7) contrast(1.04);
+}
+.card-banner::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--bg) 22%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 55%, transparent) 55%,
+    var(--bg) 100%);
+}
+@media (max-width:520px){ .card-banner{ height:72px !important; } }
+
+/* Turnuva rozetindeki küçük logo */
+.comp-mark{
+  display:inline-block; vertical-align:-.22em; margin-right:5px;
+  object-fit:contain; filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));
+}
+/* Kart başlığındaki büyük hâli */
+.comp-mark.ico{ margin-right:10px; vertical-align:-.35em; }
+.lg-none{ color:var(--faint); font-size:16px; }
+
+/* Toplu oran satırındaki durum işareti */
+.bulk-row .ok{
+  display:inline-grid; place-items:center; width:18px; height:18px;
+  border-radius:50%; font-size:11px; font-weight:700;
+  color:var(--ok); background:color-mix(in srgb, var(--ok) 15%, transparent);
+}
+.bulk-row .ok.warn{ color:var(--gold); background:color-mix(in srgb, var(--gold) 16%, transparent); }
+
 /* Şampiyonlar Ligi bilgi kartı */
 .ucl-note{
   background:linear-gradient(120deg,
@@ -1405,7 +1438,12 @@ body{
 }
 
 /* Oran tablosu penceresi */
-.odds-btn{ padding:9px 11px !important; font-size:14px !important; flex-shrink:0; }
+.odds-btn{
+  padding:9px 13px !important; font-size:11.5px !important; flex-shrink:0;
+  display:inline-flex; align-items:center; gap:6px; letter-spacing:.4px;
+}
+.odds-btn span{ line-height:1; }
+@media (max-width:480px){ .odds-btn span{ display:none; } .odds-btn{ padding:9px 11px !important; } }
 .ov-outs{ display:flex; flex-direction:column; gap:8px; }
 .ov-out{ display:flex; align-items:center; gap:9px; font-size:12px; }
 .ov-out .l{ display:flex; align-items:center; gap:7px; width:118px; flex-shrink:0;
@@ -1460,6 +1498,23 @@ body{
     radial-gradient(ellipse 90% 62% at 50% -10%, color-mix(in srgb, var(--iris) 30%, transparent), transparent 62%),
     radial-gradient(ellipse 80% 50% at 50% 108%, color-mix(in srgb, var(--magenta) 20%, transparent), transparent 60%),
     linear-gradient(180deg, var(--bg-2), var(--bg));
+}
+
+/* Zemin fotoğrafı — Unsplash, serbest lisans.
+   Üstüne koyu bir perde çekilir ki beyaz yazı ve şimşek okunsun.
+   Değiştirmek istersen tek yer aşağıdaki url().                */
+.lander-bg{
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:url('https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=1800&q=72&auto=format')
+             center 32% / cover no-repeat;
+  opacity:.34; filter:saturate(.6) contrast(1.06);
+}
+.lander-bg::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--bg) 45%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 62%, transparent) 45%,
+    color-mix(in srgb, var(--bg) 92%, transparent) 100%);
 }
 
 /* İmleci izleyen ışık — JS --mx/--my değişkenlerini günceller */
@@ -1870,6 +1925,21 @@ const COMPS = {
   UECL:{ name:'Konferans Ligi',       short:'KONFERANS', color:'#2ee0c8' },
 };
 
+/* Turnuva logoları — takım armalarıyla aynı yerde saklanır
+   (config/logos). Kodlar takım kodlarıyla çakışmaz.
+   Adresi Armalar sayfasından yapıştırabilirsin.              */
+const COMP_CODES = ['SL','UCL','UEL','UECL'];
+function compLogo(code){
+  const u = (typeof Store !== 'undefined' && Store.logos) ? Store.logos[code] : null;
+  return u || null;
+}
+/* Turnuva rozetinin başındaki küçük logo (yoksa hiç çizilmez) */
+function compMark(code, size = 14, cls = ''){
+  const u = compLogo(code);
+  return u ? `<img class="comp-mark ${cls}" src="${u}" width="${size}" height="${size}"
+    alt="" loading="lazy" onerror="this.remove()">` : '';
+}
+
 const STAGE_NAMES = {
   league:'Lig Aşaması', po:'Play-off', r16:'Son 16', qf:'Çeyrek Final',
   sf:'Yarı Final', final:'FİNAL',
@@ -2218,19 +2288,19 @@ const SEASON_PICKS = {
      Bu yüzden puan da eşit değil — oranlar buraya yazılır, çarpanı
      seasonPickPoints() maç puanlamasıyla AYNI formülle hesaplar.
      Oran güncellemek istersen tek yer burası.                      */
-  champion: { title:'SÜPER LİG ŞAMPİYONU', icon:'trophy', points:120, kind:'team',
+  champion: { title:'SÜPER LİG ŞAMPİYONU', logoKey:'SL', points:120, kind:'team',
               desc:'2026/27 kupasını kaldıracak takımı seç. Sürpriz seçim daha çok kazandırır.',
               options: BIG4,
               odds: { GS:2.00, FB:2.00, BJK:9.50, TS:10.00 },
               lock: SL_LOCK },
 
-  uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', icon:'globe', points:150, kind:'list',
+  uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', logoKey:'UCL', points:150, kind:'list',
               desc:'36 takımdan biri. Favori az, uzun atış çok kazandırır — puanlar oranlardan gelir.',
               options: UCL_TEAMS,
               odds: UCL_ODDS,
               lock: UCL_LOCK },
 
-  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', icon:'down', points:40, kind:'multi', max:3,
+  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, points:40, kind:'multi', max:3,
               desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
               options: SL_TEAMS,
               lock: SL_LOCK },
@@ -2461,49 +2531,21 @@ function timeLeftShort(ms){
    Dört büyükler çizgili; diğer takımlar iki renkli + monogram
    ============================================================ */
 /* ============================================================
-   SİMGE SETİ
-   Emoji yerine tek renkli çizgi simgeler. Hepsi 24×24 ızgarada,
-   currentColor ile çizilir; böylece bulunduğu yazının rengini
-   ve altı temanın tamamını kendiliğinden alır.
-   Yeni simge: aşağıya bir satır ekle, ic('ad') ile çağır.
+   KART ÜSTÜ FOTOĞRAF ŞERİTLERİ
+   Küçük simge yerine gerçek fotoğraf: 22px'te okunmayan bir görsel
+   90px'lik şeritte okunur. Unsplash, serbest lisans; hepsi yüklenme
+   ve parlaklık açısından denendi (şerit bandı 0.17–0.43 arası).
+   Değiştirmek istersen tek yer burası.
    ============================================================ */
-const ICONS = {
-  trophy:'<path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3"/><path d="M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 13.5V16"/><path d="M9 20.5h6l-.6-4.5h-4.8z"/>',
-  globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5a13 13 0 0 1 0 17a13 13 0 0 1 0-17z"/>',
-  down:'<path d="M12 4.5v14"/><path d="M6 12.5l6 6 6-6"/>',
-  chart:'<path d="M3.5 20.5h17"/><path d="M7 20V11"/><path d="M12 20V5"/><path d="M17 20v-6"/>',
-  list:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
-  gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.2 5.2l1.9 1.9M16.9 16.9l1.9 1.9M18.8 5.2L16.9 7.1M7.1 16.9l-1.9 1.9"/>',
-  ball:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2l3.6 2.6-1.4 4.3H9.8L8.4 9.8z"/><path d="M12 3.5v3.7M4.4 9.4l4 .4M19.6 9.4l-4 .4M8.4 20.1l1.4-5.9M15.6 20.1l-1.4-5.9"/>',
-  image:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5l-4.5-4.5-5 5-2-2-5.5 5.2"/>',
-  clipboard:'<path d="M9 4.5H7.5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-12a2 2 0 0 0-2-2H15"/><rect x="9" y="2.8" width="6" height="3.6" rx="1.2"/><path d="M9 12h6M9 16h4"/>',
-  calc:'<rect x="5" y="2.8" width="14" height="18.4" rx="2.5"/><rect x="8" y="6" width="8" height="3.2" rx="1"/><path d="M8.6 13h.01M12 13h.01M15.4 13h.01M8.6 17h.01M12 17h.01M15.4 17h.01"/>',
-  lock:'<rect x="4.8" y="10" width="14.4" height="10.2" rx="2.4"/><path d="M8 10V7.2a4 4 0 0 1 8 0V10"/>',
-  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.3l3.4 2"/>',
-  check:'<path d="M5 12.6l4.6 4.6L19 7.4"/>',
-  alert:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.6v5M12 16.2h.01"/>',
-  bolt:'<path d="M13.2 2.5L5.5 13.4h5.4l-1 8.1 7.7-11h-5.4z"/>',
-  flame:'<path d="M12 2.8s5.4 4.6 5.4 9.4a5.4 5.4 0 0 1-10.8 0c0-2.2 1-3.8 2.1-4.9 0 1.7 1 2.7 2.1 2.7 0-3.2-1.1-5.4 1.2-7.2z"/>',
-  calendar:'<rect x="3.8" y="5" width="16.4" height="16.2" rx="2.4"/><path d="M8 2.8v4.4M16 2.8v4.4M3.8 10.4h16.4"/>',
-  target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.2"/><path d="M12 12h.01"/>',
-  trend:'<path d="M3.5 17l6-6 4 4 7-7"/><path d="M15 8h5.5v5.5"/>',
-  bulb:'<path d="M9.5 18.5h5M10.5 21.2h3"/><path d="M12 2.8a6.2 6.2 0 0 0-3.6 11.2c.4.3.6.8.6 1.3v.6h6v-.6c0-.5.2-1 .6-1.3A6.2 6.2 0 0 0 12 2.8z"/>',
-  flag:'<path d="M5.5 21.2V3.2"/><path d="M5.5 4.4h11.8l-2.2 3.4 2.2 3.4H5.5"/>',
-  star:'<path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.2l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
-  search:'<circle cx="11" cy="11" r="6.4"/><path d="M20.2 20.2l-4.7-4.7"/>',
-  users:'<circle cx="9" cy="8" r="3.4"/><path d="M2.8 20.4a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.4a3.2 3.2 0 0 1 0 5.6"/><path d="M17.6 20.4a6.4 6.4 0 0 0-2-4.6"/>',
-  gift:'<rect x="3.2" y="9.4" width="17.6" height="11.6" rx="2.2"/><path d="M3.2 13.6h17.6M12 9.4V21"/><path d="M12 9.4S9.6 3.6 7.6 5.9 12 9.4 12 9.4zM12 9.4s2.4-5.8 4.4-3.5S12 9.4 12 9.4z"/>',
-  cross:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
-  robot:'<rect x="4.8" y="8" width="14.4" height="11.2" rx="3.2"/><path d="M12 4.6V8"/><circle cx="12" cy="3.4" r="1.4"/><path d="M9.4 13h.01M14.6 13h.01"/><path d="M9.6 16.2h4.8"/>',
-  joker:'<circle cx="12" cy="13.6" r="6.2"/><path d="M12 3.4L8.2 8.2h7.6z"/><circle cx="12" cy="2.9" r="1.2"/><path d="M9.9 12.6h.01M14.1 12.6h.01"/><path d="M9.5 15.8a3.6 3.6 0 0 0 5 0"/>',
-  shield:'<path d="M12 2.8l7.2 2.6v6.1c0 4.2-3.2 7.6-7.2 9-4-1.4-7.2-4.8-7.2-9V5.4z"/>',
+const BANNERS = {
+  rules:  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1400&q=70&auto=format',
+  europe: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1400&q=70&auto=format',
+  board:  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1400&q=70&auto=format',
+  odds:   'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=1400&q=70&auto=format',
 };
-function ic(name, size = 18, cls = ''){
-  const d = ICONS[name];
-  if (!d) return '';
-  return `<svg class="ic ${cls}" viewBox="0 0 24 24" width="${size}" height="${size}"
-    fill="none" stroke="currentColor" stroke-width="1.7"
-    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+function banner(key, h = 90){
+  const u = BANNERS[key];
+  return u ? `<div class="card-banner" style="height:${h}px;background-image:url('${u}')"></div>` : '';
 }
 
 const SHIELD = 'M32 2 L60 11 V34 C60 49 47 59.5 32 65 C17 59.5 4 49 4 34 V11 Z';
@@ -3258,7 +3300,7 @@ async function boot(activePage, render){
   applyTheme(currentTheme());        // ilk boyamadan önce temayı uygula
   mountChrome(activePage);
   document.getElementById('app').innerHTML =
-    `<div class="empty" style="padding:80px 20px"><span class="em">${ic('ball', 22)}</span>Yükleniyor…</div>`;
+    `<div class="empty" style="padding:80px 20px">Yükleniyor…</div>`;
 
   await waitForCloud();
   await initStore();
@@ -3389,7 +3431,7 @@ function authModalHtml(){
 
     <div class="modal-body">
       ${demo ? `<div class="note" style="margin-bottom:16px">
-        <span>${ic('alert')}</span><span><b>Sunucuya bağlanılamadı.</b> Girdiğin ad yalnızca bu
+        <span><b>Sunucuya bağlanılamadı.</b> Girdiğin ad yalnızca bu
         tarayıcıda saklanır ve puan tablosuna işlenmez. Bağlantı gelince
         sayfayı yenile.</span>
       </div>` : ''}
@@ -3519,7 +3561,7 @@ function openAccount(){
         <div class="stat"><b>${mine?.rank ?? '–'}</b><span>Sıra</span></div>
         <div class="stat"><b>${mine?.exact ?? 0}</b><span>Tam isabet</span></div>
       </div>
-      ${me.admin ? `<div class="note" style="margin-bottom:14px"><span>${ic('gear')}</span>
+      ${me.admin ? `<div class="note" style="margin-bottom:14px">
         <span>Yönetici hesabı — maç kartlarında sonuç girme alanı açık.</span></div>` : ''}
       <button class="btn ghost" style="width:100%" onclick="doLogout()">Çıkış yap</button>
     </div>
@@ -3638,7 +3680,7 @@ function openProfile(uid){
     const v = me.season?.[k], cfg = SEASON_PICKS[k];
     const has = Array.isArray(v) ? v.length > 0 : !!v;
     const hidden = !mine && !canSeeSeason(k);
-    const txt = hidden ? `<em>${ic('lock', 12)} ${has ? 'seçildi' : 'seçilmedi'}</em>`
+    const txt = hidden ? `<em>${has ? 'seçildi' : 'seçilmedi'}</em>`
       : !has ? '<em>seçilmedi</em>'
       : (Array.isArray(v) ? v : [v]).map(x => TEAMS[x]?.name || x).join(', ');
     const got = seasonPoints(k, v, SEASON_RESULT[k]);
@@ -3674,14 +3716,14 @@ function openProfile(uid){
       ${progRows.length >= 2 ? `
         <div class="pf-h">Puan gelişimi</div>
         ${progressionChart(progRows)}` : `
-        <div class="empty" style="padding:16px"><span class="em">${ic('trend', 22)}</span>
+        <div class="empty" style="padding:16px">
           Grafik için en az iki puanlanmış maç gerekiyor.</div>`}
 
       <div class="pf-h">Sezon tahminleri</div>
       ${seasonHtml}
 
       ${best && best.got > 0 ? `
-        <div class="note" style="margin-top:14px"><span>${ic('star')}</span>
+        <div class="note" style="margin-top:14px">
           <span>En iyi maçı: <b>${TEAMS[best.m.home].short || TEAMS[best.m.home].name}
           ${best.res.h}-${best.res.a} ${TEAMS[best.m.away].short || TEAMS[best.m.away].name}</b>
           — ${best.pred.h}-${best.pred.a} dedi,
@@ -3732,7 +3774,7 @@ let fTeam = 'ALL', fComp = 'ALL', shown = 14;
 /* ---------------- Hero: sıradaki / oynanan maç ---------------- */
 function heroBlock(){
   const m = upcomingFixtures()[0];
-  if (!m) return `<div class="card"><div class="empty"><span class="em">${ic('flag', 22)}</span>Sezon tamamlandı.</div></div>`;
+  if (!m) return `<div class="card"><div class="empty">Sezon tamamlandı.</div></div>`;
 
   const H = TEAMS[m.home], A = TEAMS[m.away], b = badgeOf(m);
   const live = matchState(m) === 'live';
@@ -3789,7 +3831,7 @@ function heroBlock(){
 
       <div style="text-align:center;margin-top:18px;display:flex;justify-content:center;
                   gap:8px;flex-wrap:wrap;align-items:center">
-        <span class="tier ${b.cls}">${b.text}</span>
+        <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
         <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
         <span style="font-size:11px;color:var(--faint)">${fmtDate(m.dt)} · ${m.venue}</span>
       </div>
@@ -3815,8 +3857,8 @@ function statsBlock(){
       </div>
       <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;
                   font-size:11.5px;color:var(--faint);margin-top:12px">
-        <span>${ic('flame', 11)} Derbilerden <b style="color:var(--gold)">${me.derbyPts}p</b></span>
-        <span>${ic('globe', 11)} Avrupa'dan <b style="color:#8fb0ff">${me.euroPts}p</b></span>
+        <span>Derbilerden <b style="color:var(--gold)">${me.derbyPts}p</b></span>
+        <span>Avrupa'dan <b style="color:#8fb0ff">${me.euroPts}p</b></span>
         <span>${done} maç oynandı</span>
       </div>
     </div>
@@ -3829,12 +3871,13 @@ function statsBlock(){
    yazıyla kalır (onerror ile alan gizlenir).                   */
 const PRIZE_ART = 'https://static0.moviewebimages.com/wordpress/wp-content/uploads/2024/10/spongebob-squarepants-holding-up-krabby-patty.jpg';
 
+
 function prizeCard(){
   return `
   <div class="card reveal prize-card">
     <div class="prize-in">
       <div class="prize-txt">
-        <span class="kick">${ic('trophy', 12)} Sezon birincisine</span>
+        <span class="kick">Sezon birincisine</span>
         <div class="ttl">1 ADET HAMBURGER</div>
         <div class="sub">Sponsor: <b>Kaan</b></div>
       </div>
@@ -3872,7 +3915,7 @@ function multBlock(){
       </div>
       ${rowsHtml}
       <div class="note" style="margin-top:14px">
-        <span>${ic('globe')}</span><span>Avrupa maçları <b>kura çekildikten sonra</b> fikstüre eklenir.
+        <span>Avrupa maçları <b>kura çekildikten sonra</b> fikstüre eklenir.
         Hangi maçların açılacağı yandaki kartta anlatılıyor.</span>
       </div>
     </div>
@@ -3918,10 +3961,10 @@ function matchCard(m){
   const status = !actionable ? '' : (my ? 'ok' : 'todo');
 
   const stateChip = open
-    ? `<span class="state state-open">${ic('clock', 12)} ${timeLeftShort(new Date(m.dt) - NOW())}</span>`
+    ? `<span class="state state-open">${timeLeftShort(new Date(m.dt) - NOW())}</span>`
     : st === 'live'
       ? `<span class="state state-live"><span class="pulse-dot"></span>CANLI${r?.minute ? ' ' + r.minute + "'" : ''}</span>`
-      : `<span class="state state-done">${ic('lock', 12)} BİTTİ</span>`;
+      : `<span class="state state-done">BİTTİ</span>`;
 
   const pickChip = status === 'todo'
     ? `<span class="state state-todo" title="Bu maça henüz tahmin yapmadın">
@@ -3961,7 +4004,7 @@ function matchCard(m){
         <button class="btn ${my ? 'saved' : ''}" data-save="${m.id}"
                 onclick="P_tahmin.savePick('${m.id}', event)">${my ? 'Güncelle' : 'Kaydet'}</button>
         <button class="btn ghost odds-btn" onclick="openOddsView('${m.id}')"
-                title="Bu maçın tüm oranları">${ic('chart', 16)}</button>
+                title="Bu maçın tüm oranları"><span>Oranlar</span></button>
       </div>
       <div class="odds-hint" id="hint_${m.id}">${oddsHintText(m, my?.h, my?.a)}</div>`;
   } else if (my){
@@ -3995,7 +4038,7 @@ function matchCard(m){
 
     others = `
       <button class="reveal-btn ${peek ? 'peek' : ''}" onclick="P_tahmin.togglePicks('${m.id}', this)">
-        <span>${peek ? ic('gear', 13) + ' Tahminler · yalnızca yönetici' : 'Herkes ne dedi'} (${rows.length})</span>
+        <span>${peek ? 'Tahminler · yalnızca yönetici' : 'Herkes ne dedi'} (${rows.length})</span>
         <span class="chev">▾</span>
       </button>
       <div class="picks" id="picks_${m.id}">
@@ -4009,7 +4052,7 @@ function matchCard(m){
           </div>`).join('')}
       </div>`;
   } else if (adminPeek){
-    others = `<div class="peek-note lone">${ic('gear', 13)} Diğer tahminleri görmek için
+    others = `<div class="peek-note lone">Diğer tahminleri görmek için
       <b>önce kendi tahminini kaydet</b>.</div>`;
   }
 
@@ -4018,7 +4061,7 @@ function matchCard(m){
            ${status ? 'st-' + status : ''}"
            ${feat ? 'data-tilt' : ''} style="--hc:${H.c1};--ac:${A.c1}">
     <div class="derby-top">
-      <span class="tier ${b.cls}">${b.text}</span>
+      <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
       <span class="when">${fmtTime(m.dt)}</span>
       ${m.comp === 'SL' && !m.official ? '<span class="prov" title="Resmi fikstür girilene kadar geçici eşleşme">geçici</span>' : ''}
@@ -4041,7 +4084,7 @@ function matchCard(m){
       ${pickArea}
       ${isAdmin() && st === 'open' ? `
         <div class="admin-box">
-          <div class="lbl">${ic('gear', 13)} Doğru skor oranları</div>
+          <div class="lbl">Doğru skor oranları</div>
           <span style="font-size:11px;color:var(--faint);flex:1">
             ${oddsReady ? Object.keys(oddsInfo(m.id).scores).length + ' skor girili'
                         : 'girilmedi — maç kapalı'}
@@ -4052,7 +4095,7 @@ function matchCard(m){
         </div>` : ''}
       ${isAdmin() && st !== 'open' ? `
         <div class="admin-box">
-          <div class="lbl">${ic('gear', 13)} Maç sonucu</div>
+          <div class="lbl">Maç sonucu</div>
           <input class="num" id="rh_${m.id}" type="number" min="0" max="20"
                  value="${r?.h ?? ''}" placeholder="–">
           <span class="dash">—</span>
@@ -4169,7 +4212,7 @@ function matchList(){
   const list = all.slice(0, shown);
 
   if (!all.length){
-    return `<div class="card"><div class="empty"><span class="em">${ic('search', 22)}</span>
+    return `<div class="card"><div class="empty">
       Bu filtreye uyan yaklaşan maç yok.</div></div>`;
   }
 
@@ -4221,14 +4264,14 @@ function seasonBlock(){
     return `
     <div class="card reveal">
       <div class="card-head">
-        ${ic(cfg.icon,22,'ico')}<h2>${cfg.title}</h2>
+        ${compMark(cfg.logoKey, 22, 'ico')}<h2>${cfg.title}</h2>
         <span class="tail">${seasonPointsLabel(kind)}</span>
       </div>
       <div class="card-pad">
         <p class="sub" style="margin-bottom:14px">
           ${cfg.desc}
-          ${locked ? ` <span style="color:var(--red)">· ${ic('lock', 12)} Giriş kapandı</span>`
-                   : ` <span style="color:var(--cyan)">· ${ic('clock', 12)} ${timeLeftShort(new Date(cfg.lock) - now)} kaldı</span>`}
+          ${locked ? ` <span style="color:var(--red)">· Giriş kapandı</span>`
+                   : ` <span style="color:var(--cyan)">· ${timeLeftShort(new Date(cfg.lock) - now)} kaldı</span>`}
         </p>
 
         ${multi ? `<div class="ms-count ${chosen.length === cfg.max ? 'full' : ''}">
@@ -4255,7 +4298,7 @@ function seasonBlock(){
               </button>`).join('')}
           </div>`}
 
-        ${result ? `<div class="note" style="margin-top:14px"><span>${ic('flag')}</span>
+        ${result ? `<div class="note" style="margin-top:14px">
           <span>${resultTxt}</span></div>` : ''}
       </div>
     </div>`;
@@ -4336,7 +4379,8 @@ function pickSummary(){
 function rulesBlock(){
   return `
   <div class="card reveal">
-    <div class="card-head"><span class="ico">${ic('list', 22)}</span><h2>Nasıl Puan Alınır</h2></div>
+    ${banner('rules', 96)}
+    <div class="card-head"><h2>Nasıl Puan Alınır</h2></div>
     <div class="card-pad">
       <div class="rules">
         <div class="pbadge pb-10">10p</div>
@@ -4352,14 +4396,14 @@ function rulesBlock(){
       </div>
 
       <div class="note" style="margin-top:16px">
-        <span>${ic('target')}</span>
+        
         <span><b>Skoru tam bilmek şart değil.</b> 3-1 dedin, maç 3-2 bittiyse
         kazananı bildin ve tek gol saptın — <b>8 puan</b> alırsın. Sonucu bilmek
         tek başına 6 puan getirir.</span>
       </div>
 
       <div class="note" style="margin-top:16px">
-        <span>${ic('cross')}</span>
+        
         <span><b>Puanın iki kez çarpılır.</b> Yukarıdaki puanı önce <b>1. çarpanla</b>,
         sonra <b>2. çarpanla</b> çarpıyoruz:</span>
       </div>
@@ -4377,7 +4421,7 @@ function rulesBlock(){
       </div>
 
       <div class="note" style="margin-top:12px">
-        <span>${ic('calc')}</span>
+        
         <span><b>Örnek:</b> derbide kimsenin beklemediği bir skoru tam bilirsen
         10 × 3 × 2 = <b style="color:var(--gold)">60 puan</b>.
         Sıradan bir lig maçında favori skoru tutturursan 10 × 1 × 1 = <b>10 puan</b>.
@@ -4385,14 +4429,14 @@ function rulesBlock(){
       </div>
 
       <div class="note" style="margin-top:10px">
-        <span>${ic('lock')}</span>
+        
         <span>Oranlar maç <b>açılırken dondurulur</b>: erken ya da geç tahmin
         etmen puanını değiştirmez, herkes aynı oranla puanlanır.
         Tahminler maç başlama saatinde kilitlenir ve herkese açılır.</span>
       </div>
 
       <div class="note" style="margin-top:10px">
-        <span>${ic('calendar')}</span>
+        
         <span>Oranlar yalnızca <b>yakın maçlar</b> için bulunabildiğinden, maçlar
         yaklaştıkça açılır. "Oranlar yakında" yazan maçlar henüz tahmine kapalıdır.</span>
       </div>
@@ -4418,11 +4462,11 @@ function render(){
           ${FIXTURES.filter(m => matchState(m)==='open' && !hasOdds(m)).length} maç oransız
         </span>
         <span style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn ghost" onclick="go('sonuclar.html')">${ic('ball', 15)} Sonuç gir${
+          <button class="btn ghost" onclick="go('sonuclar.html')">Sonuç gir${
             (n => n ? ` (${n})` : '')(FIXTURES.filter(m => matchState(m)!=='open' && !Store.results[m.id]).length)
           }</button>
-          <button class="btn ghost" onclick="go('oranlar.html')">${ic('gear', 15)} Oran gir</button>
-          <button class="btn ghost" onclick="go('logolar.html')">${ic('image', 15)} Armalar</button>
+          <button class="btn ghost" onclick="go('oranlar.html')">Oran gir</button>
+          <button class="btn ghost" onclick="go('logolar.html')">Armalar</button>
         </span>
       </div>` : ''}
     ${pickSummary()}
@@ -4503,7 +4547,7 @@ function openOddsView(id){
   el.innerHTML = `<div class="modal-card" style="max-width:460px">
     <button class="modal-x" onclick="closeOddsView()" aria-label="Kapat">✕</button>
     <div class="modal-head">
-      <span class="brand-mark" style="font-size:15px">${ic('chart', 16)}</span>
+      <span class="brand-mark" style="font-size:15px"></span>
       <div>
         <div class="modal-title">${TEAMS[m.home].name} – ${TEAMS[m.away].name}</div>
         <div class="modal-sub">${fmtDate(m.dt)}</div>
@@ -4516,7 +4560,7 @@ function openOddsView(id){
         ${bar('A', TEAMS[m.away].short || TEAMS[m.away].name, m.away)}
       </div>
       <div class="note" style="margin:14px 0 12px">
-        <span>${ic('bulb')}</span><span>Liste <b>en beklenen skordan</b> başlar. Aşağı indikçe
+        <span>Liste <b>en beklenen skordan</b> başlar. Aşağı indikçe
         ihtimal düşer, <b style="color:var(--gold)">puan artar</b>.
         Sağdaki puan <b>tam isabet</b> içindir.</span>
       </div>
@@ -4562,7 +4606,7 @@ function oddsModalHtml(){
   return `<div class="modal-card" style="max-width:520px">
     <button class="modal-x" onclick="closeOdds()" aria-label="Kapat">✕</button>
     <div class="modal-head">
-      <span class="brand-mark" style="font-size:14px">${ic('chart', 16)}</span>
+      <span class="brand-mark" style="font-size:14px"></span>
       <div>
         <div class="modal-title">${TEAMS[m.home].name} – ${TEAMS[m.away].name}</div>
         <div class="modal-sub">${fmtDate(m.dt)}</div>
@@ -4570,7 +4614,7 @@ function oddsModalHtml(){
     </div>
     <div class="modal-body">
       <div class="note" style="margin-bottom:14px">
-        <span>${ic('clipboard')}</span><span>Bahis sitesindeki <b>doğru skor</b> tablosunu seç, kopyala,
+        <span>Bahis sitesindeki <b>doğru skor</b> tablosunu seç, kopyala,
         buraya yapıştır. Skorlar <b>ev sahibi:deplasman</b> sırasıyla okunur.</span>
       </div>
       <textarea id="odds-in" class="odds-ta" placeholder="1:0    6.50&#10;2:0    9.50&#10;1:1    6.00&#10;0:1    8.00&#10;…"
@@ -4594,7 +4638,7 @@ function previewOdds(){
 function oddsPreviewHtml(){
   const keys = Object.keys(oddsDraft);
   if (!keys.length){
-    return `<div class="empty" style="padding:18px"><span class="em">${ic('clipboard', 22)}</span>
+    return `<div class="empty" style="padding:18px">
       Henüz oran yok — yukarıya yapıştır.</div>`;
   }
   const m = FIXTURE_BY_ID[oddsMatchId];
@@ -4934,6 +4978,7 @@ function render(){
 
   document.getElementById('app').innerHTML = `
   <section class="lander" id="lander">
+    <div class="lander-bg" aria-hidden="true"></div>
     <canvas class="bolt-fx" id="boltFx" aria-hidden="true"></canvas>
     <div class="lander-in">
       <span class="lander-pill">
@@ -5095,7 +5140,7 @@ function resultPanel(){
     </div>` : ''}
 
     <div class="note" style="margin-top:14px">
-      <span>${ic('search')}</span><span>${source}</span>
+      <span>${source}</span>
     </div>
 
     <div class="dm-h">Aynı tahminle maç başka türlü bitseydi</div>
@@ -5115,12 +5160,12 @@ function render(){
   if (!list.length){
     app.innerHTML = head + `
       <div class="card"><div class="card-pad">
-        <div class="empty" style="padding:26px"><span class="em">${ic('chart', 22)}</span>
+        <div class="empty" style="padding:26px">
           Hesaplayıcı için oranı girilmiş bir maç gerekiyor.<br>
           <span style="font-size:11px;color:var(--faint)">
             Bir maçın oran tablosu girildiğinde burada seçilebilir olur.</span></div>
         ${isAdmin() ? `<button class="btn" style="width:100%"
-            onclick="go('oranlar.html')">${ic('gear', 15)} Toplu oran gir</button>` : ''}
+            onclick="go('oranlar.html')">Toplu oran gir</button>` : ''}
       </div></div>
       <div style="text-align:center;margin-top:20px">
         <button class="btn ghost" onclick="go('nasil-oynanir.html')">← Kurallara dön</button>
@@ -5138,7 +5183,7 @@ function render(){
     <div class="card reveal">
       <div class="card-pad">
         <div class="note" style="margin-bottom:16px">
-          <span>${ic('alert')}</span><span>Burada hiçbir şey kaydedilmez. Bir maç seç, bir tahmin ve
+          <span>Burada hiçbir şey kaydedilmez. Bir maç seç, bir tahmin ve
           bir sonuç yaz, <b>Hesapla</b>'ya bas — puanın nasıl çıktığını adım adım gör.</span>
         </div>
 
@@ -5155,7 +5200,7 @@ function render(){
             <div class="nm">${TEAMS[m.home].short || TEAMS[m.home].name}
               <em>–</em> ${TEAMS[m.away].short || TEAMS[m.away].name}</div>
             <div class="sub">
-              <span class="tier ${b.cls}">${b.text}</span>
+              <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
               <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">önem ×${m.mult}</span>
             </div>
             <div class="fav">Bahisçinin favori skoru <b>${fav.replace(':','-')}</b>
@@ -5276,7 +5321,7 @@ function render(){
   const head = `<div class="sec-title" style="margin-top:26px"><h3>Maç Sonuçları</h3>
                   <span class="rule"></span></div>`;
   if (!isAdmin()){
-    app.innerHTML = head + `<div class="card"><div class="empty"><span class="em">${ic('lock', 22)}</span>
+    app.innerHTML = head + `<div class="card"><div class="empty">
       Bu sayfa yalnızca yöneticiye açık.</div></div>`;
     return;
   }
@@ -5287,7 +5332,7 @@ function render(){
     <div class="card reveal">
       <div class="card-pad">
         <div class="note" style="margin-bottom:14px">
-          <span>${ic('ball')}</span>
+          
           <span>Başlamış maçlar burada. Skoru yaz, <b>kaydet</b> — puanlar
           anında hesaplanır, ayrıca bir işlem gerekmez.</span>
         </div>
@@ -5300,7 +5345,7 @@ function render(){
           <div class="sn-list">${list.map(row).join('')}</div>
           <button class="btn" id="sn-save" disabled style="width:100%;margin-top:14px"
                   onclick="P_sonuc.saveAll()">Kaydedilecek sonuç yok</button>
-        ` : `<div class="empty" style="padding:26px"><span class="em">${ic('calendar', 22)}</span>
+        ` : `<div class="empty" style="padding:26px">
               Henüz oynanmış maç yok.</div>`}
       </div>
     </div>
@@ -5335,7 +5380,10 @@ function onEdit(code, val){
   /* Satırın önizlemesini anında tazele */
   const box = document.getElementById('lg-prev-' + code);
   if (!box) return;
-  if (!v){ box.innerHTML = crestShield(code, 34); return; }
+  if (!v){
+    box.innerHTML = TEAMS[code] ? crestShield(code, 34) : '<span class="lg-none">—</span>';
+    return;
+  }
   box.innerHTML = `<img class="crest crest-img" src="${v}" width="34" height="36"
     alt="" onerror="this.outerHTML='<span class=\\'lg-bad\\' title=\\'Görsel yüklenemedi\\'>✕</span>'">`;
 }
@@ -5357,11 +5405,17 @@ async function saveAll(){
 
 function row(code){
   const t = TEAMS[code];
+  const comp = !t && COMPS[code];
   const url = ensure()[code] || '';
+  const onizleme = comp
+    ? (url ? `<img class="crest crest-img" src="${url}" width="34" height="34" alt=""
+              onerror="this.outerHTML='<span class=\\'lg-bad\\'>✕</span>'">`
+           : `<span class="lg-none">—</span>`)
+    : crest(code, 34);
   return `
     <div class="lg-row">
-      <span class="lg-prev" id="lg-prev-${code}">${crest(code, 34)}</span>
-      <span class="lg-nm">${t.name}<em>${code}</em></span>
+      <span class="lg-prev" id="lg-prev-${code}">${onizleme}</span>
+      <span class="lg-nm">${comp ? comp.name : t.name}<em>${code}</em></span>
       <input class="lg-in" type="url" spellcheck="false" placeholder="https://… (boş = çizilmiş arma)"
              value="${url.replace(/"/g,'&quot;')}"
              oninput="P_logolar.onEdit('${code}', this.value)">
@@ -5374,7 +5428,7 @@ function render(){
   const head = `<div class="sec-title" style="margin-top:26px"><h3>Takım Armaları</h3>
                   <span class="rule"></span></div>`;
   if (!isAdmin()){
-    app.innerHTML = head + `<div class="card"><div class="empty"><span class="em">${ic('lock', 22)}</span>
+    app.innerHTML = head + `<div class="card"><div class="empty">
       Bu sayfa yalnızca yöneticiye açık.</div></div>`;
     return;
   }
@@ -5386,18 +5440,22 @@ function render(){
     <div class="card reveal">
       <div class="card-pad">
         <div class="note" style="margin-bottom:14px">
-          <span>${ic('image')}</span>
+          
           <span>Bir takımın arma adresini yapıştır — sitedeki <b>her yerde</b> anında kullanılır.
           Wikipedia'da armanın olduğu sayfada görsele sağ tık → <b>Resim adresini kopyala</b>.
           Boş bırakılan takımlar çizilmiş armayı kullanmaya devam eder.</span>
         </div>
         <div class="note" style="margin-bottom:16px">
-          <span>${ic('alert')}</span>
+          
           <span>Adresler dış sitelere bağlıdır. Görsel yüklenemezse o takım
           sessizce çizilmiş armaya döner — sayfa bozulmaz.</span>
         </div>
 
-        <div class="lg-h">Süper Lig <span>${have}/${SL_TEAMS.length} arma girili</span></div>
+        <div class="lg-h">Turnuva logoları
+          <span>maç rozetlerinde ve sezon kartlarında görünür</span></div>
+        <div class="lg-list">${COMP_CODES.map(row).join('')}</div>
+
+        <div class="lg-h" style="margin-top:20px">Süper Lig <span>${have}/${SL_TEAMS.length} arma girili</span></div>
         <div class="lg-list">${SL_TEAMS.map(row).join('')}</div>
 
         <div class="lg-h" style="margin-top:20px">Avrupa rakipleri ve diğerleri</div>
@@ -5508,7 +5566,7 @@ function resultHtml(){
   const openNoOdds = FIXTURES.filter(m => matchState(m) === 'open' && !hasOdds(m));
 
   if (!found.length){
-    return `<div class="empty" style="padding:22px"><span class="em">${ic('clipboard', 22)}</span>
+    return `<div class="empty" style="padding:22px">
       Henüz maç çözümlenmedi.<br>
       <span style="font-size:11px;color:var(--faint)">Tabloyu <b>takım adı başlığıyla birlikte</b>
       kopyaladığından emin ol — maçı o başlıktan tanıyor.</span></div>
@@ -5522,7 +5580,7 @@ function resultHtml(){
     const thin = n < MIN_SCORES;
     return `
       <div class="bulk-row">
-        <span class="ok">${thin ? ic('alert', 14) : ic('check', 14)}</span>
+        <span class="ok ${thin ? 'warn' : ''}">${thin ? '!' : '✓'}</span>
         <span class="nm">
           <b>${TEAMS[b.fx.home].name} – ${TEAMS[b.fx.away].name}</b>
           <em>${fmtDateShort(b.fx.dt)} · ${b.fx.comp === 'SL' ? b.fx.wk + '. hafta' : COMPS[b.fx.comp].short}</em>
@@ -5551,7 +5609,7 @@ function missingHtml(list){
   if (!list.length) return '';
   return `
     <div class="note" style="margin-top:16px">
-      <span>${ic('calendar')}</span>
+      
       <span><b>Hâlâ oransız ${list.length} maç:</b><br>
       <span style="color:var(--faint);font-size:11px">
         ${list.slice(0, 12).map(m => `${TEAMS[m.home].short || TEAMS[m.home].name}–${TEAMS[m.away].short || TEAMS[m.away].name}
@@ -5581,7 +5639,7 @@ function render(){
   if (!isAdmin()){
     document.getElementById('app').innerHTML = `
       <div class="sec-title" style="margin-top:26px"><h3>Toplu Oran Girişi</h3><span class="rule"></span></div>
-      <div class="card"><div class="empty"><span class="em">${ic('lock', 22)}</span>
+      <div class="card"><div class="empty">
         Bu sayfa yalnızca yöneticiye açık.</div></div>`;
     return;
   }
@@ -5590,7 +5648,7 @@ function render(){
     <div class="card">
       <div class="card-pad">
         <div class="note" style="margin-bottom:14px">
-          <span>${ic('clipboard')}</span>
+          
           <span>Bahis sitesinde her maçın <b>doğru skor</b> tablosunu
           <b>takım adı başlığıyla birlikte</b> seçip kopyala ve arka arkaya buraya yapıştır.
           Maçları başlıktaki takım adlarından kendisi tanır — tek tek seçmen gerekmez.</span>
@@ -5615,7 +5673,7 @@ function render(){
 
     <div class="card reveal try-card">
       <div class="card-pad" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <span style="font-size:26px;flex-shrink:0">${ic('calc', 26)}</span>
+        <span style="font-size:26px;flex-shrink:0"></span>
         <div style="flex:1;min-width:180px">
           <div style="font-size:13.5px;font-weight:600">Puan hesaplayıcı</div>
           <div style="font-size:11.5px;color:var(--faint);margin-top:2px">
@@ -5629,14 +5687,15 @@ function render(){
 
     <div class="sec-title"><h3>Avrupa Maçları</h3><span class="rule"></span></div>
     <div class="card reveal ucl-note">
+      ${banner('europe', 96)}
       <div class="card-pad">
         <div class="rules" style="grid-template-columns:auto 1fr">
-          <div class="pbadge pb-10" style="font-size:15px">${ic('shield', 16)}</div>
+          <div class="pbadge pb-10" style="font-size:15px"></div>
           <div class="d"><b>Dört büyüğün bütün Avrupa maçları</b> —
             <b>lig (grup) aşamasından itibaren</b>. Şampiyonlar Ligi, Avrupa Ligi
             ve Konferans Ligi; hangisinde oynarlarsa oynasınlar her maçları girer.</div>
 
-          <div class="pbadge pb-8" style="font-size:15px">${ic('trophy', 16)}</div>
+          <div class="pbadge pb-8" style="font-size:15px"></div>
           <div class="d"><b>Şampiyonlar Ligi'nde çeyrek finalden itibaren</b> —
             Türk takımı olmasa bile. Real Madrid – Bayern gibi eşleşmeler de
             o turdan sonra tahmine açılır.</div>
@@ -5647,7 +5706,7 @@ function render(){
         </div>
 
         <div class="note" style="margin-top:14px">
-          <span>${ic('cross')}</span>
+          
           <span>Bütün Avrupa maçları <b style="color:var(--gold)">×2 önem çarpanı</b> taşır,
           üstüne her zamanki oran çarpanı biner — yani bir Avrupa maçından
           en fazla <b>60 puan</b> çıkabilir.</span>
@@ -5655,7 +5714,7 @@ function render(){
 
         ${EURO_PENDING() ? `
         <div class="note" style="margin-top:10px">
-          <span>${ic('calendar')}</span>
+          
           <span>Henüz Avrupa maçı eklenmedi. Kuralar çekilip eşleşmeler
           belli oldukça fikstüre girecek ve burada görünecek.</span>
         </div>` : ''}
@@ -5699,6 +5758,7 @@ function podium(rows){
 
   return `
   <div class="card reveal">
+    ${banner('board', 84)}
     <div class="card-pad" style="padding-bottom:0">
       <div style="display:flex;align-items:flex-end;gap:10px;">
         ${col(p2, 64, 2)}${col(p1, 92, 1)}${col(p3, 46, 3)}
@@ -5715,7 +5775,7 @@ function fullBoard(){
   return podium(rows) + `
   <div class="card reveal">
     <div class="card-head">
-      <span class="ico">${ic('trophy', 22)}</span><h2>Genel Sıralama</h2>
+      <h2>Genel Sıralama</h2>
       <span class="tail">${FIXTURES.filter(isFinished).length} maç oynandı</span>
     </div>
     <div class="card-pad">
@@ -5729,7 +5789,7 @@ function fullBoard(){
           <div class="lb-name">
             <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.ai ? r.emoji + ' ' : ''}${r.name}${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
-            <div class="s">${r.exact} tam isabet · ${ic('flame', 11)} ${r.derbyPts}p · ${ic('globe', 11)} ${r.euroPts}p</div>
+            <div class="s">${r.exact} tam isabet · ${r.derbyPts}p · ${r.euroPts}p</div>
             <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
               <span style="display:block;height:100%;width:${Math.round(r.points / maxPts * 100)}%;
                            background:var(--grad);border-radius:3px"></span>
@@ -5774,12 +5834,12 @@ function seasonPicksBoard(){
       return `
       <div class="card reveal">
         <div class="card-head">
-          ${ic(cfg.icon,22,'ico')}<h2>${cfg.title}</h2>
+          ${compMark(cfg.logoKey, 22, 'ico')}<h2>${cfg.title}</h2>
           <span class="tail">${seasonPointsLabel(kind)}</span>
         </div>
         <div class="card-pad">
           <div class="locked-box">
-            <span class="ico">${ic('lock', 22)}</span>
+            
             <div>
               <b>Seçimler gizli</b>
               <em>${voted}/${rows.length} oyuncu seçimini yaptı ·
@@ -5787,7 +5847,7 @@ function seasonPicksBoard(){
               <em class="sub">${fmtDate(cfg.lock)}</em>
             </div>
           </div>
-          ${isAdmin() ? `<div class="peek-note lone">${ic('gear', 13)} Yönetici olarak erken
+          ${isAdmin() ? `<div class="peek-note lone">Yönetici olarak erken
             görebilirsin — <b>önce kendi seçimini yap</b>.</div>` : ''}
         </div>
       </div>`;
@@ -5799,11 +5859,11 @@ function seasonPicksBoard(){
     return `
     <div class="card reveal">
       <div class="card-head">
-        ${ic(cfg.icon,22,'ico')}<h2>${cfg.title}</h2>
+        ${compMark(cfg.logoKey, 22, 'ico')}<h2>${cfg.title}</h2>
         <span class="tail">${seasonPointsLabel(kind)}</span>
       </div>
       <div class="card-pad">
-        ${erken ? `<div class="peek-note">${ic('gear', 13)} Kilit açılmadı — bu liste
+        ${erken ? `<div class="peek-note">Kilit açılmadı — bu liste
           <b>yalnızca sana</b> görünür. Herkese açılma: ${fmtDate(cfg.lock)}</div>` : ''}
         ${picked.length ? picked.map(v => {
           const list = tally[v], t = TEAMS[v];
@@ -5825,7 +5885,7 @@ function seasonPicksBoard(){
               %${pct}
             </span>
           </div>`;
-        }).join('') : `<div class="empty" style="padding:18px"><span class="em">${ic('users', 22)}</span>
+        }).join('') : `<div class="empty" style="padding:18px">
             Henüz kimse seçim yapmadı.</div>`}
       </div>
     </div>`;
@@ -5862,7 +5922,7 @@ function recordsBlock(){
                    .sort((a,b) => (b.all.w*3 + b.all.d) - (a.all.w*3 + a.all.d));
   return `
   <div class="card reveal">
-    <div class="card-head"><span class="ico">${ic('clipboard', 22)}</span><h2>Takım Karneleri</h2>
+    <div class="card-head"><h2>Takım Karneleri</h2>
       <span class="tail">tüm turnuvalar</span></div>
     <div class="card-pad">
       ${rows.map(({c, all, form}) => {
@@ -5894,7 +5954,7 @@ function derbyStandings(){
   const played = FIXTURES.filter(m => m.derby && isFinished(m)).length;
   return `
   <div class="card reveal">
-    <div class="card-head"><span class="ico">${ic('flame', 22)}</span><h2>Derbi Tablosu</h2>
+    <div class="card-head"><h2>Derbi Tablosu</h2>
       <span class="tail">${played} / 12 derbi</span></div>
     <div class="card-pad">
       <div style="display:grid;grid-template-columns:22px 1fr repeat(5,26px) 34px;gap:6px;
@@ -5972,7 +6032,7 @@ function historyCard(m){
   return `
   <article class="hist reveal ${feat ? '' : 'plain'}" style="--hc:${H.c1};--ac:${A.c1}">
     <div class="derby-top">
-      <span class="tier ${b.cls}">${b.text}</span>
+      <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
       <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
       ${m.comp === 'SL' && !m.official ? '<span class="prov">geçici</span>' : ''}
       <span class="state ${live ? 'state-live' : 'state-done'}">
@@ -5997,7 +6057,7 @@ function historyCard(m){
 
       ${best.length && !live ? `
         <div class="note" style="margin-top:13px">
-          <span>${ic('target')}</span><span>Maçın kralı: <b>${best.map(x => x.u.name).join(', ')}</b>
+          <span>Maçın kralı: <b>${best.map(x => x.u.name).join(', ')}</b>
           — ${best[0].pts} puan${best[0].p.h === r.h && best[0].p.a === r.a ? ' (tam isabet)' : ''}</span>
         </div>` : ''}
 
@@ -6075,7 +6135,7 @@ function render(){
 
     <div class="sec-title"><h3>Oynanan Maçlar</h3><span class="rule"></span></div>
     ${filterBar()}
-    ${all.length ? cards : `<div class="card"><div class="empty"><span class="em">${ic('calendar', 22)}</span>
+    ${all.length ? cards : `<div class="card"><div class="empty">
         Bu filtreye uyan oynanmış maç yok.</div></div>`}
     ${all.length > shown ? `<button class="btn ghost" onclick="P_gecmis.showMore()"
         style="width:100%;margin-top:6px">${all.length - shown} maç daha göster ▾</button>` : ''}
