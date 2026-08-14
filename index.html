@@ -2872,17 +2872,41 @@ function simulateResult(m){
 /* ============================================================
    YAPAY ZEKÂ OYUNCULAR
    Puan tablosunda gerçek oyuncularla yarışan iki bot. Tahminleri
-   Firestore'da tutulmaz; oran tablosundan HER SEFERİNDE AYNI
-   şekilde türetilir (rng tohumu maç kimliği), yoksa puanları
-   her yenilemede oynardı.
+   Firestore'da tutulmaz, oran tablosundan türetilir.
+
+   Robot hep aynı skoru oynar (en kısa oran) — tahmini hiç değişmez.
+
+   Deli ise adı gibi davranır: maç BAŞLAYANA KADAR belirli aralıklarla
+   fikir değiştirir. Değişim rastgele değil, SAATE bağlı bir tohumdan
+   gelir; böylece aynı anda bakan herkes aynı tahmini görür (yoksa iki
+   oyuncu Deli'yi iki ayrı skorla görürdü).
+
+   Maç başladığı anda tahmin DONAR: tohum, başlama anındaki pencereye
+   sabitlenir. Oynanmış maçların tahmini bir daha asla oynamaz, yani
+   puan geriye dönük değişmez.
    ============================================================ */
 const AI_PLAYERS = [
   { uid:'ai_robot', name:'Robot', emoji:'🤖', ai:true,
     note:'Her maçta bahisçinin en olası gördüğü skoru oynar — hep banko.' },
   { uid:'ai_deli',  name:'Deli',  emoji:'🤡', ai:true,
-    note:'Her maçta oranı 15.00 ve üzeri olan skorlardan rastgele birini oynar.' },
+    note:'Oranı 15.00 ve üzeri olan skorlardan rastgele birini oynar. ' +
+         'Maç başlayana kadar sık sık fikir değiştirir, başlayınca tahmini kilitlenir.' },
 ];
-const DELI_MIN_ODDS = 15;
+const DELI_MIN_ODDS  = 15;
+const DELI_REROLL_MS = 5 * 60000;   // kaç dakikada bir fikir değiştirsin
+
+/* Deli'nin o an geçerli tohum penceresi.
+   Maç başlamadan önce saatle birlikte ilerler → tahmin değişir.
+   Başladıktan sonra sabitlenir.
+
+   Sınır "kick" değil "kick - 1": başlama anı yeni bir pencere açıyorsa
+   tahmin tam düdükle birlikte bir kez daha değişirdi. Bir milisaniye
+   geri çekmek, ekranda EN SON görünen tahmini kilitler — oyuncular ne
+   gördüyse maça o girer. */
+function deliBucket(m){
+  const kick = new Date(m.dt).getTime();
+  return Math.floor(Math.min(NOW().getTime(), kick - 1) / DELI_REROLL_MS);
+}
 
 function aiPrediction(uid, m){
   const i = oddsInfo(m.id);
@@ -2891,8 +2915,7 @@ function aiPrediction(uid, m){
   /* ÖNEMLİ: anahtarlar HER ZAMAN sıralanır.
      Object.keys() sırası kaynağa göre değişebilir (Firestore map
      sırası garanti değildir). Sıralamazsak Deli'nin seçtiği skor
-     sayfa yenilendikçe kayar — hatta oynanmış maçlarda bile — ve
-     puanı geriye dönük değişir. Sıralama bunu imkânsız kılar. */
+     aynı pencerede bile kayar ve puanı oynardı. */
   const keys = Object.keys(i.scores).sort();
   if (!keys.length) return null;
 
@@ -2903,7 +2926,9 @@ function aiPrediction(uid, m){
   } else {
     const wild = keys.filter(k => i.scores[k] >= DELI_MIN_ODDS);
     const pool = wild.length ? wild : keys;                            // 15+ yoksa hepsi
-    key = pool[Math.floor(rng(hashStr('deli' + m.id))() * pool.length)];
+    /* Havuzdaki her skorun şansı eşit: en yüksek oranı kayırmaz,
+       15.00'lik skor da 96.00'lık skor kadar çıkabilir. */
+    key = pool[Math.floor(rng(hashStr('deli' + m.id + '#' + deliBucket(m)))() * pool.length)];
   }
   const [h, a] = key.split(':').map(Number);
   return { h, a };
@@ -2942,6 +2967,30 @@ function injectAI(){
     Store.predictions[p.uid] = preds;
     Store.season[p.uid] = aiSeason(p.uid);
   });
+}
+
+/* Deli fikir değiştirince ekranı tazeler.
+   Yalnızca BAŞLAMAMIŞ maçlara bakılır: başlamış maçın penceresi zaten
+   sabittir, boşuna yeniden çizmeye gerek yok. Pencere numaralarının
+   toplamı değişmediyse hiçbir şey yapılmaz — yani sakin zamanlarda
+   bu döngü bedavaya gelir. */
+let deliWatch = null, deliSig = null;
+function deliSignature(){
+  let s = 0;
+  FIXTURES.forEach(m => { if (matchState(m) === 'open') s += deliBucket(m); });
+  return s;
+}
+function watchDeli(render){
+  clearInterval(deliWatch);
+  deliSig = deliSignature();
+  if (DEMO_NOW) return;                    // saat donmuşsa Deli de donar
+  deliWatch = setInterval(() => {
+    const now = deliSignature();
+    if (now === deliSig) return;
+    deliSig = now;
+    injectAI();                            // yeni tahminleri üret
+    render();                              // tabloyu ve kartları tazele
+  }, 15000);
 }
 
 /* Demo modda oran tablosu üretir (bulut yokken de oyun çalışsın).
@@ -3530,6 +3579,7 @@ async function boot(activePage, render){
   initReveal();
   initTilt();
   initCounters();
+  watchDeli(render);                 // Deli fikir değiştirdikçe tazele
 
   // oturum değişince (başka sekmede çıkış vb.) tazele
   window.Cloud?.onChange(async () => {
