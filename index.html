@@ -1982,6 +1982,31 @@ const TEAMS = {
   GNT:{ name:'Gent',             c1:'#0b4ea2', c2:'#ffffff', st:'Ghelamco Arena',  pow:73 },
   DIN:{ name:'Dinamo Zagreb',    c1:'#0b4ea2', c2:'#ffffff', st:'Maksimir',        pow:74 },
   BSK:{ name:'Basaksehir B',     c1:'#12336b', c2:'#e8792b', st:'—',               pow:70 },
+
+  /* Şampiyonlar Ligi bahsindeki kulüpler (UCL_ODDS listesinden).
+     Buradaki renkler ÇİZİLEN armayı boyar; gerçek arma adresi
+     Armalar sayfasından yapıştırılınca onun yerini alır.        */
+  BAR:{ name:'Barcelona',        c1:'#a50044', c2:'#004d98', st:'Camp Nou',        pow:90, stripe:'v' },
+  LIV:{ name:'Liverpool',        c1:'#c8102e', c2:'#00b2a9', st:'Anfield',         pow:90 },
+  MUN:{ name:'Man United',       c1:'#da291c', c2:'#fbe122', st:'Old Trafford',    pow:84 },
+  AVL:{ name:'Aston Villa',      c1:'#670e36', c2:'#95bfe5', st:'Villa Park',      pow:80, stripe:'v' },
+  NAP:{ name:'Napoli',           c1:'#12a0d7', c2:'#003c82', st:'Maradona',        pow:83 },
+  BVB:{ name:'Dortmund',         c1:'#fde100', c2:'#141418', st:'Signal Iduna',    pow:82 },
+  BET:{ name:'Real Betis',       c1:'#00954c', c2:'#ffffff', st:'Benito Villamarín',pow:77, stripe:'v' },
+  RBL:{ name:'RB Leipzig',       c1:'#dd0741', c2:'#001f47', st:'Red Bull Arena',  pow:80 },
+  VIL:{ name:'Villarreal',       c1:'#ffe667', c2:'#005187', st:'La Cerámica',     pow:78 },
+  COM:{ name:'Como',             c1:'#005ca9', c2:'#ffffff', st:'Sinigaglia',      pow:72 },
+  STU:{ name:'Stuttgart',        c1:'#ffffff', c2:'#e32219', st:'MHPArena',        pow:77 },
+  SPO:{ name:'Sporting CP',      c1:'#008057', c2:'#ffffff', st:'Alvalade',        pow:79, stripe:'h' },
+  POR:{ name:'Porto',            c1:'#00428c', c2:'#ffffff', st:'Dragão',          pow:79, stripe:'v' },
+  LEN:{ name:'Lens',             c1:'#ffe500', c2:'#e01e13', st:'Bollaert',        pow:74, stripe:'v' },
+  LIL:{ name:'Lille',            c1:'#e01e13', c2:'#003876', st:'Pierre-Mauroy',   pow:75 },
+  PSV:{ name:'PSV',              c1:'#ed1c24', c2:'#ffffff', st:'Philips Stadion', pow:76, stripe:'v' },
+  CEL:{ name:'Celtic',           c1:'#018749', c2:'#ffffff', st:'Celtic Park',     pow:73, stripe:'h' },
+  BOD:{ name:'Bodø/Glimt',       c1:'#ffdd00', c2:'#141418', st:'Aspmyra',         pow:71 },
+  AEK:{ name:'AEK Atina',        c1:'#ffcc00', c2:'#141418', st:'OPAP Arena',      pow:70 },
+  USG:{ name:'Union SG',         c1:'#ffe500', c2:'#005baa', st:'Joseph Marien',   pow:72 },
+  SHA:{ name:'Shakhtar',         c1:'#ff6600', c2:'#141418', st:'Arena Lviv',      pow:72, stripe:'v' },
 };
 
 const strength = code => TEAMS[code]?.pow ?? 65;
@@ -2408,6 +2433,29 @@ const UCL_ODDS = {
   'Olympiakos':251.00, 'Shakhtar Donetsk':251.00,
 };
 const UCL_TEAMS = Object.keys(UCL_ODDS);
+
+/* Bahisteki kulüp ADI → TEAMS kodu.
+   Bahis listesi tam adları kullanıyor ('Paris Saint-Germain'), TEAMS
+   ise kısa kodları ('PSG'); eşleşme olmayınca arma yerine adın baş
+   harfi çıkıyordu. Bu tablo ikisini birleştirir, böylece puan
+   tablosunda gerçek arma (yoksa kulüp renkli çizim) görünür.
+   Yeni kulüp eklersen TEAMS'e de bir satır aç.                     */
+const UCL_CODE = {
+  'Paris Saint-Germain':'PSG', 'FC Bayern München':'BAY', 'Arsenal':'ARS',
+  'Barcelona':'BAR', 'Manchester City':'MCI', 'Real Madrid':'RMA',
+  'Liverpool':'LIV', 'Manchester United':'MUN', 'Inter':'INT',
+  'Aston Villa':'AVL', 'Atlético Madrid':'ATM', 'Napoli':'NAP',
+  'Borussia Dortmund':'BVB', 'AS Roma':'ROM', 'Real Betis':'BET',
+  'RB Leipzig':'RBL', 'Villarreal':'VIL', 'Como':'COM',
+  'VfB Stuttgart':'STU', 'Sporting CP':'SPO', 'Porto':'POR',
+  'Lens':'LEN', 'Lille':'LIL', 'PSV':'PSV', 'Feyenoord':'FEY',
+  'Fenerbahçe':'FB', 'Celtic':'CEL', 'Galatasaray':'GS',
+  'Bodø/Glimt':'BOD', 'Club Brugge':'CLB', 'Lyon':'LYO',
+  'AEK Atina':'AEK', 'Royale Union SG':'USG', 'Slavia Praha':'SLA',
+  'Olympiakos':'OLY', 'Shakhtar Donetsk':'SHA',
+};
+/* Şık değeri bir TEAMS kodu mu, yoksa bahisteki uzun ad mı? İkisini de kabul et. */
+const teamCodeOf = v => TEAMS[v] ? v : (UCL_CODE[v] || null);
 
 /* ------------------------------------------------------------
    SEZON BAHİSLERİ — sezon başında bir kez, uzun vadeli
@@ -6180,14 +6228,21 @@ function seasonPicksBoard(){
         ${erken ? `<div class="peek-note">Kilit açılmadı — bu liste
           <b>yalnızca sana</b> görünür. Herkese açılma: ${fmtDate(cfg.lock)}</div>` : ''}
         ${picked.length ? picked.map(v => {
-          const list = tally[v], t = TEAMS[v];
+          /* Şampiyonlar Ligi şıkları uzun adla tutulur ('Real Madrid');
+             koda çevirince arma çizilebiliyor. Çeviremezsek baş harf.
+             Yazı, şıkkın kendi adı olarak kalır: kod verilmişse TEAMS
+             adı, uzun ad verilmişse aynen o — böylece burada yazan isim
+             tahmin sayfasındakiyle aynı kalır. */
+          const code = teamCodeOf(v), t = TEAMS[code];
+          const label = TEAMS[v] ? TEAMS[v].name : v;
+          const list = tally[v];
           const pct = Math.round(list.length / Math.max(1, voted) * 100);
           return `
-          <div class="${t ? 't-' + v.toLowerCase() : ''}" style="display:flex;align-items:center;gap:12px;
+          <div class="${t ? 't-' + code.toLowerCase() : ''}" style="display:flex;align-items:center;gap:12px;
                padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-            ${t ? crest(v, 32) : `<span class="opt-dot">${v.charAt(0).toLocaleUpperCase('tr')}</span>`}
+            ${t ? crest(code, 32) : `<span class="opt-dot">${v.charAt(0).toLocaleUpperCase('tr')}</span>`}
             <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600">${t ? t.name : v}</div>
+              <div style="font-size:13px;font-weight:600">${label}</div>
               <div style="font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;
                           text-overflow:ellipsis">${list.map(u => u.name).join(', ')}</div>
               <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
