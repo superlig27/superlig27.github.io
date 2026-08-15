@@ -1509,6 +1509,64 @@ body{
   background:var(--grad-soft); border:1px solid var(--line-2); color:var(--text);
 }
 
+/* ---------- Başarım rozetleri (puan tablosu satırı) ----------
+   Her rozetin tek sahibi var, o yüzden bir satırda genelde 0–2 tane
+   olur. Dar ekranda yalnızca simge kalır: adı okumak için dokunma
+   hedefi değil, kimliği taşıyan şey simgenin kendisi.            */
+.achs{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.ach{
+  display:inline-flex; align-items:center; gap:4px; cursor:default;
+  font-size:9.5px; font-weight:700; letter-spacing:.4px; line-height:1;
+  padding:3px 7px 3px 5px; border-radius:99px; white-space:nowrap;
+  color:var(--dim); background:rgba(255,255,255,.05);
+  border:1px solid var(--line-2);
+}
+.ach i{ font-style:normal; font-size:11px; }
+.ach-kral   { color:var(--gold); background:color-mix(in srgb, var(--gold) 13%, transparent);
+              border-color:color-mix(in srgb, var(--gold) 34%, transparent); }
+.ach-kahin  { color:var(--violet); background:color-mix(in srgb, var(--violet) 15%, transparent);
+              border-color:color-mix(in srgb, var(--violet) 36%, transparent); }
+.ach-nisanci{ color:var(--cyan); background:color-mix(in srgb, var(--cyan) 13%, transparent);
+              border-color:color-mix(in srgb, var(--cyan) 34%, transparent); }
+.ach-derbi  { color:var(--magenta); background:color-mix(in srgb, var(--magenta) 14%, transparent);
+              border-color:color-mix(in srgb, var(--magenta) 36%, transparent); }
+.ach-form   { color:var(--red); background:color-mix(in srgb, var(--red) 13%, transparent);
+              border-color:color-mix(in srgb, var(--red) 34%, transparent); }
+@media (max-width:520px){
+  .ach b{ display:none; }
+  .ach{ padding:3px 6px; gap:0; }
+  .ach i{ font-size:12px; }
+}
+
+/* ---------- Canlı (geçici) puan işaretleri ----------
+   Maç sürerken hesaplanan puanlar kesin değil; hepsi aynı kırmızı
+   "canlı" diliyle işaretlenir ki kimse bitmiş puan sanmasın. */
+.live-tag{
+  font-size:8.5px; letter-spacing:1.2px; font-weight:700; white-space:nowrap;
+  padding:2px 6px; border-radius:4px; align-self:center;
+  color:var(--red); background:rgba(255,77,109,.12);
+  border:1px solid rgba(255,77,109,.3);
+}
+.live-note{
+  display:flex; align-items:center; gap:8px;
+  font-size:11.5px; color:var(--dim); line-height:1.5;
+  padding:9px 11px; margin-bottom:8px; border-radius:var(--r-sm);
+  background:rgba(255,77,109,.07); border:1px solid rgba(255,77,109,.22);
+}
+.live-banner{
+  display:flex; align-items:center; gap:10px;
+  font-size:12px; color:var(--dim); line-height:1.55;
+  padding:11px 13px; margin-bottom:14px; border-radius:var(--r-md);
+  background:rgba(255,77,109,.07); border:1px solid rgba(255,77,109,.22);
+}
+.live-banner b{ color:var(--text); }
+.live-note .pulse-dot, .live-banner .pulse-dot{ background:var(--red); flex-shrink:0; }
+/* Toplam puanın yanındaki canlı katkı */
+.lb-live{
+  display:block; font-family:var(--f-body); font-size:10px; font-weight:700;
+  letter-spacing:.3px; color:var(--red); line-height:1; margin-top:1px;
+}
+
 /* ---------- "Oranı girilmemiş maçlar" açar/kapatır ----------
    Tahmin listesinin altında durur; kapalıyken oynanamayan maçlar
    yer kaplamasın diye sessiz bir ayraç gibi görünür. */
@@ -1765,7 +1823,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
          signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp, writeBatch }
+import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp,
+         writeBatch, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1867,6 +1926,18 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
     },
     async saveResult(matchId, val){
       await setDoc(doc(db, 'results', matchId), { h: val.h, a: val.a, at: serverTimestamp() });
+    },
+    /* Sonuçları CANLI dinler. Yönetici maç sürerken skoru güncelleyince
+       herkesin tablosu kendiliğinden yenilensin diye var — yoksa
+       diğer oyuncular sayfayı yenilemeden yeni golü göremezdi.
+       Yalnızca 'results' dinlenir: tahminler ve oranlar maç başlayınca
+       zaten donuyor, onları sürekli dinlemenin faydası yok.        */
+    watchResults(cb){
+      return onSnapshot(collection(db, 'results'), snap => {
+        const out = {};
+        snap.forEach(d => { const x = d.data(); out[d.id] = { h: x.h, a: x.a }; });
+        cb(out);
+      }, err => console.warn('[Cloud] sonuç dinlemesi koptu:', err));
     },
     /* Oranlar bir kez girilip DONDURULUR: herkes aynı oranla puanlanır */
     async saveOdds(matchId, scores){
@@ -3276,38 +3347,147 @@ function lastFinishedId(){
   return done.length ? done[done.length - 1].id : null;
 }
 
+/* Skoru girilmiş ve BAŞLAMIŞ her maç puanlanır — bitmesi beklenmez.
+   Maç sürerken girilen skor "şimdilik böyle" demektir; puan da geçicidir
+   ve her golle değişir. Bitmemiş maçtan gelen puan ayrıca sayılır ki
+   arayüz bunu canlı olarak işaretleyebilsin. */
+const isLiveScored = m => matchState(m) === 'live' && !!Store.results[m.id];
+const anyLiveMatch  = () => FIXTURES.some(isLiveScored);
+
 function leaderboard(){
   const lastId = lastFinishedId();
+  /* Canlı maç varken "önceki sıralama" = maç başlamadan önceki hâl;
+     yoksa eski davranış (son biten maçtan önceki hâl). Böylece ok
+     işareti maç sürerken tam da o maçın etkisini gösterir. */
+  const canliVar = anyLiveMatch();
 
   const rows = Store.users.map(u => {
     const preds  = Store.predictions[u.uid] || {};
     const season = Store.season[u.uid] || {};
     let pts = 0, exact = 0, count = 0, prevPts = 0, derbyPts = 0, euroPts = 0;
+    let livePts = 0, liveCount = 0;
 
     FIXTURES.forEach(m => {
       const p = preds[m.id], r = Store.results[m.id];
       if (!p) return;
       count++;
-      if (!r || !isFinished(m)) return;
+      if (!r || matchState(m) === 'open') return;
+      const canli = !isFinished(m);
       const got = scorePrediction(p, r, m).pts;
       pts += got;
+      if (canli){ livePts += got; liveCount++; }
       if (m.derby) derbyPts += got;
       if (['UCL','UEL','UECL'].includes(m.comp)) euroPts += got;
       if (p.h === r.h && p.a === r.a) exact++;
-      if (m.id !== lastId) prevPts += got;
+      if (canliVar ? !canli : m.id !== lastId) prevPts += got;
     });
 
     Object.keys(SEASON_PICKS).forEach(k => {
       pts += seasonPoints(k, season[k], SEASON_RESULT[k]);
     });
 
-    return { ...u, points:pts, exact, count, prevPoints:prevPts, derbyPts, euroPts, season };
+    return { ...u, points:pts, exact, count, prevPoints:prevPts, derbyPts, euroPts, season,
+             livePts, liveCount };
   });
 
   rows.sort((a,b) => b.points - a.points || b.exact - a.exact || a.name.localeCompare(b.name,'tr'));
   const prev = [...rows].sort((a,b) => b.prevPoints - a.prevPoints || a.name.localeCompare(b.name,'tr'));
   rows.forEach((r,i) => { r.rank = i + 1; r.delta = prev.findIndex(x => x.uid === r.uid) - i; });
   return rows;
+}
+
+/* ============================================================
+   BAŞARIMLAR (puan tablosundaki küçük rozetler)
+
+   Kural: her rozetin TEK sahibi vardır — o daldaki en iyi. Ölçüt
+   henüz anlamsızsa (kimse tam isabet yapmadıysa, derbi oynanmadıysa)
+   rozet HİÇ dağıtılmaz; sıfırla övünülmesin.
+
+   EŞİTLİK: rekor türü rozetlerde (Kâhin) rekoru ÖNCE kıran sahiplenir —
+   rekor böyle çalışır, geçmek için aşmak gerekir. Kalan eşitlikler
+   toplam puana, o da eşitse ada bakar. Tek sahip şart: on kişinin
+   birden taşıdığı rozet rozet olmaktan çıkar, hem de satıra sığmaz.
+
+   Süren maçlar da sayılır, tıpkı puan tablosu gibi — yani "Son Maçın
+   Kralı" maç oynanırken golden gole el değiştirir.
+
+   Yeni rozet eklemek: aşağıdaki listeye bir satır yaz. `deger`
+   oyuncunun o daldaki sayısını döndürür, `esik` altındakiler elenir.
+   ============================================================ */
+const ACHIEVEMENTS = [
+  { id:'kral',   ad:'Son Maçın Kralı', emoji:'👑', esik:1,
+    ipucu:  d => `Son maçta en çok puanı o topladı — ${d} puan`,
+    deger:  d => d.sonMac },
+  { id:'kahin',  ad:'Kâhin',           emoji:'🔮', esik:1,
+    ipucu:  d => `Sezonun tek maçtaki en yüksek puanı — ${d} puan`,
+    deger:  d => d.enIyiMac,
+    /* Aynı rekora ulaşanlar arasında rekoru ÖNCE kıran sahiplenir */
+    kirici: d => d.enIyiSira },
+  { id:'nisanci',ad:'Keskin Nişancı',  emoji:'🎯', esik:1,
+    ipucu:  d => `En çok tam isabet — ${d} maç`,
+    deger:  d => d.tamIsabet },
+  { id:'derbi',  ad:'Derbi Adamı',     emoji:'⚔️', esik:1,
+    ipucu:  d => `Derbilerden en çok puanı o çıkardı — ${d} puan`,
+    deger:  d => d.derbi },
+  { id:'form',   ad:'Formda',          emoji:'🔥', esik:2,
+    ipucu:  d => `Üst üste ${d} maçtır puan alıyor`,
+    deger:  d => d.seri },
+];
+
+/* Oyuncu başına ham sayılar. Puan tablosuyla aynı maç kümesini
+   kullanır: başlamış + skoru girilmiş her maç. */
+function achievementStats(rows){
+  const oynanan = FIXTURES.filter(m => matchState(m) !== 'open' && Store.results[m.id]);
+  const sonMacId = oynanan.length ? oynanan[oynanan.length - 1].id : null;
+  const stats = {};
+
+  rows.forEach(r => {
+    const preds = Store.predictions[r.uid] || {};
+    let enIyiMac = 0, tamIsabet = 0, derbi = 0, sonMac = 0, seri = 0;
+    let enIyiSira = Infinity;                    // rekoru kaçıncı maçta kırdı
+
+    const puanlar = oynanan.map((m, i) => {
+      const p = preds[m.id], res = Store.results[m.id];
+      if (!p) return null;                       // tahmin yoksa seri kırılır
+      const s = scorePrediction(p, res, m);
+      if (s.pts > enIyiMac){ enIyiMac = s.pts; enIyiSira = i; }
+      if (p.h === res.h && p.a === res.a) tamIsabet++;
+      if (m.derby) derbi += s.pts;
+      if (m.id === sonMacId) sonMac = s.pts;
+      return s.pts;
+    });
+
+    /* Form = SONDAN başlayarak kesintisiz puan alınan maç sayısı */
+    for (let i = puanlar.length - 1; i >= 0; i--){
+      if (!puanlar[i]) break;                    // null (tahmin yok) ya da 0 puan
+      seri++;
+    }
+    stats[r.uid] = { enIyiMac, enIyiSira, tamIsabet, derbi, sonMac, seri };
+  });
+  return stats;
+}
+
+/* uid → [rozet].  rows puana göre sıralı geldiği için, eşitlik
+   kırıcıları eşit çıktığında üstteki oyuncu rozeti korur. */
+function achievementsFor(rows){
+  const stats = achievementStats(rows);
+  const out = {};
+
+  ACHIEVEMENTS.forEach(a => {
+    const kirici = r => a.kirici ? a.kirici(stats[r.uid]) : 0;
+    let kazanan = null, enIyi = 0;
+
+    rows.forEach(r => {
+      const v = a.deger(stats[r.uid]);
+      if (v < a.esik) return;                    // bu oyuncu bu dalda yok
+      if (!kazanan || v > enIyi){ kazanan = r; enIyi = v; return; }
+      if (v === enIyi && kirici(r) < kirici(kazanan)) kazanan = r;
+    });
+
+    if (!kazanan) return;                        // dal henüz anlamsız
+    (out[kazanan.uid] ||= []).push({ ...a, sayi: enIyi, baslik: a.ipucu(enIyi) });
+  });
+  return out;
 }
 
 function derbyTable(){
@@ -3627,6 +3807,35 @@ function startCountdown(target, els){
   if (!DEMO_NOW) cdInterval = setInterval(tick, 1000);
 }
 
+/* ---------- Canlı sonuç akışı ----------
+   Yönetici skoru güncellediğinde herkesin ekranı yenilensin diye.
+   İki koruma var:
+     · Veri gerçekten değişmediyse çizim yapılmaz (kendi yazdığımız
+       skor geri geldiğinde boşuna yenilememek için).
+     · Bir kutuya yazı yazılıyorsa çizim ertelenir — yönetici skoru
+       girerken alan altından kayıp yazdığı rakam silinmesin.        */
+let sonucAbone = null, sonucBekleyen = null;
+function watchResults(render){
+  if (!window.Cloud?.watchResults) return;      // demo modda gerek yok
+  sonucAbone?.();
+
+  /* Çizimi ertele: veri her hâlükârda güncel: yalnızca yeniden
+     boyama bekler, böylece hesaplar doğru kalırken imleç kaçmaz. */
+  const ciz = () => {
+    const yaziliyor = document.activeElement &&
+      /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    clearTimeout(sonucBekleyen);
+    if (yaziliyor){ sonucBekleyen = setTimeout(ciz, 4000); return; }
+    render();
+  };
+
+  sonucAbone = window.Cloud.watchResults(yeni => {
+    if (JSON.stringify(yeni) === JSON.stringify(Store.results)) return;
+    Store.results = yeni;
+    ciz();
+  });
+}
+
 /* ---------- Sayfa açılış ---------- */
 async function boot(activePage, render){
   applyTheme(currentTheme());        // ilk boyamadan önce temayı uygula
@@ -3645,6 +3854,7 @@ async function boot(activePage, render){
   initTilt();
   initCounters();
   watchDeli(render);                 // Deli fikir değiştirdikçe tazele
+  watchResults(render);              // gol girilince herkeste tazele
 
   // oturum değişince (başka sekmede çıkış vb.) tazele
   window.Cloud?.onChange(async () => {
@@ -4351,14 +4561,17 @@ function matchCard(m){
       </div>
       <div class="odds-hint" id="hint_${m.id}">${oddsHintText(m, my?.h, my?.a)}</div>`;
   } else if (my){
-    const sc = r && isFinished(m) ? scorePrediction(my, r, m) : null;
+    /* Maç sürerken de puanla: "şu an bitse ne alırdın" bilgisi. */
+    const scored = r && st !== 'open';
+    const sc = scored ? scorePrediction(my, r, m) : null;
     pickArea = `
       <div class="pick" style="gap:14px">
         <div class="pick-label">Senin tahminin</div>
         <span class="score" style="font-size:23px;color:var(--dim)">${my.h} — ${my.a}</span>
         ${sc
           ? `<span class="${ptsClass(sc.tier)}" style="font-family:var(--f-num);font-size:22px"
-                   title="${sc.tier} × ${sc.mult}">+${sc.pts}p</span>`
+                   title="${sc.tier} × ${sc.mult}">+${sc.pts}p</span>
+             ${st === 'live' ? '<span class="live-tag">ŞİMDİLİK</span>' : ''}`
           : `<span style="font-size:11px;color:var(--faint)">maç bitince puanlanacak</span>`}
       </div>`;
   }
@@ -4372,10 +4585,11 @@ function matchCard(m){
 
   if (!open || (adminPeek && !!my)){
     const peek = open;                       // maç başlamadıysa bu yönetici görünümü
+    const scored = r && st !== 'open';
     const rows = Store.users.map(u => {
       const p = (u.you ? myPredictions() : predictionsOf(u.uid))?.[m.id];
       if (!p) return null;
-      const sc = r && isFinished(m) ? scorePrediction(p, r, m) : null;
+      const sc = scored ? scorePrediction(p, r, m) : null;
       return { u, p, pts: sc ? sc.pts : null, tier: sc ? sc.tier : 0 };
     }).filter(Boolean).sort((a,b) => (b.pts ?? -1) - (a.pts ?? -1));
 
@@ -4387,6 +4601,9 @@ function matchCard(m){
       <div class="picks" id="picks_${m.id}">
         ${peek ? `<div class="peek-note">Bu liste maç başlayana kadar
           <b>yalnızca sana</b> görünür.</div>` : ''}
+        ${st === 'live' && scored ? `<div class="live-note">
+          <span class="pulse-dot"></span>Maç sürüyor — puanlar
+          <b>${r.h}-${r.a}</b> skoruna göre, her golde değişir.</div>` : ''}
         ${rows.map(({u,p,pts,tier}) => `
           <div class="prow ${u.you ? 'me' : ''}">
             <span class="who">${u.ai ? u.emoji + ' ' : ''}${u.name}${u.you ? ' (sen)' : ''}</span>
@@ -6196,6 +6413,8 @@ function podium(rows){
 function fullBoard(){
   const rows = leaderboard();
   const maxPts = Math.max(...rows.map(r => r.points), 1);
+  const canli = FIXTURES.filter(isLiveScored);
+  const rozet = achievementsFor(rows);
 
   return podium(rows) + `
   <div class="card reveal">
@@ -6204,6 +6423,11 @@ function fullBoard(){
       <span class="tail">${FIXTURES.filter(isFinished).length} maç oynandı</span>
     </div>
     <div class="card-pad">
+      ${canli.length ? `<div class="live-banner">
+        <span class="pulse-dot"></span>
+        <span><b>${canli.length} maç sürüyor.</b> Tablo canlı skora göre hesaplanıyor —
+        her golde değişir, maç bitince kesinleşir.</span>
+      </div>` : ''}
       ${rows.map(r => `
         <div class="lb-row clickable ${r.you ? 'me' : ''} ${r.rank <= 3 ? 'top' + r.rank : ''}"
              onclick="openProfile('${r.uid}')" role="button" tabindex="0"
@@ -6214,6 +6438,9 @@ function fullBoard(){
             <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.ai ? r.emoji + ' ' : ''}${r.name}${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
             <div class="s">${r.exact} tam isabet · ${r.derbyPts}p · ${r.euroPts}p</div>
+            ${(rozet[r.uid] || []).length ? `<div class="achs">${
+              rozet[r.uid].map(a => `<span class="ach ach-${a.id}" title="${a.baslik}">
+                <i>${a.emoji}</i><b>${a.ad}</b></span>`).join('')}</div>` : ''}
             <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
               <span style="display:block;height:100%;width:${Math.round(r.points / maxPts * 100)}%;
                            background:var(--grad);border-radius:3px"></span>
@@ -6222,10 +6449,11 @@ function fullBoard(){
           <div class="trend ${r.delta > 0 ? 'up' : r.delta < 0 ? 'down' : 'flat'}">
             ${r.delta > 0 ? '▲' + r.delta : r.delta < 0 ? '▼' + Math.abs(r.delta) : '–'}
           </div>
-          <div class="lb-pts">${r.points}</div>
+          <div class="lb-pts">${r.points}${
+            r.livePts ? `<span class="lb-live" title="Süren maçtan gelen geçici puan">+${r.livePts}</span>` : ''}</div>
         </div>`).join('')}
       <div style="font-size:11px;color:var(--faint);margin-top:12px;text-align:center">
-        ▲ / ▼ son maçtan önceki sıralamaya göre değişimi gösterir
+        ▲ / ▼ ${canli.length ? 'süren maç öncesindeki' : 'son maçtan önceki'} sıralamaya göre değişimi gösterir
       </div>
     </div>
   </div>`;
