@@ -615,6 +615,10 @@ body{
   font-variant-numeric:tabular-nums; }
 .lb-row.top1 .lb-pts{ color:var(--gold); }
 
+/* Birinciye altın parıltı. Yazıyı saydamlaştırıp altındaki degradeyi
+   gösterdiği için YALNIZCA ada sarılır: emoji ve rozet gibi renkli
+   ögeler bu kutunun içine girerse görünmez olur (saydam yazı rengi
+   emojiyi de siler). */
 .shine{
   background:linear-gradient(100deg, var(--gold) 12%, var(--text) 32%, var(--gold) 52%);
   background-size:220% 100%;
@@ -6389,7 +6393,8 @@ function podium(rows){
     <div style="display:flex;flex-direction:column;align-items:center;gap:9px;flex:1;min-width:0">
       ${medal(place, 46)}
       <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;
-                  text-overflow:ellipsis;max-width:100%;${r.you ? 'color:var(--iris)' : ''}">${r.name}</div>
+                  text-overflow:ellipsis;max-width:100%;${r.you ? 'color:var(--iris)' : ''}"
+           >${r.ai ? r.emoji + ' ' : ''}${r.name}</div>
       <div style="width:100%;height:${h}px;border-radius:12px 12px 0 0;position:relative;
                   background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.02));
                   border:1px solid var(--line);border-bottom:none;display:grid;place-items:center;">
@@ -6435,7 +6440,8 @@ function fullBoard(){
              title="${r.name} — gelişimini gör">
           <div class="rank">${r.rank <= 3 ? medal(r.rank, 28) : r.rank}</div>
           <div class="lb-name">
-            <div class="n ${r.rank === 1 ? 'shine' : ''}">${r.ai ? r.emoji + ' ' : ''}${r.name}${
+            <div class="n">${r.ai ? r.emoji + ' ' : ''}<span class="${
+              r.rank === 1 ? 'shine' : ''}">${r.name}</span>${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
             <div class="s">${r.exact} tam isabet · ${r.derbyPts}p · ${r.euroPts}p</div>
             ${(rozet[r.uid] || []).length ? `<div class="achs">${
