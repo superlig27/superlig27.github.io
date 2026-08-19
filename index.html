@@ -1192,19 +1192,43 @@ body{
 
 /* ---------- Kart üstü fotoğraf şeridi ----------
    Alta doğru kart zeminine eriyerek biter; sert kesim olmaz. */
+/* Kart üstü görsel şeridi.
+   Perde eskiden en altta TAM opak bitiyordu; koyu bir fotoğrafla
+   birleşince şerit siyah bir banda dönüşüyordu. Artık %88'de durur:
+   görsel görünür, alttaki yazı yine de rahat okunur. Üstte hafif bir
+   aydınlatma, altta yatay bir vurgu çizgisi ile şerit "unutulmuş
+   dolgu" değil, bilerek yapılmış bir başlık gibi durur. */
 .card-banner{
-  position:relative; width:100%;
-  background-size:cover; background-position:center 42%;
-  filter:saturate(.7) contrast(1.04);
+  position:relative; width:100%; overflow:hidden;
+  background-size:cover; background-position:center 45%;
+  filter:saturate(.82) contrast(1.06);
 }
 .card-banner::after{
   content:''; position:absolute; inset:0;
-  background:linear-gradient(180deg,
-    color-mix(in srgb, var(--bg) 22%, transparent) 0%,
-    color-mix(in srgb, var(--bg) 55%, transparent) 55%,
-    var(--bg) 100%);
+  background:
+    radial-gradient(120% 85% at 50% 0%, rgba(255,255,255,.10), transparent 60%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bg) 12%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 42%, transparent) 52%,
+      color-mix(in srgb, var(--bg) 88%, transparent) 100%);
 }
-@media (max-width:520px){ .card-banner{ height:72px !important; } }
+/* Şeridin dibindeki ince vurgu — kart gövdesine geçişi keskinleştirir */
+.card-banner::before{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:2px; z-index:2;
+  background:var(--grad); opacity:.9;
+}
+/* Şerit üstü başlık */
+.card-banner.has-title{ display:flex; align-items:flex-end; }
+.bn-title{
+  position:relative; z-index:3; padding:0 20px 12px;
+  font-family:var(--f-head); font-size:19px; letter-spacing:1.2px;
+  text-transform:uppercase; color:#fff;
+  text-shadow:0 2px 12px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.9);
+}
+@media (max-width:520px){
+  .card-banner{ height:76px !important; }
+  .bn-title{ font-size:15px; padding:0 16px 10px; }
+}
 
 /* Turnuva rozetindeki küçük logo */
 .comp-mark{
@@ -1953,6 +1977,33 @@ body{
 .to-top:hover{ color:var(--text); border-color:var(--line-2); transform:translateY(-2px); }
 @media (max-width:640px){ .to-top{ right:12px; bottom:66px; width:38px; height:38px; } }
 
+/* ---------- Küme düşme işareti ----------
+   Tehlike rengi ve aşağı akan bir zemin: bahsin diğer ikisinden
+   (şampiyonluk, kupa) farklı bir şey olduğunu renk söylüyor. */
+.comp-mark.ico.drop{
+  display:inline-grid; place-items:center; padding:0; box-shadow:none;
+  color:var(--red);
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--red) 26%, transparent),
+    color-mix(in srgb, var(--red) 8%, transparent));
+  border:1px solid color-mix(in srgb, var(--red) 42%, transparent);
+  filter:none;
+}
+.comp-mark.ico.drop svg{ display:block; }
+
+/* ---------- Görsel şeritli pencere ----------
+   Şerit kartın en üstünde durduğu için üst köşe yuvarlaklığını
+   ondan devralır; kapatma düğmesi de görselin üstünde okunsun diye
+   koyulaşır. */
+.modal-shot .card-banner{ border-radius:var(--r-xl) var(--r-xl) 0 0; }
+.modal-shot .modal-head{ border-top:none; }
+.modal-x.on-shot{
+  z-index:4; color:#fff;
+  background:rgba(0,0,0,.42); border-color:rgba(255,255,255,.28);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
+.modal-x.on-shot:hover{ background:rgba(0,0,0,.6); }
+
 /* ---------- Rozet dolabı (profil penceresi) ----------
    Kazanılanlar net, kilitliler soluk. Kilitliyi göstermek bilerek:
    toplanacak bir şey olduğunu bilmek toplamayı başlatır. */
@@ -2362,9 +2413,25 @@ function compMark(code, size = 14, cls = ''){
 
 /* Sezon bahsi başlığının işareti: logosu varsa logo, yoksa emoji.
    Tek yerden geçmesi, üç ayrı başlığın da aynı hizada durmasını sağlar. */
+/* Küme düşme işareti — yerinde çizilir.
+   Burası 13–22 piksel: bu boyutta bir yüz fotoğrafı lekeye dönüşür,
+   okunmaz. Aşağı bakan çift ok "düşüş"ü tek bakışta anlatır, altı
+   temada da doğru renkte çıkar ve dışarıdan görsel çekmez. */
+function dropMark(size = 22){
+  return `<span class="comp-mark ico drop" aria-hidden="true"
+    style="width:${size + 6}px;height:${size + 6}px">
+    <svg viewBox="0 0 24 24" width="${size - 2}" height="${size - 2}" fill="none"
+         stroke="currentColor" stroke-width="2.6"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 5.5 L12 11.5 L18 5.5"/>
+      <path d="M6 13 L12 19 L18 13"/>
+    </svg></span>`;
+}
+
 function seasonMark(cfg, size = 22){
   if (!cfg) return '';
   if (cfg.logoKey) return compMark(cfg.logoKey, size, 'ico');
+  if (cfg.mark === 'drop') return dropMark(size);
   if (!cfg.emoji) return '';
   return `<span class="comp-mark ico emoji" aria-hidden="true"
     style="width:${size + 6}px;height:${size + 6}px;font-size:${size - 2}px">${cfg.emoji}</span>`;
@@ -2823,7 +2890,8 @@ const SEASON_PICKS = {
 
   /* Küme düşmenin ortak bir logosu yok — başlıktaki işaret emoji.
      Değiştirmek istersen tek yer burası (bkz. seasonMark).          */
-  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, emoji:'😩', points:40, kind:'multi', max:3,
+  /* mark:'drop' → başlıktaki aşağı ok işareti (bkz. dropMark) */
+  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, mark:'drop', points:40, kind:'multi', max:3,
               desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
               options: SL_TEAMS,
               lock: SL_LOCK },
@@ -3060,15 +3128,32 @@ function timeLeftShort(ms){
    ve parlaklık açısından denendi (şerit bandı 0.17–0.43 arası).
    Değiştirmek istersen tek yer burası.
    ============================================================ */
+/* Kart üstü görseller — hepsi Unsplash, serbest lisans (ticari kullanım
+   ve atıfsız kullanım serbest). Adresler kalıcı CDN bağlantılarıdır;
+   ?w= ile boyut, ?q= ile sıkıştırma istenir, o yüzden ağırlık yapmaz.
+
+   SEÇİM ÖLÇÜTÜ — PARLAKLIK: bu şeritlerin üstüne koyu bir perde
+   çekiliyor (bkz. .card-banner::after). Karanlık bir fotoğraf perdenin
+   altında tamamen kayboluyor. Eski "board" görselinin ortalama
+   parlaklığı 0.17'ydi ve sıralamanın üstünde siyah bir bant gibi
+   duruyordu; yerine 0.58 parlaklıkta, konusu olmayan (dolayısıyla
+   84 piksellik şeride kırpılınca kafası kesilmeyen) bir saha dokusu
+   kondu. Yeni görsel eklerken bu iki şeye bak: parlak olsun, ve
+   ince bir şeride kırpılmaya dayansın.                              */
 const BANNERS = {
   rules:  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1400&q=70&auto=format',
   europe: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1400&q=70&auto=format',
-  board:  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1400&q=70&auto=format',
+  board:  'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=1400&q=72&auto=format',
   odds:   'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=1400&q=70&auto=format',
 };
-function banner(key, h = 90){
+/* `baslik` verilirse şeridin üstüne oturur — şerit boş bir dolgu
+   olmaktan çıkıp bölümün kendi başlığını taşır. */
+function banner(key, h = 90, baslik = ''){
   const u = BANNERS[key];
-  return u ? `<div class="card-banner" style="height:${h}px;background-image:url('${u}')"></div>` : '';
+  if (!u) return '';
+  return `<div class="card-banner${baslik ? ' has-title' : ''}"
+    style="height:${h}px;background-image:url('${u}')">${
+    baslik ? `<span class="bn-title">${baslik}</span>` : ''}</div>`;
 }
 
 /* ============================================================
@@ -5497,10 +5582,11 @@ function openOddsView(id){
     </div>`;
   }).join('');
 
-  el.innerHTML = `<div class="modal-card" style="max-width:460px">
-    <button class="modal-x" onclick="closeOddsView()" aria-label="Kapat">✕</button>
+  el.innerHTML = `<div class="modal-card modal-shot" style="max-width:460px">
+    <button class="modal-x on-shot" onclick="closeOddsView()" aria-label="Kapat">✕</button>
+    ${banner('odds', 104, 'Oranlar')}
     <div class="modal-head">
-      <span class="brand-mark" style="font-size:15px"></span>
+      <span class="brand-mark" style="font-size:15px">⚖</span>
       <div>
         <div class="modal-title">${TEAMS[m.home].name} – ${TEAMS[m.away].name}</div>
         <div class="modal-sub">${fmtDate(m.dt)}</div>
@@ -6753,7 +6839,7 @@ function podium(rows){
 
   return `
   <div class="card reveal">
-    ${banner('board', 84)}
+    ${banner('board', 116, 'Fantazi Ligi Sıralaması')}
     <div class="card-pad" style="padding-bottom:0">
       <div style="display:flex;align-items:flex-end;gap:10px;">
         ${col(p2, 64, 2)}${col(p1, 92, 1)}${col(p3, 46, 3)}
@@ -6770,8 +6856,9 @@ const LB_SORTS = {
   puan:   { ad:'Puan',        fn:(a,b) => b.points - a.points || b.exact - a.exact },
   isabet: { ad:'Tam isabet',  fn:(a,b) => b.exact - a.exact || b.points - a.points },
   form:   { ad:'Form',        fn:(a,b) => b.delta - a.delta || b.points - a.points },
-  ad:     { ad:'İsim',        fn:(a,b) => a.name.localeCompare(b.name,'tr') },
 };
+/* Kayıtlı seçim listeden kaldırılmış bir ölçüt olabilir (İsim gibi);
+   o zaman sessizce puana dön, boş tablo çizmektense. */
 let lbSort = 'puan', lbQuery = '';
 
 /* Aramada "Çaçi" ile "caci" eşleşsin: Türkçe harfleri sadeleştirir.
@@ -6781,7 +6868,7 @@ const TR_SADE = { 'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','â':'a'
 const adSade = s => (s || '').toLocaleLowerCase('tr')
   .replace(/[çğıöşüâîû]/g, c => TR_SADE[c] || c);
 
-function setLbSort(k){ lbSort = k; render(); }
+function setLbSort(k){ lbSort = LB_SORTS[k] ? k : 'puan'; render(); }
 function onLbSearch(v){
   lbQuery = v;
   /* Tüm sayfayı çizmek imleci kutudan atardı — yalnızca satırları gizle */
@@ -6801,7 +6888,7 @@ function fullBoard(){
   const maxPts = Math.max(...rows.map(r => r.points), 1);
   const canli = FIXTURES.filter(isLiveScored);
   const rozet = achievementsFor(rows);
-  const sirali = [...rows].sort(LB_SORTS[lbSort].fn);
+  const sirali = [...rows].sort((LB_SORTS[lbSort] || LB_SORTS.puan).fn);
 
   return podium(rows) + `
   <div class="card reveal">
@@ -6979,7 +7066,9 @@ function render(){
     <div class="sec-title" style="margin-top:26px"><h3>Ödül</h3><span class="rule"></span></div>
     ${P_tahmin.prizeCard()}
 
-    <div class="sec-title"><h3>Fantazi Ligi Sıralaması</h3><span class="rule"></span></div>
+    <!-- Bölüm başlığı yok: sıralamanın adını artık görsel şerit taşıyor
+         (bkz. banner('board', …, 'Fantazi Ligi Sıralaması')). İkisi
+         birden durunca aynı başlık üst üste iki kez yazıyordu. -->
     ${fullBoard()}
     <div class="sec-title"><h3>Sezon Tahminleri — Kim Ne Dedi</h3><span class="rule"></span></div>
     ${seasonPicksBoard()}
