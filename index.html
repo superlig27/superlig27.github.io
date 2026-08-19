@@ -1804,6 +1804,237 @@ body{
   .reveal{ opacity:1; transform:none; }
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   CİLA KATMANI
+   Buradaki kurallar bilerek en sonda: yukarıdaki bileşenlerin
+   üstüne ortak bir hareket, odak ve yüzey dili çeker. Tek tek
+   bileşene dokunmak yerine hepsini aynı gramerle konuşturur.
+   ════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Tek yerden hareket dili — süre ve yumuşama */
+  --ease:      cubic-bezier(.2,.8,.3,1);   /* çık-yerleş: girişler için */
+  --ease-out:  cubic-bezier(.33,1,.68,1);  /* yalın yavaşlama */
+  --dur-1: .14s;   /* dokunma tepkisi */
+  --dur-2: .24s;   /* üzerine gelme */
+  --dur-3: .42s;   /* yer değiştirme */
+}
+
+/* ---------- Odak halkası ----------
+   Klavyeyle gezen için TEK ve tutarlı bir işaret. :focus yerine
+   :focus-visible: fareyle tıklayanda halka çıkmaz, sekme ile
+   gelende çıkar. Öncesinde yalnızca birkaç alanda odak izi vardı,
+   kalan her şeyde klavye kullanıcısı nerede olduğunu göremiyordu. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible{
+  outline:2px solid var(--iris);
+  outline-offset:2px;
+  border-radius:var(--r-sm);
+}
+/* Fare tıklamasında tarayıcının bıraktığı iz temizlensin */
+:where(a, button, input, select, textarea, [tabindex]):focus:not(:focus-visible){ outline:none; }
+
+/* ---------- Seçim ve kaydırma çubuğu ---------- */
+::selection{ background:color-mix(in srgb, var(--iris) 42%, transparent); color:var(--text); }
+*{ scrollbar-width:thin; scrollbar-color:var(--line-2) transparent; }
+*::-webkit-scrollbar{ width:10px; height:10px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{
+  background:var(--line-2); border-radius:99px;
+  border:3px solid transparent; background-clip:content-box;
+}
+*::-webkit-scrollbar-thumb:hover{ background:var(--dim); background-clip:content-box; }
+
+/* ---------- Yüzey basamakları ----------
+   Eskiden her kart aynı ağırlıktaydı: buzlu cam, aynı gölge, aynı
+   kenarlık. Göz nereye bakacağını seçemiyordu. Artık üç basamak var:
+     .card        → sayfanın ana kartı (değişmedi)
+     .card.quiet  → destek içeriği: cam yok, gölge yok, ince çizgi
+     .card.raised → sayfanın tek kahramanı: daha derin gölge
+   Kart yapısı aynı kaldığı için istediğin karta sınıf eklemen yeter. */
+.card.quiet{
+  background:rgba(255,255,255,.022);
+  border-color:var(--line);
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  box-shadow:none;
+}
+.card.quiet::before{ opacity:.35; }
+.card.raised{ box-shadow:var(--shadow-lg); border-color:var(--line-2); }
+
+/* Tıklanabilir kart: üzerine gelince hafifçe kalkar ve kenarı aydınlanır.
+   Yalnızca .clickable olanlarda — süs değil, "bu tıklanır" işareti. */
+.card.clickable, .card[onclick]{ cursor:pointer; }
+.card.clickable{ transition:transform var(--dur-2) var(--ease), border-color var(--dur-2) linear,
+                            box-shadow var(--dur-2) var(--ease); }
+.card.clickable:hover{ transform:translateY(-2px); border-color:var(--line-2);
+                       box-shadow:var(--shadow-lg); }
+
+/* ---------- Düğme ve pil dokunma tepkisi ---------- */
+.btn{ transition:transform var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease),
+                 filter var(--dur-2) linear; }
+.btn.ghost:hover{ border-color:var(--line-2); }
+.pill{ transition:color var(--dur-2) linear, border-color var(--dur-2) linear,
+                  background var(--dur-2) linear, transform var(--dur-1) var(--ease); }
+.pill:hover{ transform:translateY(-1px); }
+.pill:active{ transform:translateY(0) scale(.97); }
+.pill.on:hover{ transform:translateY(-1px); filter:brightness(1.06); }
+
+/* ---------- Puan tablosu satırı ----------
+   Üzerine gelince solda ince bir vurgu şeridi açılır: satırın
+   tıklanabilir olduğunu, satırı boyamadan söyler. */
+.lb-row{ position:relative; transition:background var(--dur-2) linear,
+                                       border-color var(--dur-2) linear; }
+.lb-row.clickable::after{
+  content:''; position:absolute; left:0; top:10%; bottom:10%; width:2px;
+  border-radius:0 2px 2px 0; background:var(--grad); opacity:0;
+  transform:scaleY(.3); transform-origin:center;
+  transition:opacity var(--dur-2) linear, transform var(--dur-2) var(--ease);
+}
+.lb-row.clickable:hover::after, .lb-row.clickable:focus-visible::after{
+  opacity:1; transform:scaleY(1);
+}
+.lb-row.clickable:hover{ background:rgba(255,255,255,.05); }
+
+/* ---------- Boş durum ----------
+   Önceden tek satır gri yazıydı. Sezon başında en çok görülen ekran
+   burasıydı; artık bir simge, bir başlık ve yol gösteren bir alt
+   satır taşıyor. Eski tek-satırlık kullanımlar da çalışmaya devam eder. */
+.empty{ text-align:center; padding:44px 20px; color:var(--faint); font-size:13px; }
+.empty .em{
+  display:grid; place-items:center; width:52px; height:52px; margin:0 auto 14px;
+  border-radius:50%; font-size:23px; opacity:1;
+  background:var(--grad-soft); border:1px solid var(--line-2);
+}
+.empty .ttl{
+  display:block; font-family:var(--f-head); font-size:15px; letter-spacing:.9px;
+  text-transform:uppercase; color:var(--dim); margin-bottom:7px;
+}
+.empty .hint{ display:block; max-width:330px; margin:0 auto; line-height:1.7; font-size:12px; }
+
+/* ---------- İpucu balonu ----------
+   title= özniteliği bir saniye gecikir ve dokunmatikte hiç çıkmaz.
+   Bu balon anında açılır; title da yedek olarak yerinde bırakılır. */
+.tip{ position:relative; }
+.tip::after{
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 8px); left:50%;
+  transform:translateX(-50%) translateY(4px);
+  z-index:120; pointer-events:none; opacity:0;
+  padding:7px 11px; border-radius:var(--r-sm);
+  background:color-mix(in srgb, var(--bg-2) 96%, transparent);
+  border:1px solid var(--line-2); box-shadow:var(--shadow);
+  font-family:var(--f-body); font-size:11px; font-weight:500; line-height:1.5;
+  letter-spacing:.2px; color:var(--text); text-transform:none;
+  white-space:normal; width:max-content; max-width:210px; text-align:center;
+  transition:opacity var(--dur-2) linear, transform var(--dur-2) var(--ease);
+}
+.tip:hover::after, .tip:focus-visible::after{ opacity:1; transform:translateX(-50%) translateY(0); }
+/* Kenara taşanlar için hizalama kaçamağı */
+.tip.tip-l::after{ left:0; transform:translateX(0) translateY(4px); }
+.tip.tip-l:hover::after{ transform:translateX(0) translateY(0); }
+.tip.tip-r::after{ left:auto; right:0; transform:translateX(0) translateY(4px); }
+.tip.tip-r:hover::after{ transform:translateX(0) translateY(0); }
+
+/* ---------- Yukarı çık ----------
+   Uzun listelerde (124 maç, 17 satır) başa dönmek için. Sayfa
+   kaydırılınca belirir; tema düğmesinin üstüne oturur. */
+.to-top{
+  position:fixed; right:16px; bottom:74px; z-index:149;
+  width:42px; height:42px; border-radius:50%; cursor:pointer;
+  display:grid; place-items:center; font-size:15px; line-height:1;
+  color:var(--dim); background:rgba(var(--pane),.86); border:1px solid var(--line-2);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  box-shadow:var(--shadow);
+  opacity:0; transform:translateY(10px) scale(.9); pointer-events:none;
+  transition:opacity var(--dur-2) linear, transform var(--dur-2) var(--ease),
+             color var(--dur-2) linear, border-color var(--dur-2) linear;
+}
+.to-top.on{ opacity:1; transform:none; pointer-events:auto; }
+.to-top:hover{ color:var(--text); border-color:var(--line-2); transform:translateY(-2px); }
+@media (max-width:640px){ .to-top{ right:12px; bottom:66px; width:38px; height:38px; } }
+
+/* ---------- Rozet dolabı (profil penceresi) ----------
+   Kazanılanlar net, kilitliler soluk. Kilitliyi göstermek bilerek:
+   toplanacak bir şey olduğunu bilmek toplamayı başlatır. */
+.badge-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:4px; }
+.badge{
+  display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
+  gap:1px 9px; align-items:center;
+  padding:9px 11px; border-radius:var(--r-md);
+  background:rgba(255,255,255,.04); border:1px solid var(--line);
+}
+.badge i{ grid-row:1 / span 2; font-style:normal; font-size:19px; line-height:1; }
+.badge b{ font-size:11.5px; font-weight:700; letter-spacing:.2px; color:var(--text); }
+.badge em{ font-style:normal; font-size:10px; line-height:1.45; color:var(--faint); }
+.badge.locked{ opacity:.42; filter:grayscale(1); }
+.badge.badge-u{ background:rgba(255,255,255,.055); border-color:var(--line-2); }
+/* Ünvan rozetleri satırdaki pil renklerini ödünç alır */
+.badge-u.ach-kral   b{ color:var(--gold); }
+.badge-u.ach-kahin  b{ color:var(--violet); }
+.badge-u.ach-nisanci b{ color:var(--cyan); }
+.badge-u.ach-derbi  b{ color:var(--magenta); }
+.badge-u.ach-form   b{ color:var(--red); }
+.badge-u.ach-demir  b{ color:var(--text); }
+.badge-u.ach-kumar  b{ color:var(--gold); }
+.pf-count{
+  font-family:var(--f-num); font-size:12px; letter-spacing:.5px; color:var(--faint);
+  margin-left:6px; padding:1px 7px; border-radius:99px;
+  background:rgba(255,255,255,.06); border:1px solid var(--line);
+}
+.pf-sub{
+  font-size:9.5px; letter-spacing:1.8px; text-transform:uppercase;
+  color:var(--faint); margin:12px 0 7px;
+}
+.pf-none{ font-size:11.5px; color:var(--faint); padding:4px 0 8px; }
+@media (max-width:420px){ .badge-grid{ grid-template-columns:1fr; } }
+
+/* Satırdaki madalya sayacı — nötr, ünvanların önüne geçmesin */
+.ach-med{ color:var(--dim); background:rgba(255,255,255,.06); border-color:var(--line-2); }
+
+/* ---------- Puan tablosu araç çubuğu (ara + sırala) ---------- */
+.lb-tools{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.lb-search{
+  position:relative; flex:1 1 180px; min-width:0;
+  display:flex; align-items:center;
+}
+.lb-search .ico{
+  position:absolute; left:11px; font-size:14px; color:var(--faint); pointer-events:none;
+}
+.lb-search input{
+  width:100%; font-family:var(--f-body); font-size:12.5px; color:var(--text);
+  padding:9px 12px 9px 31px; border-radius:99px;
+  background:rgba(255,255,255,.04); border:1px solid var(--line);
+  outline:none; transition:border-color var(--dur-2) linear, background var(--dur-2) linear;
+}
+.lb-search input::placeholder{ color:var(--faint); }
+.lb-search input:focus{ border-color:var(--line-2); background:rgba(255,255,255,.07); }
+.lb-search input::-webkit-search-cancel-button{ filter:grayscale(1) opacity(.5); cursor:pointer; }
+.lb-sort{ display:flex; gap:5px; flex-wrap:wrap; }
+.lb-sort .pill{ padding:6px 11px; font-size:11px; }
+@media (max-width:520px){
+  .lb-tools{ gap:8px; }
+  .lb-search{ flex:1 1 100%; }
+  .lb-sort{ width:100%; }
+  .lb-sort .pill{ flex:1; text-align:center; padding:6px 4px; }
+}
+
+/* ---------- Klavye kısayolları penceresi ---------- */
+.keys{ display:grid; gap:9px; }
+.keyrow{
+  display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--dim);
+  padding:8px 2px; border-bottom:1px solid rgba(255,255,255,.045);
+}
+.keyrow:last-child{ border-bottom:none; }
+.keyrow kbd{
+  font-family:var(--f-num); font-size:13px; letter-spacing:.5px; line-height:1;
+  min-width:26px; padding:6px 8px; border-radius:7px; text-align:center;
+  color:var(--text); background:rgba(255,255,255,.07);
+  border:1px solid var(--line-2); border-bottom-width:2px;
+}
+.keyrow .d{ flex:1; }
 </style>
 </head>
 <body>
@@ -3401,63 +3632,125 @@ function leaderboard(){
 }
 
 /* ============================================================
-   BAŞARIMLAR (puan tablosundaki küçük rozetler)
+   BAŞARIMLAR
 
-   Kural: her rozetin TEK sahibi vardır — o daldaki en iyi. Ölçüt
-   henüz anlamsızsa (kimse tam isabet yapmadıysa, derbi oynanmadıysa)
-   rozet HİÇ dağıtılmaz; sıfırla övünülmesin.
+   İki ayrı tür var; karıştırmamak önemli çünkü kuralları farklı:
 
-   EŞİTLİK: rekor türü rozetlerde (Kâhin) rekoru ÖNCE kıran sahiplenir —
-   rekor böyle çalışır, geçmek için aşmak gerekir. Kalan eşitlikler
-   toplam puana, o da eşitse ada bakar. Tek sahip şart: on kişinin
-   birden taşıdığı rozet rozet olmaktan çıkar, hem de satıra sığmaz.
+   ÜNVAN  — o dalın EN İYİSİNE verilir, tek sahibi vardır ve el
+            değiştirir. Rekabet buradan çıkar.
+   MADALYA — bir eşiği geçen HERKES alır, bir daha kaybetmez.
+            Toplanacak şey buradan çıkar.
 
-   Süren maçlar da sayılır, tıpkı puan tablosu gibi — yani "Son Maçın
-   Kralı" maç oynanırken golden gole el değiştirir.
+   Madalyaların bir kısmı GİZLİdir: profilde kilitli listede bile
+   görünmezler, ancak hak edilince ortaya çıkarlar. Sürpriz olsun
+   diye — nasıl alındığını önceden söylersek şaka kaçar.
 
-   Yeni rozet eklemek: aşağıdaki listeye bir satır yaz. `deger`
-   oyuncunun o daldaki sayısını döndürür, `esik` altındakiler elenir.
+   Ölçüt anlamsızsa (kimse tam isabet yapmadıysa, derbi
+   oynanmadıysa) ünvan HİÇ dağıtılmaz; sıfırla övünülmesin.
+   Süren maçlar da sayılır, tıpkı puan tablosu gibi — yani
+   "Son Maçın Kralı" maç oynanırken golden gole el değiştirir.
    ============================================================ */
-const ACHIEVEMENTS = [
+
+/* ---- ÜNVANLAR: tek sahipli, kapışmalı ---- */
+const TITLES = [
   { id:'kral',   ad:'Son Maçın Kralı', emoji:'👑', esik:1,
-    ipucu:  d => `Son maçta en çok puanı o topladı — ${d} puan`,
-    deger:  d => d.sonMac },
+    ipucu: d => `Son maçta en çok puanı o topladı — ${d} puan`,
+    deger: d => d.sonMac },
   { id:'kahin',  ad:'Kâhin',           emoji:'🔮', esik:1,
-    ipucu:  d => `Sezonun tek maçtaki en yüksek puanı — ${d} puan`,
-    deger:  d => d.enIyiMac,
+    ipucu: d => `Sezonun tek maçtaki en yüksek puanı — ${d} puan`,
+    deger: d => d.enIyiMac,
     /* Aynı rekora ulaşanlar arasında rekoru ÖNCE kıran sahiplenir */
     kirici: d => d.enIyiSira },
   { id:'nisanci',ad:'Keskin Nişancı',  emoji:'🎯', esik:1,
-    ipucu:  d => `En çok tam isabet — ${d} maç`,
-    deger:  d => d.tamIsabet },
+    ipucu: d => `En çok tam isabet — ${d} maç`,
+    deger: d => d.tamIsabet },
   { id:'derbi',  ad:'Derbi Adamı',     emoji:'⚔️', esik:1,
-    ipucu:  d => `Derbilerden en çok puanı o çıkardı — ${d} puan`,
-    deger:  d => d.derbi },
+    ipucu: d => `Derbilerden en çok puanı o çıkardı — ${d} puan`,
+    deger: d => d.derbi },
   { id:'form',   ad:'Formda',          emoji:'🔥', esik:2,
-    ipucu:  d => `Üst üste ${d} maçtır puan alıyor`,
-    deger:  d => d.seri },
+    ipucu: d => `Üst üste ${d} maçtır puan alıyor`,
+    deger: d => d.seri },
+  { id:'demir',  ad:'Demir Adam',      emoji:'🧱', esik:3,
+    ipucu: d => `En çok maçtan puan çıkaran o — ${d} maç`,
+    deger: d => d.puanliMac },
+  { id:'kumar',  ad:'Kumarbaz',        emoji:'🎲', esik:2,
+    ipucu: d => `Tutturduğu en yüksek oran — ${d.toFixed(2)}`,
+    deger: d => d.enBuyukOran },
+];
+
+/* ---- MADALYALAR: eşiği geçen herkes alır ----
+   `gizli:true` olanlar hak edilene kadar hiçbir yerde görünmez. */
+const MEDALS = [
+  { id:'ilkkan', ad:'İlk Kan',        emoji:'🩸',
+    ne:'İlk puanını al',                     kosul: d => d.toplamPuan >= 1 },
+  { id:'ilkisabet', ad:'İlk İsabet',  emoji:'🎯',
+    ne:'Bir maçın skorunu tam bil',          kosul: d => d.tamIsabet >= 1 },
+  { id:'yuzler', ad:'Yüzler Kulübü',  emoji:'💯',
+    ne:'100 puana ulaş',                     kosul: d => d.toplamPuan >= 100 },
+  { id:'besyuz', ad:'Beş Yüzler',     emoji:'🏆',
+    ne:'500 puana ulaş',                     kosul: d => d.toplamPuan >= 500 },
+  { id:'cifte',  ad:'Çifte Dikiş',    emoji:'⚡',
+    ne:'3 maçın skorunu tam bil',            kosul: d => d.tamIsabet >= 3 },
+  { id:'kadro',  ad:'Tam Kadro',      emoji:'📋',
+    ne:'Oynanan her maça tahmin gir (en az 5 maç)',
+    kosul: d => d.oynanan >= 5 && d.tahminSayisi === d.oynanan },
+
+  /* ---- gizli olanlar ---- */
+  { id:'ayna',   ad:'Ayna',           emoji:'🪞', gizli:true,
+    ne:'Skoru tam ters bildin — 2-1 dedin, 1-2 bitti',
+    kosul: d => d.ayna >= 1 },
+  { id:'sifirci',ad:'Sıfırcı',        emoji:'🥚', gizli:true,
+    ne:'Üç kez 0-0 tahmini yaptın',          kosul: d => d.sifirci >= 3 },
+  { id:'yagmur', ad:'Gol Yağmuru',    emoji:'🌋', gizli:true,
+    ne:'Beş golden fazla atılan bir maçı tam bildin',
+    kosul: d => d.golYagmuru >= 1 },
+  { id:'cirak',  ad:'Deli’nin Çırağı',emoji:'🃏', gizli:true,
+    ne:'Bir maçta Deli ile aynı skoru yazdın',
+    kosul: d => d.deliCirak >= 1 },
+  { id:'kilpayi',ad:'Kıl Payı',       emoji:'💀', gizli:true,
+    ne:'Beş kez tek golle kaçırdın',         kosul: d => d.kilPayi >= 5 },
 ];
 
 /* Oyuncu başına ham sayılar. Puan tablosuyla aynı maç kümesini
    kullanır: başlamış + skoru girilmiş her maç. */
 function achievementStats(rows){
-  const oynanan = FIXTURES.filter(m => matchState(m) !== 'open' && Store.results[m.id]);
+  const oynanan  = FIXTURES.filter(m => matchState(m) !== 'open' && Store.results[m.id]);
   const sonMacId = oynanan.length ? oynanan[oynanan.length - 1].id : null;
+  const deliTah  = Store.predictions['ai_deli'] || {};
   const stats = {};
 
   rows.forEach(r => {
     const preds = Store.predictions[r.uid] || {};
-    let enIyiMac = 0, tamIsabet = 0, derbi = 0, sonMac = 0, seri = 0;
-    let enIyiSira = Infinity;                    // rekoru kaçıncı maçta kırdı
+    let enIyiMac = 0, enIyiSira = Infinity, tamIsabet = 0, derbi = 0, sonMac = 0;
+    let seri = 0, puanliMac = 0, tahminSayisi = 0, enBuyukOran = 0;
+    let ayna = 0, sifirci = 0, golYagmuru = 0, deliCirak = 0, kilPayi = 0;
 
     const puanlar = oynanan.map((m, i) => {
       const p = preds[m.id], res = Store.results[m.id];
       if (!p) return null;                       // tahmin yoksa seri kırılır
+      tahminSayisi++;
       const s = scorePrediction(p, res, m);
+      const tam = p.h === res.h && p.a === res.a;
+
       if (s.pts > enIyiMac){ enIyiMac = s.pts; enIyiSira = i; }
-      if (p.h === res.h && p.a === res.a) tamIsabet++;
+      if (s.pts > 0) puanliMac++;
+      if (tam) tamIsabet++;
       if (m.derby) derbi += s.pts;
       if (m.id === sonMacId) sonMac = s.pts;
+      if (s.tier === 2) kilPayi++;               // tek gol farkla kaçan
+
+      /* Gizliler */
+      if (p.h === 0 && p.a === 0) sifirci++;
+      if (!tam && p.h === res.a && p.a === res.h) ayna++;
+      if (tam && (res.h + res.a) > 5) golYagmuru++;
+      const dp = deliTah[m.id];
+      if (r.uid !== 'ai_deli' && dp && dp.h === p.h && dp.a === p.a) deliCirak++;
+
+      /* Tutturulan en yüksek oran — riski ödüllendiren ünvan için */
+      if (tam){
+        const o = oddsInfo(m.id)?.scores?.[`${p.h}:${p.a}`];
+        if (o && o > enBuyukOran) enBuyukOran = o;
+      }
       return s.pts;
     });
 
@@ -3466,18 +3759,22 @@ function achievementStats(rows){
       if (!puanlar[i]) break;                    // null (tahmin yok) ya da 0 puan
       seri++;
     }
-    stats[r.uid] = { enIyiMac, enIyiSira, tamIsabet, derbi, sonMac, seri };
+
+    stats[r.uid] = { enIyiMac, enIyiSira, tamIsabet, derbi, sonMac, seri,
+                     puanliMac, tahminSayisi, enBuyukOran, oynanan: oynanan.length,
+                     toplamPuan: r.points,
+                     ayna, sifirci, golYagmuru, deliCirak, kilPayi };
   });
   return stats;
 }
 
-/* uid → [rozet].  rows puana göre sıralı geldiği için, eşitlik
-   kırıcıları eşit çıktığında üstteki oyuncu rozeti korur. */
-function achievementsFor(rows){
-  const stats = achievementStats(rows);
+/* uid → [ünvan].  rows puana göre sıralı geldiği için, eşitlik
+   kırıcıları eşit çıktığında üstteki oyuncu ünvanı korur. */
+function titlesFor(rows, stats){
+  stats = stats || achievementStats(rows);
   const out = {};
 
-  ACHIEVEMENTS.forEach(a => {
+  TITLES.forEach(a => {
     const kirici = r => a.kirici ? a.kirici(stats[r.uid]) : 0;
     let kazanan = null, enIyi = 0;
 
@@ -3489,11 +3786,27 @@ function achievementsFor(rows){
     });
 
     if (!kazanan) return;                        // dal henüz anlamsız
-    (out[kazanan.uid] ||= []).push({ ...a, sayi: enIyi, baslik: a.ipucu(enIyi) });
+    (out[kazanan.uid] ||= []).push({ ...a, tur:'unvan', sayi: enIyi, baslik: a.ipucu(enIyi) });
   });
   return out;
 }
 
+/* uid → [madalya] */
+function medalsFor(rows, stats){
+  stats = stats || achievementStats(rows);
+  const out = {};
+  rows.forEach(r => {
+    out[r.uid] = MEDALS.filter(m => m.kosul(stats[r.uid]))
+                       .map(m => ({ ...m, tur:'madalya', baslik: m.ne }));
+  });
+  return out;
+}
+
+/* Puan tablosu ve profil aynı hesabı iki kez yapmasın */
+function achievementsFor(rows){
+  const stats = achievementStats(rows);
+  return { stats, unvan: titlesFor(rows, stats), madalya: medalsFor(rows, stats) };
+}
 function derbyTable(){
   const t = {}; BIG4.forEach(c => t[c] = { code:c, w:0, d:0, l:0, gf:0, ga:0, pts:0, played:0 });
   FIXTURES.forEach(m => {
@@ -4225,6 +4538,33 @@ function openProfile(uid){
   const best = [...progRows].sort((a,b) => b.got - a.got)[0];
   const recent = [...progRows].reverse().slice(0, 8);
 
+  /* ---- Rozet dolabı ----
+     Kazanılan ünvan ve madalyalar önde; henüz alınmamış AÇIK
+     madalyalar soluk durur ki peşinden gidilecek bir şey olsun.
+     GİZLİ madalyalar kilitli listede bile görünmez — sürpriz. */
+  const roz = achievementsFor(rows);
+  const kazanilanU = roz.unvan[uid] || [];
+  const kazanilanM = roz.madalya[uid] || [];
+  const kazanilanId = new Set(kazanilanM.map(m => m.id));
+  const kilitli = MEDALS.filter(m => !m.gizli && !kazanilanId.has(m.id));
+
+  const rozetHtml = `
+    <div class="pf-h">Rozetler
+      <span class="pf-count">${kazanilanU.length + kazanilanM.length}</span></div>
+    ${kazanilanU.length || kazanilanM.length ? `
+      <div class="badge-grid">
+        ${kazanilanU.map(a => `<div class="badge badge-u ach-${a.id}">
+          <i>${a.emoji}</i><b>${a.ad}</b><em>${a.baslik}</em></div>`).join('')}
+        ${kazanilanM.map(a => `<div class="badge">
+          <i>${a.emoji}</i><b>${a.ad}</b><em>${a.ne}</em></div>`).join('')}
+      </div>` : `<div class="pf-none">Henüz rozet yok — ilk puanla birlikte gelir.</div>`}
+    ${kilitli.length ? `
+      <div class="pf-sub">Kilitli</div>
+      <div class="badge-grid">
+        ${kilitli.map(a => `<div class="badge locked">
+          <i>${a.emoji}</i><b>${a.ad}</b><em>${a.ne}</em></div>`).join('')}
+      </div>` : ''}`;
+
   /* Başkasının sezon seçimi kilit açılana kadar gizli; kendi profilinde görünür */
   const mine = Store.me && Store.me.uid === uid;
   const seasonHtml = Object.keys(SEASON_PICKS).map(k => {
@@ -4263,6 +4603,8 @@ function openProfile(uid){
         <div class="stat"><b>${me.exact}</b><span>Tam isabet</span></div>
         <div class="stat"><b>${me.count}</b><span>Tahmin</span></div>
       </div>
+
+      ${rozetHtml}
 
       ${progRows.length >= 2 ? `
         <div class="pf-h">Puan gelişimi</div>
@@ -4802,8 +5144,11 @@ function groupedCards(list, limit){
 function matchList(){
   const all = filterFixtures(upcomingFixtures(), fTeam, fComp);
   if (!all.length){
-    return `<div class="card"><div class="empty">
-      Bu filtreye uyan yaklaşan maç yok.</div></div>`;
+    return `<div class="card quiet"><div class="empty">
+      <span class="em">🔭</span>
+      <span class="ttl">Maç bulunamadı</span>
+      <span class="hint">Bu filtreyle yaklaşan maç yok. Filtreleri temizleyip
+        tüm fikstüre bakabilirsin.</span></div></div>`;
   }
 
   const oranli  = all.filter(hasOdds);
@@ -4819,8 +5164,11 @@ function matchList(){
       </button>`;
     }
   } else {
-    html += `<div class="card"><div class="empty">
-      Şu an oranı girilmiş maç yok — aşağıdan tüm fikstüre bakabilirsin.</div></div>`;
+    html += `<div class="card quiet"><div class="empty">
+      <span class="em">⏳</span>
+      <span class="ttl">Tahmine açık maç yok</span>
+      <span class="hint">Oranlar girilince maçlar burada belirir.
+        Aşağıdan tüm fikstüre göz atabilirsin.</span></div></div>`;
   }
 
   /* Oranı olmayanlar: varsayılan kapalı */
@@ -6415,11 +6763,45 @@ function podium(rows){
   </div>`;
 }
 
+/* Sıralama ölçütleri. Sıra numarası HER ZAMAN puana göredir; buradaki
+   seçim yalnızca satırların diziliş sırasını değiştirir, kimsenin
+   derecesini değiştirmez. */
+const LB_SORTS = {
+  puan:   { ad:'Puan',        fn:(a,b) => b.points - a.points || b.exact - a.exact },
+  isabet: { ad:'Tam isabet',  fn:(a,b) => b.exact - a.exact || b.points - a.points },
+  form:   { ad:'Form',        fn:(a,b) => b.delta - a.delta || b.points - a.points },
+  ad:     { ad:'İsim',        fn:(a,b) => a.name.localeCompare(b.name,'tr') },
+};
+let lbSort = 'puan', lbQuery = '';
+
+/* Aramada "Çaçi" ile "caci" eşleşsin: Türkçe harfleri sadeleştirir.
+   (Oranlar sayfasındaki norm() o modülün kapanışında kaldığı için
+   burada kendi küçük sürümü duruyor.) */
+const TR_SADE = { 'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','â':'a','î':'i','û':'u' };
+const adSade = s => (s || '').toLocaleLowerCase('tr')
+  .replace(/[çğıöşüâîû]/g, c => TR_SADE[c] || c);
+
+function setLbSort(k){ lbSort = k; render(); }
+function onLbSearch(v){
+  lbQuery = v;
+  /* Tüm sayfayı çizmek imleci kutudan atardı — yalnızca satırları gizle */
+  const q = adSade(v.trim());
+  let gorunen = 0;
+  document.querySelectorAll('#lbRows .lb-row').forEach(el => {
+    const uyar = !q || adSade(el.dataset.name || '').includes(q);
+    el.style.display = uyar ? '' : 'none';
+    if (uyar) gorunen++;
+  });
+  const bos = document.getElementById('lbNoHit');
+  if (bos) bos.style.display = gorunen ? 'none' : '';
+}
+
 function fullBoard(){
   const rows = leaderboard();
   const maxPts = Math.max(...rows.map(r => r.points), 1);
   const canli = FIXTURES.filter(isLiveScored);
   const rozet = achievementsFor(rows);
+  const sirali = [...rows].sort(LB_SORTS[lbSort].fn);
 
   return podium(rows) + `
   <div class="card reveal">
@@ -6433,9 +6815,26 @@ function fullBoard(){
         <span><b>${canli.length} maç sürüyor.</b> Tablo canlı skora göre hesaplanıyor —
         her golde değişir, maç bitince kesinleşir.</span>
       </div>` : ''}
-      ${rows.map(r => `
+
+      <div class="lb-tools">
+        <div class="lb-search">
+          <span class="ico" aria-hidden="true">⌕</span>
+          <input id="lbSearch" type="search" placeholder="Oyuncu ara…  ( / )"
+                 value="${lbQuery.replace(/"/g,'&quot;')}" autocomplete="off"
+                 aria-label="Oyuncu ara" oninput="P_puan.onLbSearch(this.value)">
+        </div>
+        <div class="lb-sort" role="group" aria-label="Sıralama ölçütü">
+          ${Object.entries(LB_SORTS).map(([k,v]) => `
+            <button class="pill ${lbSort === k ? 'on' : ''}"
+                    onclick="P_puan.setLbSort('${k}')">${v.ad}</button>`).join('')}
+        </div>
+      </div>
+
+      <div id="lbRows">
+      ${sirali.map(r => `
         <div class="lb-row clickable ${r.you ? 'me' : ''} ${r.rank <= 3 ? 'top' + r.rank : ''}"
              onclick="openProfile('${r.uid}')" role="button" tabindex="0"
+             data-name="${r.name.replace(/"/g,'&quot;')}"
              onkeydown="if(event.key==='Enter')openProfile('${r.uid}')"
              title="${r.name} — gelişimini gör">
           <div class="rank">${r.rank <= 3 ? medal(r.rank, 28) : r.rank}</div>
@@ -6444,9 +6843,18 @@ function fullBoard(){
               r.rank === 1 ? 'shine' : ''}">${r.name}</span>${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
             <div class="s">${r.exact} tam isabet · ${r.derbyPts}p · ${r.euroPts}p</div>
-            ${(rozet[r.uid] || []).length ? `<div class="achs">${
-              rozet[r.uid].map(a => `<span class="ach ach-${a.id}" title="${a.baslik}">
-                <i>${a.emoji}</i><b>${a.ad}</b></span>`).join('')}</div>` : ''}
+            ${(() => {
+              /* Ünvanlar satırda görünür (nadir ve renkli), madalyalar
+                 tek bir sayaca sığar — yoksa satır rozet çorbasına döner.
+                 Tamamı profil penceresinde. */
+              const u = rozet.unvan[r.uid] || [], md = rozet.madalya[r.uid] || [];
+              if (!u.length && !md.length) return '';
+              return `<div class="achs">${
+                u.map(a => `<span class="ach ach-${a.id} tip" data-tip="${a.baslik}"
+                   title="${a.baslik}"><i>${a.emoji}</i><b>${a.ad}</b></span>`).join('')}${
+                md.length ? `<span class="ach ach-med tip" data-tip="${md.length} madalya — hepsi için profile bak"
+                   title="${md.length} madalya"><i>🎖</i><b>${md.length}</b></span>` : ''}</div>`;
+            })()}
             <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
               <span style="display:block;height:100%;width:${Math.round(r.points / maxPts * 100)}%;
                            background:var(--grad);border-radius:3px"></span>
@@ -6458,6 +6866,12 @@ function fullBoard(){
           <div class="lb-pts">${r.points}${
             r.livePts ? `<span class="lb-live" title="Süren maçtan gelen geçici puan">+${r.livePts}</span>` : ''}</div>
         </div>`).join('')}
+      </div>
+      <div id="lbNoHit" class="empty" style="display:none;padding:26px 20px">
+        <span class="em">🔍</span>
+        <span class="ttl">Eşleşme yok</span>
+        <span class="hint">Bu adda bir oyuncu bulunamadı.</span>
+      </div>
       <div style="font-size:11px;color:var(--faint);margin-top:12px;text-align:center">
         ▲ / ▼ ${canli.length ? 'süren maç öncesindeki' : 'son maçtan önceki'} sıralamaya göre değişimi gösterir
       </div>
@@ -6550,8 +6964,10 @@ function seasonPicksBoard(){
               %${pct}
             </span>
           </div>`;
-        }).join('') : `<div class="empty" style="padding:18px">
-            Henüz kimse seçim yapmadı.</div>`}
+        }).join('') : `<div class="empty" style="padding:22px">
+            <span class="em">🗳️</span>
+            <span class="ttl">Sandık boş</span>
+            <span class="hint">Bu bahiste henüz kimse seçim yapmadı.</span></div>`}
       </div>
     </div>`;
   };
@@ -6570,7 +6986,7 @@ function render(){
   `;
   initReveal(); initTilt(); initCounters();
 }
-return { podium, fullBoard, seasonPicksBoard, render };
+return { podium, fullBoard, seasonPicksBoard, setLbSort, onLbSearch, render };
 })();
 
 /* ===== gecmis.html ===== */
@@ -6798,8 +7214,11 @@ function render(){
 
     <div class="sec-title"><h3>Oynanan Maçlar</h3><span class="rule"></span></div>
     ${filterBar()}
-    ${all.length ? cards : `<div class="card"><div class="empty">
-        Bu filtreye uyan oynanmış maç yok.</div></div>`}
+    ${all.length ? cards : `<div class="card quiet"><div class="empty">
+        <span class="em">📼</span>
+        <span class="ttl">Kayıt yok</span>
+        <span class="hint">Bu filtreyle oynanmış maç bulunamadı.
+          Sezon ilerledikçe burası dolacak.</span></div></div>`}
     ${all.length > shown ? `<button class="btn ghost" onclick="P_gecmis.showMore()"
         style="width:100%;margin-top:6px">${all.length - shown} maç daha göster ▾</button>` : ''}
   `;
@@ -6807,6 +7226,131 @@ function render(){
 }
 return { recordsBlock, derbyStandings, filterBar, setTeam, setComp, showMore, historyCard, togglePicks, summary, render };
 })();
+
+/* ============================================================
+   KULLANIM KOLAYLIKLARI
+   Esc ile kapatma, klavye kısayolları, başa dön düğmesi.
+   Hepsi tek yerde durur ki hangi tuşun ne yaptığı tek bakışta
+   görülsün — kısayol eklemek KEYS listesine satır yazmaktır.
+   ============================================================ */
+
+/* Açık olan pencereyi kapat. Sıra önemli: en son açılan en üsttedir,
+   Esc önce onu kapatmalı (oran penceresi profilin üstüne açılabiliyor). */
+const MODALS = [
+  { id:'oddsModal',    kapat:() => closeOdds() },
+  { id:'oddsView',     kapat:() => closeOddsView() },
+  { id:'profileModal', kapat:() => closeProfile() },
+  { id:'authModal',    kapat:() => closeAuth() },
+  { id:'keysModal',    kapat:() => closeKeys() },
+];
+function acikPencere(){
+  /* DOM sırası değil, z-sırası: sonradan eklenen düğüm daha üsttedir */
+  const acik = MODALS.map(m => ({ ...m, el: document.getElementById(m.id) }))
+                     .filter(m => m.el);
+  if (!acik.length) return null;
+  return acik.reduce((a, b) =>
+    (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING) ? b : a);
+}
+function kapatUstteki(){
+  const m = acikPencere();
+  if (!m) return false;
+  m.kapat();
+  return true;
+}
+
+/* ---------- Klavye kısayolları penceresi ---------- */
+function openKeys(){
+  let el = document.getElementById('keysModal');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'keysModal'; el.className = 'modal';
+    el.addEventListener('click', e => { if (e.target === el) closeKeys(); });
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div class="modal-card">
+    <button class="modal-x" onclick="closeKeys()" aria-label="Kapat">✕</button>
+    <div class="modal-head">
+      <span class="brand-mark" style="font-size:15px">⌨</span>
+      <div>
+        <div class="modal-title">Klavye Kısayolları</div>
+        <div class="modal-sub">Fareye uzanmadan gez</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="keys">
+        ${KEYS.map(k => `<div class="keyrow">
+          <kbd>${k.tus}</kbd><span class="d">${k.ne}</span></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+  requestAnimationFrame(() => el.classList.add('show'));
+}
+function closeKeys(){
+  const el = document.getElementById('keysModal');
+  if (!el) return;
+  el.classList.remove('show');
+  setTimeout(() => el.remove(), 260);
+}
+
+/* Kısayol çizelgesi. `git` alanı olanlar sayfa değiştirir. */
+const KEYS = [
+  { tus:'1', ne:'Tahminler',       git:'tahminler.html' },
+  { tus:'2', ne:'Puan Tablosu',    git:'puan-tablosu.html' },
+  { tus:'3', ne:'Geçmiş Maçlar',   git:'gecmis.html' },
+  { tus:'4', ne:'Nasıl Oynanır',   git:'nasil-oynanir.html' },
+  { tus:'0', ne:'Ana sayfa',       git:'index.html' },
+  { tus:'/', ne:'Puan tablosunda oyuncu ara' },
+  { tus:'T', ne:'Tema değiştirici' },
+  { tus:'?', ne:'Bu pencere' },
+  { tus:'Esc', ne:'Açık pencereyi kapat' },
+];
+
+function initShortcuts(){
+  document.addEventListener('keydown', (e) => {
+    /* Esc her yerde çalışır — yazı yazarken bile pencereyi kapatmalı */
+    if (e.key === 'Escape'){ if (kapatUstteki()) e.preventDefault(); return; }
+
+    /* Kutuya yazı yazılıyorsa harf kısayolları susar, yoksa
+       skor kutusuna "1" yazan kişi Tahminler'e ışınlanırdı. */
+    const yaziliyor = e.target instanceof Element &&
+      (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable);
+    if (yaziliyor || e.ctrlKey || e.metaKey || e.altKey) return;
+
+    if (e.key === '?'){ openKeys(); e.preventDefault(); return; }
+    if (e.key === '/'){
+      const ara = document.getElementById('lbSearch');
+      if (ara){ ara.focus(); ara.select(); e.preventDefault(); }
+      return;
+    }
+    if (e.key === 't' || e.key === 'T'){
+      document.getElementById('themeDock')?.classList.toggle('open');
+      e.preventDefault(); return;
+    }
+    const k = KEYS.find(x => x.tus === e.key && x.git);
+    if (k){ go(k.git); e.preventDefault(); }
+  });
+}
+
+/* ---------- Başa dön ---------- */
+function initToTop(){
+  const b = document.createElement('button');
+  b.className = 'to-top'; b.type = 'button';
+  b.setAttribute('aria-label', 'Başa dön');
+  b.innerHTML = '↑';
+  b.onclick = () => window.scrollTo({ top:0, behavior:'smooth' });
+  document.body.appendChild(b);
+
+  let raf = null;
+  const bak = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      b.classList.toggle('on', window.scrollY > 620);
+    });
+  };
+  window.addEventListener('scroll', bak, { passive:true });
+  bak();
+}
 
 /* ===== Tek dosya yönlendirici ===== */
 const ROUTES = {
@@ -6840,6 +7384,8 @@ function go(href){
 
 /* auth-ui açık sayfayı yeniden çizmek için global render() bekler */
 window.render = () => { setActive(CURRENT); ROUTES[CURRENT](); };
+initShortcuts();
+initToTop();
 boot(HOME, window.render);
 
 </script>
