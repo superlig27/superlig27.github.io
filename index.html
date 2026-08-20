@@ -1977,6 +1977,53 @@ body{
 .to-top:hover{ color:var(--text); border-color:var(--line-2); transform:translateY(-2px); }
 @media (max-width:640px){ .to-top{ right:12px; bottom:66px; width:38px; height:38px; } }
 
+/* ---------- Maç medyası (video / fotoğraf) ----------
+   Kart yalnızca medya varken (ya da yönetici bakarken) basılır;
+   burada "boş hâl" diye bir stil yok, çünkü boş hâl hiç çizilmiyor. */
+.med-card{ overflow:hidden; }
+/* Video 16:9 çerçevede */
+.med-frame{
+  position:relative; width:100%; background:#000;
+  aspect-ratio:16 / 9;
+}
+.med-frame iframe, .med-frame video{
+  position:absolute; inset:0; width:100%; height:100%;
+  border:0; display:block;
+}
+/* Fotoğraf KENDİ oranını korur; uzun kareler ekranı kaplamasın diye
+   yüksekliği sınırlanır, kırpılmaz (contain). */
+.med-foto{ display:block; background:#000; line-height:0; }
+.med-foto img{
+  display:block; width:100%; max-height:440px;
+  object-fit:contain; object-position:center;
+}
+.med-foto:hover img{ opacity:.94; }
+
+/* Alt yazı — medyanın hemen altında, tırnak içinde bir espri gibi */
+.med-yazi{
+  padding:12px 16px; font-size:12.5px; line-height:1.6;
+  color:var(--dim); text-align:center; font-style:italic;
+  border-top:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+}
+
+/* Yönetici satırı: kutular esner, düğmeler sabit kalır */
+.med-admin{ flex-wrap:wrap; }
+.med-admin .med-in{
+  flex:1 1 200px; min-width:0;
+  font-family:var(--f-body); font-size:12px; color:var(--text);
+  padding:8px 11px; border-radius:var(--r-sm);
+  background:rgba(0,0,0,.28); border:1px solid var(--line-2); outline:none;
+}
+.med-admin .med-yazi-in{ flex:1 1 160px; font-style:italic; }
+.med-admin .med-in:focus{ border-color:var(--iris); }
+.med-admin .med-in::placeholder{ color:var(--faint); font-style:normal; }
+@media (max-width:520px){
+  .med-admin .med-in{ flex:1 1 100%; }
+  .med-admin .btn{ flex:1; }
+  .med-foto img{ max-height:320px; }
+}
+
 /* ---------- Oran simgesi ---------- */
 .odds-emoji{ display:inline-block; line-height:1; }
 /* Emoji kendi rengini taşır; degrade zemin altında kalmasın diye
@@ -2193,7 +2240,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
          signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp,
-         writeBatch, onSnapshot }
+         writeBatch, onSnapshot, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -2246,13 +2293,14 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
        users [{uid,name}] · predictions uid→{matchId:{h,a}}
        season uid→{champion,derbyKing,euroBest} · results matchId→{h,a} */
     async loadAll(){
-      const [uSnap, pSnap, sSnap, rSnap, oSnap, lSnap] = await Promise.all([
+      const [uSnap, pSnap, sSnap, rSnap, oSnap, lSnap, vSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'predictions')),
         getDocs(collection(db, 'season')),
         getDocs(collection(db, 'results')),
         getDocs(collection(db, 'odds')),
         getDoc(doc(db, 'config', 'logos')),
+        getDocs(collection(db, 'media')),
       ]);
 
       const users = [];
@@ -2276,7 +2324,11 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
 
       const logos = lSnap.exists() ? (lSnap.data().urls || {}) : {};
 
-      return { users, predictions, season, results, odds, logos };
+      /* Maça iliştirilen medya — yalnızca yönetici ekler, olmayabilir */
+      const media = {};
+      vSnap.forEach(d => { const x = d.data(); if (x.url) media[d.id] = { url:x.url, yazi:x.yazi || '' }; });
+
+      return { users, predictions, season, results, odds, logos, media };
     },
 
     async savePrediction(uid, matchId, val){
@@ -2314,6 +2366,22 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
     },
     async saveLogos(urls){
       await setDoc(doc(db, 'config', 'logos'), { urls, at: serverTimestamp() });
+    },
+    /* Maç medyası: { url, yazi }. Boş adres = medyayı kaldır; belge
+       tamamen silinir ki "medya var ama boş" diye bir ara durum
+       oluşmasın. yazi = altına düşülen espri, isteğe bağlı. */
+    async saveMedia(matchId, url, yazi){
+      const ref = doc(db, 'media', matchId);
+      if (url) await setDoc(ref, { url, yazi: yazi || '', at: serverTimestamp() });
+      else     await deleteDoc(ref);
+    },
+    /* Medya eklenince/silinince herkeste anında görünsün */
+    watchMedia(cb){
+      return onSnapshot(collection(db, 'media'), snap => {
+        const out = {};
+        snap.forEach(d => { const x = d.data(); if (x.url) out[d.id] = { url:x.url, yazi:x.yazi || '' }; });
+        cb(out);
+      }, err => console.warn('[Cloud] medya dinlemesi koptu:', err));
     },
 
     async login(email, pass){ await signInWithEmailAndPassword(auth, email, pass); },
@@ -3427,6 +3495,7 @@ const Store = {
   results: {},         // matchId -> { h, a }
   odds: {},            // matchId -> { scores: { "2:1": 8.5, … } }
   logos: {},           // takım kodu -> arma adresi (yönetici girer)
+  media: {},           // matchId -> { url, yazi } (yönetici iliştirir, olmayabilir)
   ready: false,
 };
 
@@ -3536,6 +3605,27 @@ function aiPrediction(uid, m){
   return { h, a };
 }
 
+/* ------------------------------------------------------------
+   DELİ'NİN SEZON BAHİSLERİ
+
+   Deli eskiden listedeki EN UZUN oranı alıyordu. İki sorun çıktı:
+
+   1) Şampiyonlar Ligi'nde oran tablosuna Dinamo Zagreb (326.00)
+      girince seçim "sürpriz" olmaktan çıkıp imkânsıza döndü. Artık
+      DELI_BAND aralığından seçiyor: tutması şaşırtır ama saçma
+      değildir — Napoli, Dortmund, Roma, Leipzig gibi isimler.
+      Bant boş kalırsa (dar listelerde olabilir) en uzun atışa döner.
+
+   2) Süper Lig'de oranlar güncellenince en uzun atış Trabzonspor'dan
+      Beşiktaş'a geçmişti. Oysa Deli'nin karakteri kalabalığın
+      gitmediği yere gitmek; Trabzonspor'u kimse seçmiyor. Bu yüzden
+      şampiyonluk seçimi DELI_SEZON ile elle sabitlendi.
+
+   Değiştirmek istersen tek yer aşağıdaki iki sabit.
+   ------------------------------------------------------------ */
+const DELI_SEZON = { champion:'TS', uclWinner:'Napoli' };   // elle sabitlenen seçimler
+const DELI_BAND  = [25, 70];            // "karanlık at" oran aralığı
+
 function aiSeason(uid){
   const robot = uid === 'ai_robot';
   const out = {};
@@ -3543,7 +3633,15 @@ function aiSeason(uid){
     const cfg = SEASON_PICKS[k];
     if (!cfg?.odds) return;
     const sorted = Object.entries(cfg.odds).sort((a,b) => a[1] - b[1]);
-    out[k] = (robot ? sorted[0] : sorted[sorted.length - 1])[0];
+    if (robot){ out[k] = sorted[0][0]; return; }          // Robot: hep favori
+
+    /* Elle sabitlenmiş seçim varsa (ve hâlâ listedeyse) o kullanılır */
+    const sabit = DELI_SEZON[k];
+    if (sabit && cfg.odds[sabit] != null){ out[k] = sabit; return; }
+
+    const bant = sorted.filter(([, o]) => o >= DELI_BAND[0] && o <= DELI_BAND[1]);
+    const havuz = bant.length ? bant : [sorted[sorted.length - 1]];
+    out[k] = havuz[Math.floor(rng(hashStr('deli-sezon-' + k))() * havuz.length)][0];
   });
   /* Küme düşmede oran yok: Robot en zayıf üçü, Deli rastgele üçü seçer */
   const pool = SL_TEAMS.filter(c => !BIG4.includes(c));
@@ -3699,6 +3797,7 @@ async function loadCloud(){
   Store.results = snap.results;
   Store.odds = snap.odds || {};
   Store.logos = snap.logos || {};
+  Store.media = snap.media || {};
   Store.me = C.currentUser();
   if (Store.me) Store.users.forEach(u => { u.you = u.uid === Store.me.uid; });
   injectAI();
@@ -3787,6 +3886,61 @@ async function setResult(id, h, a){
   const val = { h: parseInt(h), a: parseInt(a) };
   Store.results[id] = val;
   if (Store.mode === 'bulut') await window.Cloud.saveResult(id, val);
+}
+
+/* ============================================================
+   MAÇ MEDYASI (video ya da fotoğraf)
+   Yönetici sıradaki maça bir şey iliştirebilir: komik bir klip,
+   bir ekran görüntüsü, bir karikatür… MEDYA YOKSA sayfada hiçbir
+   iz kalmaz — ne boş kutu, ne başlık, ne çizgi. mediaBlock() boş
+   dize döner.
+
+   GÜVENLİK: yapıştırılan adres OLDUĞU GİBİ iframe'e konmaz. YouTube
+   için yalnızca video kimliği çıkarılır ve gömme adresini biz
+   kurarız; dosya adreslerinde ise https ve bilinen uzantı şartı
+   aranır. Tanınmayan hiçbir şey sayfaya girmez.
+   ============================================================ */
+/* Alt yazı serbest metindir ve HTML'e basılır: kaçırılmazsa
+   yapıştırılan bir etiket sayfaya karışır. Tek yerden geçsin. */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function mediaEmbed(url){
+  const u = (url || '').trim();
+  if (!u) return null;
+
+  /* YouTube: watch?v= · youtu.be/ · shorts/ · embed/ — kimlik 11 karakter */
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (yt) return { tur:'yt', id:yt[1],
+    src:`https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1&playsinline=1` };
+
+  /* Doğrudan video dosyası — yalnızca https ve bilinen uzantılar */
+  if (/^https:\/\/[^\s"'<>]+\.(mp4|webm|ogg)(\?[^\s"'<>]*)?$/i.test(u))
+    return { tur:'video', src:u };
+
+  /* Fotoğraf — gif dahil, çünkü hareketli gif de "fotoğraf" gibi durur */
+  if (/^https:\/\/[^\s"'<>]+\.(jpe?g|png|gif|webp|avif)(\?[^\s"'<>]*)?$/i.test(u))
+    return { tur:'foto', src:u };
+
+  return null;                       // tanınmadı → hiç gösterme
+}
+
+/* Kayıt {url, yazi} nesnesidir. Eski bir kayıt düz metin olarak
+   durabilir diye tek yerden normalleştirilir. */
+function mediaOf(id){
+  const v = Store.media?.[id];
+  if (!v) return null;
+  return typeof v === 'string' ? { url:v, yazi:'' } : { url:v.url || '', yazi:v.yazi || '' };
+}
+
+/* Yönetici: maça medya iliştir / kaldır (boş adres = kaldır) */
+async function setMedia(id, url, yazi){
+  if (!isAdmin()) throw new Error('Yetki yok');
+  if (url) Store.media[id] = { url, yazi: yazi || '' };
+  else delete Store.media[id];
+  if (Store.mode === 'bulut') await window.Cloud.saveMedia(id, url, yazi);
 }
 
 /* Yönetici: takım armalarını kaydet (kod → adres) */
@@ -4368,7 +4522,7 @@ function startCountdown(target, els){
        skor geri geldiğinde boşuna yenilememek için).
      · Bir kutuya yazı yazılıyorsa çizim ertelenir — yönetici skoru
        girerken alan altından kayıp yazdığı rakam silinmesin.        */
-let sonucAbone = null, sonucBekleyen = null;
+let sonucAbone = null, sonucBekleyen = null, medyaAbone = null;
 function watchResults(render){
   if (!window.Cloud?.watchResults) return;      // demo modda gerek yok
   sonucAbone?.();
@@ -4386,6 +4540,16 @@ function watchResults(render){
   sonucAbone = window.Cloud.watchResults(yeni => {
     if (JSON.stringify(yeni) === JSON.stringify(Store.results)) return;
     Store.results = yeni;
+    ciz();
+  });
+
+  /* Video da canlı dinlenir: yönetici klibi iliştirince herkeste
+     kendiliğinden belirsin, kimse sayfayı yenilemek zorunda kalmasın.
+     Aynı çizim ertelemesini paylaşır. */
+  medyaAbone?.();
+  medyaAbone = window.Cloud.watchMedia?.(yeni => {
+    if (JSON.stringify(yeni) === JSON.stringify(Store.media)) return;
+    Store.media = yeni;
     ciz();
   });
 }
@@ -4991,6 +5155,73 @@ function heroBlock(){
       </div>
     </div>
   </div>`;
+}
+
+/* ---------------- Sıradaki maçın videosu ----------------
+   Video yoksa BOŞ DİZE döner: sayfada ne kutu, ne başlık, ne boşluk
+   kalır — kullanıcı bir şeyin eksik olduğunu fark etmez. Yönetici
+   ise videoyu buradan iliştirir/kaldırır. */
+function mediaBlock(){
+  const m = upcomingFixtures()[0];
+  if (!m) return '';
+
+  const kayit = mediaOf(m.id) || { url:'', yazi:'' };
+  const adres = kayit.url;
+  const v = mediaEmbed(adres);
+  const yonetici = isAdmin();
+  if (!v && !yonetici) return '';                 // sıradan kullanıcı: hiçbir şey
+
+  /* Video 16:9 çerçeveye oturur; fotoğraf ise KENDİ oranını korur —
+     bir mizah karesi kırpılırsa şakası kaçar. */
+  let govde = '';
+  if (v?.tur === 'yt'){
+    govde = `<div class="med-frame">
+      <iframe src="${v.src}" title="Maç videosu" loading="lazy" frameborder="0"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe></div>`;
+  } else if (v?.tur === 'video'){
+    govde = `<div class="med-frame">
+      <video src="${v.src}" controls preload="metadata" playsinline></video></div>`;
+  } else if (v?.tur === 'foto'){
+    govde = `<a class="med-foto" href="${v.src}" target="_blank" rel="noopener noreferrer"
+        title="Tam boyutta aç">
+        <img src="${v.src}" alt="Maça iliştirilen fotoğraf" loading="lazy"></a>`;
+  }
+
+  /* Alt yazı yalnızca medya varken ve doluyken çıkar */
+  const altYazi = (v && kayit.yazi)
+    ? `<div class="med-yazi">${esc(kayit.yazi)}</div>` : '';
+
+  const panel = !yonetici ? '' : `
+    <div class="admin-box med-admin">
+      <div class="lbl">Maç medyası</div>
+      <input id="med_${m.id}" type="url" class="med-in" autocomplete="off"
+             placeholder="YouTube bağlantısı · .mp4 · .jpg / .png / .gif"
+             value="${adres.replace(/"/g,'&quot;')}">
+      <input id="medy_${m.id}" type="text" class="med-in med-yazi-in" autocomplete="off"
+             maxlength="140" placeholder="Alt yazı (isteğe bağlı)"
+             value="${esc(kayit.yazi)}">
+      <button class="btn" onclick="P_tahmin.saveMedia('${m.id}')">Kaydet</button>
+      ${adres ? `<button class="btn ghost" onclick="P_tahmin.saveMedia('${m.id}', true)">Kaldır</button>` : ''}
+    </div>`;
+
+  return `<div class="card reveal med-card">${govde}${altYazi}${
+    panel ? `<div class="card-pad" style="padding:12px 14px">${panel}</div>` : ''}</div>`;
+}
+
+async function saveMedia(id, sil){
+  const url  = sil ? '' : (document.getElementById('med_' + id)?.value || '').trim();
+  const yazi = sil ? '' : (document.getElementById('medy_' + id)?.value || '').trim().slice(0, 140);
+  if (url && !mediaEmbed(url)){
+    toast('Tanınmayan adres — YouTube, .mp4 ya da .jpg/.png/.gif olmalı');
+    return;
+  }
+  try { await setMedia(id, url, yazi); }
+  catch(e){ toast('Kaydedilemedi: ' + (e.message || '')); return; }
+  const tur = mediaEmbed(url)?.tur;
+  toast(!url ? 'Medya kaldırıldı' : tur === 'foto' ? 'Fotoğraf eklendi' : 'Video eklendi');
+  render();
 }
 
 /* ---------------- İstatistikler ---------------- */
@@ -5669,6 +5900,7 @@ function render(){
 
   document.getElementById('app').innerHTML = `
     ${heroBlock()}
+    ${mediaBlock()}
     ${seasonTop ? seasonSection(true) : ''}
     ${statsBlock()}
 
@@ -5703,7 +5935,7 @@ function render(){
   }
   initReveal(); initTilt(); initCounters();
 }
-return { heroBlock, statsBlock, prizeCard, multBlock, filterBar, setTeam, setComp, showMore, showMoreSoon, toggleSoon, matchCard, togglePicks, hintOdds, savePick, saveResult, matchList, seasonBlock, seasonSection, seasonDone, pickSeason, pickSummary, rulesBlock, render };
+return { heroBlock, mediaBlock, saveMedia, statsBlock, prizeCard, multBlock, filterBar, setTeam, setComp, showMore, showMoreSoon, toggleSoon, matchCard, togglePicks, hintOdds, savePick, saveResult, matchList, seasonBlock, seasonSection, seasonDone, pickSeason, pickSummary, rulesBlock, render };
 })();
 
 /* ============================================================
