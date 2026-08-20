@@ -1109,8 +1109,14 @@ body{
   .cd-cell{ min-width:0; flex:1; }
   .cd-cell b{ font-size:25px; }
   .team-grid{ grid-template-columns:repeat(2,1fr); }
-  .matchup{ gap:6px; }
-  .side .nm{ font-size:12.5px; }
+  /* "Erzurumspor" 3 piksel eksikten "Erzurumsp…" diye kesiliyordu.
+     Orta sütun kısaltılamaz (skor "1 — 0" tam 76 pikseli kullanıyor),
+     o yüzden boşluk yanlardan toplandı: sütun aralıkları biraz daraldı,
+     arma ile ad arasındaki boşluk azaldı, harf aralığı sıfırlandı.
+     Toplam ~6 piksel — en uzun takım adı için yeterli pay. */
+  .matchup{ gap:4px; }
+  .side{ gap:8px; }
+  .side .nm{ font-size:12.5px; letter-spacing:0; }
   .side .meta{ display:none; }
   .score{ font-size:29px; }
   .card-pad{ padding:16px; }
@@ -1560,11 +1566,22 @@ body{
               border-color:color-mix(in srgb, var(--magenta) 36%, transparent); }
 .ach-form   { color:var(--red); background:color-mix(in srgb, var(--red) 13%, transparent);
               border-color:color-mix(in srgb, var(--red) 34%, transparent); }
+/* Dar ekranda rozet adları yer kaplıyordu, hepsi simgeye iniyordu —
+   ama o hâlde ne oldukları hiçbir yerden anlaşılmıyordu: dokunmatikte
+   ne title ne de :hover balonu çıkar. Artık İLK rozet (listedeki en
+   üst sıradaki, yani en değerlisi) adıyla durur; kalanlar simge kalır
+   ve dokunulunca balonunu açar (bkz. initTapTips). */
 @media (max-width:520px){
   .ach b{ display:none; }
+  .ach.lead b{ display:inline; }
   .ach{ padding:3px 6px; gap:0; }
+  .ach.lead{ padding:3px 8px 3px 6px; gap:4px; }
   .ach i{ font-size:12px; }
 }
+
+/* Parmakla açılan ipucu balonu */
+.tip.acik::after{ opacity:1; transform:translateX(-50%) translateY(0); }
+.tip.tip-l.acik::after, .tip.tip-r.acik::after{ transform:translateX(0) translateY(0); }
 
 /* ---------- Canlı (geçici) puan işaretleri ----------
    Maç sürerken hesaplanan puanlar kesin değil; hepsi aynı kırmızı
@@ -7458,14 +7475,16 @@ function fullBoard(){
                 data-tip="Üst üste ${r.streak} maçtır puan alıyor"
                 title="${r.streak} maçlık puan serisi">🔥<b>${r.streak}</b></span>` : ''}${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
-            <div class="s">${r.exact} tam isabet · ${r.derbyPts}p · ${r.euroPts}p</div>
+            <!-- Eskiden "1 tam isabet · 0p · 0p" yazıyordu; iki sayının
+                 neyi saydığı hiçbir yerde belli değildi. Artık adlarıyla. -->
+            <div class="s">${r.exact} tam isabet · derbi ${r.derbyPts}p · Avrupa ${r.euroPts}p</div>
             ${(() => {
               /* Ünvanlar tek kişilik olduğu için bir satırda birkaç
                  taneden fazlası olmaz; hepsi doğrudan gösterilir. */
               const u = rozet.unvan[r.uid] || [];
               if (!u.length) return '';
               return `<div class="achs">${
-                u.map(a => `<span class="ach ach-${a.id} tip" data-tip="${a.baslik}"
+                u.map((a, i) => `<span class="ach ach-${a.id} tip ${i ? '' : 'lead'}" data-tip="${a.baslik}"
                    title="${a.baslik}"><i>${a.emoji}</i><b>${a.ad}</b></span>`).join('')}</div>`;
             })()}
             <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
@@ -7953,6 +7972,31 @@ function initShortcuts(){
   });
 }
 
+/* ---------- Dokunmatikte ipucu balonu ----------
+   Telefonda :hover yok ve title= hiç görünmez; rozetler bu yüzden
+   anlamı okunamayan renkli noktalara dönüşüyordu. Burada balon
+   PARMAKLA açılıyor.
+
+   Olay YAKALAMA evresinde dinleniyor ve durduruluyor: rozet, tıklanınca
+   profili açan satırın içinde duruyor. Durdurmazsak rozete dokunmak
+   profili açar ve balon hiç görünmez.                                */
+function initTapTips(){
+  document.addEventListener('click', (e) => {
+    /* Fare kontrolü BURADA yapılır, dinleyici kurulurken değil:
+       kurulum anında bakarsak, sayfa masaüstünde açılıp sonra
+       dokunmatiğe geçen bir cihazda (ya da geliştirici araçlarında)
+       özellik ölü kalır. Faresi olanda zaten :hover çalışıyor. */
+    if (!matchMedia('(hover: none)').matches) return;
+    const t = e.target.closest?.('.tip[data-tip]');
+    /* Başka bir yere dokunulduysa açık balonları kapat */
+    document.querySelectorAll('.tip.acik').forEach(x => { if (x !== t) x.classList.remove('acik'); });
+    if (!t) return;
+    e.preventDefault();
+    e.stopPropagation();                              // satırın tıklaması çalışmasın
+    t.classList.toggle('acik');
+  }, true);
+}
+
 /* ---------- Başa dön ---------- */
 function initToTop(){
   const b = document.createElement('button');
@@ -8008,6 +8052,7 @@ function go(href){
 window.render = () => { setActive(CURRENT); ROUTES[CURRENT](); };
 initShortcuts();
 initToTop();
+initTapTips();
 boot(HOME, window.render);
 
 </script>
