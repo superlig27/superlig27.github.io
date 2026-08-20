@@ -1978,12 +1978,20 @@ body{
 @media (max-width:640px){ .to-top{ right:12px; bottom:66px; width:38px; height:38px; } }
 
 /* ---------- Oran simgesi ---------- */
-.odds-svg{ display:block; }
+.odds-emoji{ display:inline-block; line-height:1; }
+/* Emoji kendi rengini taşır; degrade zemin altında kalmasın diye
+   pencere başlığındaki yuvarlak sade bırakılır. */
 .brand-mark.odds-mark{
-  display:grid; place-items:center; color:var(--ink);
+  display:grid; place-items:center;
+  background:rgba(255,255,255,.08); border:1px solid var(--line-2);
 }
-.odds-btn .odds-svg{ opacity:.85; }
-.odds-btn:hover .odds-svg{ opacity:1; }
+.odds-btn .odds-emoji{ margin-right:2px; }
+
+/* Beraberlik satırındaki kılıçlar — arma genişliğiyle aynı kutuda */
+.ov-draw{
+  display:inline-grid; place-items:center; width:20px; height:20px;
+  font-size:14px; line-height:1; flex-shrink:0;
+}
 
 /* ---------- Form serisi ateşi ----------
    Adın hemen yanında, ünvan pillerinden ayrı bir dilde: bu bir
@@ -2073,11 +2081,21 @@ body{
   background:rgba(255,255,255,.05); border:1px solid var(--line);
   max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-/* Bu oyuncunun taşıdığı ünvan */
+/* Bakılan profilin taşıdığı ünvan */
 .tl.mine{ background:rgba(255,255,255,.06); border-color:var(--line-2); }
 .tl.mine i{ filter:none; opacity:1; }
 .tl.mine .tl-b b{ color:var(--text); }
-.tl.mine .tl-who{ color:var(--ink); background:var(--grad); border-color:transparent; }
+/* Etiketin iki hâli:
+     .you   → ünvan GİRİŞ YAPANDA; degrade ile en güçlü vurgu
+     .owner → ünvan bakılan kişide; adı vurgu renginde            */
+.tl-who.you{
+  color:var(--ink); background:var(--grad); border-color:transparent;
+}
+.tl-who.owner{
+  color:var(--iris); text-transform:none; letter-spacing:.2px;
+  background:color-mix(in srgb, var(--iris) 14%, transparent);
+  border-color:color-mix(in srgb, var(--iris) 40%, transparent);
+}
 .tl.free{ opacity:.55; }
 /* Ünvana özel renk, satırdaki pillerle aynı dil */
 .tl.mine.ach-kral   .tl-b b{ color:var(--gold); }
@@ -3238,21 +3256,14 @@ function timeLeftShort(ms){
    Değiştirmek istersen tek yer burası.
    ============================================================ */
 /* ------------------------------------------------------------
-   ORAN SİMGESİ
-   Yükselen basamaklar + bir yıldız: "oran arttıkça ödül büyür".
-   Aramadan gelen hazır ikonlar ya düşük çözünürlüklü PNG ya da
-   beyaz zeminli oluyor; bu çizim her boyutta net kalır, temanın
-   rengini alır ve ağdan bir şey beklemez.
+   ORAN SİMGESİ — çubuk grafik emojisi
+   Emoji, sistemin kendi çizimini kullanır: her platformda tanıdık
+   durur ve renk/boyut ayarı gerektirmez. Boyut yazı puntosundan
+   gelir, o yüzden tek parametre yeter.
    ------------------------------------------------------------ */
 function oddsIcon(size = 18){
-  return `<svg class="odds-svg" viewBox="0 0 24 24" width="${size}" height="${size}"
-    fill="none" stroke="currentColor" stroke-width="2"
-    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M3 20 L3 15"/><path d="M9 20 L9 11"/><path d="M15 20 L15 14"/>
-    <path d="M21 20 L21 6"/>
-    <path d="M17.6 3.6 L18.6 5.7 L21 6 L19.3 7.7 L19.7 10 L17.6 8.9 L15.5 10
-             L15.9 7.7 L14.2 6 L16.6 5.7 Z" fill="currentColor" stroke="none" opacity=".9"/>
-  </svg>`;
+  return `<span class="odds-emoji" aria-hidden="true"
+    style="font-size:${size}px">📊</span>`;
 }
 
 /* Kart üstü görseller — hepsi Unsplash, serbest lisans (ticari kullanım
@@ -4766,19 +4777,31 @@ function openProfile(uid){
   const tahta = titleBoard(rows, stats);
   const bende = tahta.filter(t => t.tutan && t.tutan.uid === uid);
 
+  /* Sağdaki etiket İKİ ayrı soruyu ayırt etmeli:
+       · ünvanı GİRİŞ YAPAN mı taşıyor   → "sende"
+       · bakılan PROFİL mi taşıyor       → o kişinin adı, vurgulu
+     Eskiden tek karşılaştırma vardı ve sahibi bakılan profille
+     kıyaslanıyordu; başkasının profiline girince onun ünvanları
+     "sende" diye görünüyordu. İkisi artık ayrı değişken.        */
+  const benimUid = Store.me && !Store.me.anon ? Store.me.uid : null;
+
   const satir = (t) => {
-    const benim = t.tutan && t.tutan.uid === uid;
-    const bos = !t.tutan;
-    const kim = bos ? 'sahipsiz'
-      : benim ? 'sende'
-      : (rows.find(r => r.uid === t.tutan.uid)?.name || '—');
-    return `<div class="tl ${benim ? 'mine' : ''} ${bos ? 'free' : ''} ${benim ? 'ach-' + t.id : ''}">
+    const bos    = !t.tutan;
+    const sahip  = bos ? null : t.tutan.uid;
+    const benimMi   = !bos && benimUid && sahip === benimUid;   // giriş yapan taşıyor
+    const profilinMi = !bos && sahip === uid;                   // bakılan kişi taşıyor
+    const sahipAdi = bos ? '' : (rows.find(r => r.uid === sahip)?.name || '—');
+    const kim = bos ? 'sahipsiz' : benimMi ? 'sende' : sahipAdi;
+    const etiketSinif = benimMi ? 'you' : profilinMi ? 'owner' : '';
+    return `<div class="tl ${profilinMi ? 'mine' : ''} ${bos ? 'free' : ''} ${
+              profilinMi ? 'ach-' + t.id : ''}">
       <i>${t.emoji}</i>
       <div class="tl-b">
         <b>${t.ad}</b>
         <em>${t.tutan ? t.baslikKisa : 'bu dalda henüz kimse yok'}</em>
       </div>
-      <span class="tl-who">${kim}</span>
+      <span class="tl-who ${etiketSinif}" ${
+        !bos && !benimMi ? `title="${sahipAdi} taşıyor"` : ''}>${kim}</span>
     </div>`;
   };
   /* Kısa açıklama: uzun ipucu satıra sığmıyor, sayıyı öne al */
@@ -5711,9 +5734,12 @@ function openOddsView(id){
   }
 
   const pct = s => Math.round(i.p[s] * 100);
+  /* Beraberliğin arması yok; boş bir kutu bırakmak yerine kılıçlar
+     konur — üç satır da aynı hizada başlasın, boşluk göze batmasın. */
   const bar = (s, label, code) => `
     <div class="ov-out">
-      <span class="l">${code ? crest(code, 20) : '<span style="width:20px"></span>'}${label}</span>
+      <span class="l">${code ? crest(code, 20)
+        : '<span class="ov-draw" aria-hidden="true">⚔️</span>'}${label}</span>
       <span class="t"><span style="width:${pct(s)}%"></span></span>
       <span class="v">%${pct(s)}</span>
     </div>`;
