@@ -2934,19 +2934,26 @@ function euroBos(comp){
 /* Şampiyonlar Ligi kupa oranları — favoriden uzağa sıralı.
    Puan bu oranlardan hesaplanır: favoriyi seçmek az, sürprizi
    tutturmak çok kazandırır. Oranlar değişirse tek yer burası. */
+/* Güncellendi 20.08.2026 — kilit (10.09) açılmadan önce.
+   Olympiakos listeden çıktı, yerine Dinamo Zagreb girdi; 36 takım
+   sabit kaldı. DİKKAT: seçimler Firestore'da takım ADIYLA saklanıyor,
+   bu yüzden kalan takımların yazılışına dokunulmadı — 'Bodø/Glimt',
+   'AEK Atina', 'Slavia Praha', 'Atlético Madrid', 'FC Bayern München'
+   aynen bırakıldı. Adı değiştirmek, o takımı seçmiş kişinin tahminini
+   sahipsiz bırakırdı. */
 const UCL_ODDS = {
-  'Paris Saint-Germain':6.00, 'FC Bayern München':7.50, 'Arsenal':7.50,
-  'Barcelona':8.00, 'Manchester City':8.00, 'Real Madrid':8.00,
-  'Liverpool':11.00, 'Manchester United':17.00, 'Inter':29.00,
-  'Aston Villa':34.00, 'Atlético Madrid':34.00, 'Napoli':41.00,
-  'Borussia Dortmund':41.00, 'AS Roma':41.00, 'Real Betis':51.00,
-  'RB Leipzig':51.00, 'Villarreal':51.00, 'Como':66.00,
-  'VfB Stuttgart':76.00, 'Sporting CP':101.00, 'Porto':101.00,
-  'Lens':126.00, 'Lille':126.00, 'PSV':126.00, 'Feyenoord':151.00,
-  'Fenerbahçe':151.00, 'Celtic':151.00, 'Galatasaray':151.00,
-  'Bodø/Glimt':201.00, 'Club Brugge':201.00, 'Lyon':201.00,
-  'AEK Atina':251.00, 'Royale Union SG':251.00, 'Slavia Praha':251.00,
-  'Olympiakos':251.00, 'Shakhtar Donetsk':251.00,
+  'Paris Saint-Germain':6.00, 'Arsenal':7.00, 'FC Bayern München':7.00,
+  'Barcelona':7.00, 'Real Madrid':8.00, 'Manchester City':8.50,
+  'Liverpool':12.00, 'Manchester United':17.00, 'Inter':29.00,
+  'Atlético Madrid':34.00, 'Aston Villa':34.00, 'AS Roma':41.00,
+  'Borussia Dortmund':41.00, 'Napoli':41.00, 'Villarreal':51.00,
+  'RB Leipzig':51.00, 'Real Betis':51.00, 'Como':66.00,
+  'VfB Stuttgart':81.00, 'Porto':101.00, 'Sporting CP':101.00,
+  'PSV':126.00, 'Bodø/Glimt':126.00, 'Lille':126.00, 'Lens':126.00,
+  'Celtic':151.00, 'Lyon':151.00, 'Fenerbahçe':151.00, 'Feyenoord':151.00,
+  'Galatasaray':176.00, 'Club Brugge':201.00, 'Royale Union SG':226.00,
+  'Shakhtar Donetsk':251.00, 'Slavia Praha':251.00, 'AEK Atina':251.00,
+  'Dinamo Zagreb':326.00,
 };
 const UCL_TEAMS = Object.keys(UCL_ODDS);
 
@@ -2968,7 +2975,7 @@ const UCL_CODE = {
   'Fenerbahçe':'FB', 'Celtic':'CEL', 'Galatasaray':'GS',
   'Bodø/Glimt':'BOD', 'Club Brugge':'CLB', 'Lyon':'LYO',
   'AEK Atina':'AEK', 'Royale Union SG':'USG', 'Slavia Praha':'SLA',
-  'Olympiakos':'OLY', 'Shakhtar Donetsk':'SHA',
+  'Shakhtar Donetsk':'SHA', 'Dinamo Zagreb':'DIN',
 };
 /* Şık değeri bir TEAMS kodu mu, yoksa bahisteki uzun ad mı? İkisini de kabul et. */
 const teamCodeOf = v => TEAMS[v] ? v : (UCL_CODE[v] || null);
@@ -3005,7 +3012,8 @@ const SEASON_PICKS = {
   champion: { title:'SÜPER LİG ŞAMPİYONU', logoKey:'SL', points:120, kind:'team',
               desc:'2026/27 kupasını kaldıracak takımı seç. Sürpriz seçim daha çok kazandırır.',
               options: BIG4,
-              odds: { GS:2.00, FB:2.00, BJK:9.50, TS:10.00 },
+              /* Güncellendi 20.08.2026 — kilit (29.08) açılmadan önce */
+              odds: { GS:2.15, FB:2.15, TS:9.00, BJK:10.00 },
               lock: SL_LOCK },
 
   uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', logoKey:'UCL', points:150, kind:'list',
