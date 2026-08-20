@@ -1977,6 +1977,39 @@ body{
 .to-top:hover{ color:var(--text); border-color:var(--line-2); transform:translateY(-2px); }
 @media (max-width:640px){ .to-top{ right:12px; bottom:66px; width:38px; height:38px; } }
 
+/* ---------- Oran simgesi ---------- */
+.odds-svg{ display:block; }
+.brand-mark.odds-mark{
+  display:grid; place-items:center; color:var(--ink);
+}
+.odds-btn .odds-svg{ opacity:.85; }
+.odds-btn:hover .odds-svg{ opacity:1; }
+
+/* ---------- Form serisi ateşi ----------
+   Adın hemen yanında, ünvan pillerinden ayrı bir dilde: bu bir
+   ödül değil, "şu an sıcak" demek. Alev hafifçe nefes alır. */
+.streak{
+  display:inline-flex; align-items:center; gap:2px; vertical-align:2px;
+  margin-left:6px; padding:1px 6px 1px 4px; border-radius:99px;
+  font-size:10px; line-height:1.5;
+  color:var(--gold); background:color-mix(in srgb, var(--gold) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--gold) 34%, transparent);
+  cursor:default;
+}
+.streak b{ font-family:var(--f-num); font-size:11px; letter-spacing:.5px; }
+.streak::before{ content:''; }
+@keyframes alev{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
+.streak{ animation:alev 2.2s ease-in-out infinite; }
+@media (prefers-reduced-motion:reduce){ .streak{ animation:none; } }
+
+/* ---------- Avrupa sekmesi boş durumu ---------- */
+.euro-empty .em{ font-size:26px; }
+.euro-marks{
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  margin-top:16px;
+}
+.euro-marks .comp-mark.ico{ margin-right:0; vertical-align:middle; opacity:.9; }
+
 /* ---------- Küme düşme işareti ----------
    Tehlike rengi ve aşağı akan bir zemin: bahsin diğer ikisinden
    (şampiyonluk, kupa) farklı bir şey olduğunu renk söylüyor. */
@@ -1990,6 +2023,19 @@ body{
   filter:none;
 }
 .comp-mark.ico.drop svg{ display:block; }
+/* Arteta madalyonu.
+   Görsel zaten kare kırpılmış olduğu için ekstra konumlandırma yok:
+   kutuyu tam doldurur. Diğer bahis logoları size+6 kutuda dururken
+   bu size+18'de — yüz ifadesi seçilsin diye bilerek büyük. Kırmızı
+   halka ve içeriden gölge, madalyonu başlığa bağlar. */
+.comp-mark.ico.drop.arteta{
+  background-size:cover; background-position:center; background-repeat:no-repeat;
+  border:2px solid color-mix(in srgb, var(--red) 62%, transparent);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.45),
+             0 3px 10px -3px rgba(0,0,0,.7);
+}
+/* Başlıkla arasındaki boşluk büyüyen kutuya göre ayarlanır */
+.card-head .comp-mark.ico.drop.arteta{ margin-right:12px; }
 
 /* ---------- Görsel şeritli pencere ----------
    Şerit kartın en üstünde durduğu için üst köşe yuvarlaklığını
@@ -2007,26 +2053,45 @@ body{
 /* ---------- Rozet dolabı (profil penceresi) ----------
    Kazanılanlar net, kilitliler soluk. Kilitliyi göstermek bilerek:
    toplanacak bir şey olduğunu bilmek toplamayı başlatır. */
-.badge-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:4px; }
-.badge{
-  display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
-  gap:1px 9px; align-items:center;
-  padding:9px 11px; border-radius:var(--r-md);
-  background:rgba(255,255,255,.04); border:1px solid var(--line);
+/* Ünvan tahtası: her satır bir ünvan, sağda o an kimde olduğu.
+   Oyuncunun kendi ünvanları renkli ve vurgulu; sahipsiz olanlar soluk. */
+.tl-list{ display:grid; gap:6px; }
+.tl{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 11px; border-radius:var(--r-md);
+  background:rgba(255,255,255,.03); border:1px solid var(--line);
+  transition:border-color var(--dur-2) linear, background var(--dur-2) linear;
 }
-.badge i{ grid-row:1 / span 2; font-style:normal; font-size:19px; line-height:1; }
-.badge b{ font-size:11.5px; font-weight:700; letter-spacing:.2px; color:var(--text); }
-.badge em{ font-style:normal; font-size:10px; line-height:1.45; color:var(--faint); }
-.badge.locked{ opacity:.42; filter:grayscale(1); }
-.badge.badge-u{ background:rgba(255,255,255,.055); border-color:var(--line-2); }
-/* Ünvan rozetleri satırdaki pil renklerini ödünç alır */
-.badge-u.ach-kral   b{ color:var(--gold); }
-.badge-u.ach-kahin  b{ color:var(--violet); }
-.badge-u.ach-nisanci b{ color:var(--cyan); }
-.badge-u.ach-derbi  b{ color:var(--magenta); }
-.badge-u.ach-form   b{ color:var(--red); }
-.badge-u.ach-demir  b{ color:var(--text); }
-.badge-u.ach-kumar  b{ color:var(--gold); }
+.tl i{ font-style:normal; font-size:17px; line-height:1; flex-shrink:0; filter:grayscale(1); opacity:.5; }
+.tl-b{ flex:1; min-width:0; }
+.tl-b b{ display:block; font-size:11.5px; font-weight:700; letter-spacing:.2px; color:var(--dim); }
+.tl-b em{ font-style:normal; font-size:10px; color:var(--faint); }
+.tl-who{
+  flex-shrink:0; font-size:9.5px; font-weight:700; letter-spacing:.4px;
+  text-transform:uppercase; color:var(--faint);
+  padding:3px 8px; border-radius:99px;
+  background:rgba(255,255,255,.05); border:1px solid var(--line);
+  max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+/* Bu oyuncunun taşıdığı ünvan */
+.tl.mine{ background:rgba(255,255,255,.06); border-color:var(--line-2); }
+.tl.mine i{ filter:none; opacity:1; }
+.tl.mine .tl-b b{ color:var(--text); }
+.tl.mine .tl-who{ color:var(--ink); background:var(--grad); border-color:transparent; }
+.tl.free{ opacity:.55; }
+/* Ünvana özel renk, satırdaki pillerle aynı dil */
+.tl.mine.ach-kral   .tl-b b{ color:var(--gold); }
+.tl.mine.ach-kahin  .tl-b b{ color:var(--violet); }
+.tl.mine.ach-nisanci .tl-b b{ color:var(--cyan); }
+.tl.mine.ach-derbi  .tl-b b{ color:var(--magenta); }
+.tl.mine.ach-form   .tl-b b{ color:var(--red); }
+.tl.mine.ach-kumar  .tl-b b{ color:var(--gold); }
+.tl.mine.ach-kanka  .tl-b b{ color:var(--violet); }
+.pf-note{
+  font-size:10.5px; line-height:1.6; color:var(--faint);
+  margin:-2px 0 10px;
+}
+.pf-note b{ color:var(--dim); }
 .pf-count{
   font-family:var(--f-num); font-size:12px; letter-spacing:.5px; color:var(--faint);
   margin-left:6px; padding:1px 7px; border-radius:99px;
@@ -2037,10 +2102,10 @@ body{
   color:var(--faint); margin:12px 0 7px;
 }
 .pf-none{ font-size:11.5px; color:var(--faint); padding:4px 0 8px; }
-@media (max-width:420px){ .badge-grid{ grid-template-columns:1fr; } }
-
-/* Satırdaki madalya sayacı — nötr, ünvanların önüne geçmesin */
-.ach-med{ color:var(--dim); background:rgba(255,255,255,.06); border-color:var(--line-2); }
+@media (max-width:420px){
+  .tl{ padding:8px 9px; gap:8px; }
+  .tl-who{ max-width:74px; }
+}
 
 /* ---------- Puan tablosu araç çubuğu (ara + sırala) ---------- */
 .lb-tools{
@@ -2413,19 +2478,41 @@ function compMark(code, size = 14, cls = ''){
 
 /* Sezon bahsi başlığının işareti: logosu varsa logo, yoksa emoji.
    Tek yerden geçmesi, üç ayrı başlığın da aynı hizada durmasını sağlar. */
-/* Küme düşme işareti — yerinde çizilir.
-   Burası 13–22 piksel: bu boyutta bir yüz fotoğrafı lekeye dönüşür,
-   okunmaz. Aşağı bakan çift ok "düşüş"ü tek bakışta anlatır, altı
-   temada da doğru renkte çıkar ve dışarıdan görsel çekmez. */
+/* ------------------------------------------------------------
+   KÜME DÜŞME İŞARETİ — Arteta "forfeit match"
+
+   Görsel dosyaya GÖMÜLÜ (base64). Uzak adresten çekilmiyor; bunun
+   sebebi kaynağın bir arama önbelleği olması ve öyle adreslerin er
+   geç kırılmasıydı. Gömülü hâlde bağlantı kopması diye bir şey yok,
+   çevrimdışı da çalışır. Bedeli ~9 KB — bir kez indirilir.
+
+   Kare, 1360×816'lık ekran görüntüsünden (786,110) noktasından
+   400×400 kırpılıp 160×160'a indirildi: kadrajda yalnızca baş ve
+   yüzü kapatan eller var, FIFA yazısı ve sarı zeminin çoğu dışarıda.
+   Değiştirmek istersen tek yapman gereken bu satırı yeni bir
+   data URI ya da './arteta.jpg' gibi bir yolla değiştirmek.
+   ------------------------------------------------------------ */
+const ARTETA = 'data:image/jpeg;base64,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';
+
+/* Bahis başlığındaki yuvarlak Arteta. Sitedeki diğer yuvarlak
+   işaretlerden bilerek BÜYÜK: yüz ifadesi seçilsin diye. Turnuva
+   logoları size+6 kutuya oturuyor, bu size+18'e. */
 function dropMark(size = 22){
-  return `<span class="comp-mark ico drop" aria-hidden="true"
-    style="width:${size + 6}px;height:${size + 6}px">
-    <svg viewBox="0 0 24 24" width="${size - 2}" height="${size - 2}" fill="none"
-         stroke="currentColor" stroke-width="2.6"
-         stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 5.5 L12 11.5 L18 5.5"/>
-      <path d="M6 13 L12 19 L18 13"/>
-    </svg></span>`;
+  const kutu = size + 18;
+  return `<span class="comp-mark ico drop arteta" role="img"
+    aria-label="Küme düşme hattı"
+    style="width:${kutu}px;height:${kutu}px;background-image:url('${ARTETA}')"></span>`;
+}
+
+/* Sezon bahsinin kart üstü görseli. Şimdilik yalnızca küme düşme
+   bahsinde var — 22 piksellik işaret Arteta'yı hakkıyla gösteremiyor,
+   asıl dram bu şeritte çıkıyor. Başka bir bahse görsel istersen
+   SEASON_PICKS içine `foto:'…'` eklemen yeterli. */
+function seasonFoto(cfg){
+  if (!cfg?.foto) return '';
+  return `<div class="card-banner season-shot"
+    style="height:104px;background-image:url('${cfg.foto}')">
+    <span class="bn-title">${cfg.fotoYazi || ''}</span></div>`;
 }
 
 function seasonMark(cfg, size = 22){
@@ -2787,14 +2874,35 @@ const playedFixtures   = () => FIXTURES.filter(m => matchState(m) !== 'open');
 const upcomingFixtures = () => FIXTURES.filter(m => matchState(m) !== 'done');
 
 /* Filtreleme: takım kodu ya da 'ALL', turnuva kodu / 'DERBY' / 'ALL' */
+const EURO_COMPS = ['UCL','UEL','UECL'];
+
 function filterFixtures(list, team, comp){
   return list.filter(m => {
     if (team !== 'ALL' && !m.big.includes(team)) return false;
     if (comp === 'ALL') return true;
     if (comp === 'DERBY') return m.derby;
-    if (comp === 'EU') return ['UCL','UEL','UECL'].includes(m.comp);
+    if (comp === 'EU') return EURO_COMPS.includes(m.comp);
     return m.comp === comp;
   });
+}
+
+/* Avrupa sekmesi seçiliyken fikstürde hiç Avrupa maçı yoksa gösterilir.
+   "Filtren tutmadı" demek yanlış olurdu — sorun filtre değil, kuranın
+   henüz çekilmemiş olması. Maçlar EURO_FIXTURES'a girer girmez bu
+   ekran kendiliğinden kaybolur, başka bir yeri değiştirmeye gerek yok. */
+function euroBos(comp){
+  if (comp !== 'EU' && !EURO_COMPS.includes(comp)) return '';
+  if (FIXTURES.some(m => EURO_COMPS.includes(m.comp))) return '';   // maç var, boş durum gerekmez
+  return `<div class="card quiet euro-empty"><div class="empty">
+      <span class="em">🏆</span>
+      <span class="ttl">Avrupa maçları yolda</span>
+      <span class="hint">Dört büyüğün Şampiyonlar Ligi, Avrupa Ligi ve
+        Konferans Ligi maçları <b>kura çekilir çekilmez</b> buraya düşecek —
+        lig aşamasından itibaren hepsi tahmine açılacak.</span>
+      <span class="euro-marks">${EURO_COMPS.map(c => compMark(c, 26, 'ico')).join('')}</span>
+      <span class="hint" style="margin-top:12px">Avrupa maçları
+        <b style="color:var(--gold)">çift puan</b> getirir.</span>
+    </div></div>`;
 }
 
 /* ============================================================
@@ -2891,7 +2999,8 @@ const SEASON_PICKS = {
   /* Küme düşmenin ortak bir logosu yok — başlıktaki işaret emoji.
      Değiştirmek istersen tek yer burası (bkz. seasonMark).          */
   /* mark:'drop' → başlıktaki aşağı ok işareti (bkz. dropMark) */
-  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, mark:'drop', points:40, kind:'multi', max:3,
+  relegated:{ title:'KÜME DÜŞECEK ÜÇ TAKIM', logoKey:null, mark:'drop',
+              points:40, kind:'multi', max:3,
               desc:'Süper Lig’den düşecek üç takımı seç. Her doğru takım ayrı puan getirir.',
               options: SL_TEAMS,
               lock: SL_LOCK },
@@ -3128,6 +3237,24 @@ function timeLeftShort(ms){
    ve parlaklık açısından denendi (şerit bandı 0.17–0.43 arası).
    Değiştirmek istersen tek yer burası.
    ============================================================ */
+/* ------------------------------------------------------------
+   ORAN SİMGESİ
+   Yükselen basamaklar + bir yıldız: "oran arttıkça ödül büyür".
+   Aramadan gelen hazır ikonlar ya düşük çözünürlüklü PNG ya da
+   beyaz zeminli oluyor; bu çizim her boyutta net kalır, temanın
+   rengini alır ve ağdan bir şey beklemez.
+   ------------------------------------------------------------ */
+function oddsIcon(size = 18){
+  return `<svg class="odds-svg" viewBox="0 0 24 24" width="${size}" height="${size}"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M3 20 L3 15"/><path d="M9 20 L9 11"/><path d="M15 20 L15 14"/>
+    <path d="M21 20 L21 6"/>
+    <path d="M17.6 3.6 L18.6 5.7 L21 6 L19.3 7.7 L19.7 10 L17.6 8.9 L15.5 10
+             L15.9 7.7 L14.2 6 L16.6 5.7 Z" fill="currentColor" stroke="none" opacity=".9"/>
+  </svg>`;
+}
+
 /* Kart üstü görseller — hepsi Unsplash, serbest lisans (ticari kullanım
    ve atıfsız kullanım serbest). Adresler kalıcı CDN bağlantılarıdır;
    ?w= ile boyut, ?q= ile sıkıştırma istenir, o yüzden ağırlık yapmaz.
@@ -3674,6 +3801,34 @@ function lastFinishedId(){
 const isLiveScored = m => matchState(m) === 'live' && !!Store.results[m.id];
 const anyLiveMatch  = () => FIXTURES.some(isLiveScored);
 
+/* ============================================================
+   FORM SERİSİ (🔥)
+   Ünvan DEĞİLDİR: tek sahibi yoktur, kimseden alınmaz, kimseyle
+   yarışılmaz. Sadece bir durum göstergesi — üst üste puan alan
+   HERKESTE aynı anda yanar.
+
+   Seri, oynanmış maçların SONUNDAN geriye doğru sayılır: son maçta
+   puan yoksa seri sıfırdır. Tahmin girilmemiş maç da seriyi kırar;
+   "form" oynamayı sürdürmeyi de kapsar.
+
+   ATEŞ_ESIGI maçta bir kez tutunca ateş yanar ve seri devam ettiği
+   sürece yanmaya devam eder; seri kırıldığı an söner.
+   ============================================================ */
+const ATES_ESIGI = 3;
+
+function scoringStreak(uid){
+  const preds = Store.predictions[uid] || {};
+  const oynanan = FIXTURES.filter(m => matchState(m) !== 'open' && Store.results[m.id]);
+  let seri = 0;
+  for (let i = oynanan.length - 1; i >= 0; i--){
+    const m = oynanan[i], p = preds[m.id];
+    if (!p) break;                                   // tahmin yok → seri kırılır
+    if (scorePrediction(p, Store.results[m.id], m).pts <= 0) break;
+    seri++;
+  }
+  return seri;
+}
+
 function leaderboard(){
   const lastId = lastFinishedId();
   /* Canlı maç varken "önceki sıralama" = maç başlamadan önceki hâl;
@@ -3707,7 +3862,7 @@ function leaderboard(){
     });
 
     return { ...u, points:pts, exact, count, prevPoints:prevPts, derbyPts, euroPts, season,
-             livePts, liveCount };
+             livePts, liveCount, streak: scoringStreak(u.uid) };
   });
 
   rows.sort((a,b) => b.points - a.points || b.exact - a.exact || a.name.localeCompare(b.name,'tr'));
@@ -3717,84 +3872,65 @@ function leaderboard(){
 }
 
 /* ============================================================
-   BAŞARIMLAR
+   ÜNVANLAR
 
-   İki ayrı tür var; karıştırmamak önemli çünkü kuralları farklı:
+   Tek bir kural var: her ünvanın AYNI ANDA TEK sahibi olur.
+   Madalya, kupa, eşik ödülü yok — herkesin toplayabileceği rozet
+   yok. Bir ünvanı taşımak, o dalda ligin EN İYİSİ olmak demektir.
 
-   ÜNVAN  — o dalın EN İYİSİNE verilir, tek sahibi vardır ve el
-            değiştirir. Rekabet buradan çıkar.
-   MADALYA — bir eşiği geçen HERKES alır, bir daha kaybetmez.
-            Toplanacak şey buradan çıkar.
+   ── Mimarî: sahiplik saklanmaz, HESAPLANIR ──────────────────
+   Hiçbir yerde "bu ünvan şu kişide" diye bir kayıt tutulmaz.
+   Her çizimde canlı veriden yeniden hesaplanır. Bunun üç faydası:
+     · El değiştirme kendiliğinden olur — birisi rekoru geçtiği an
+       ünvan ona geçer, tetiklenecek bir olay yoktur.
+     · Bayat veri olamaz. Skor düzeltilirse ünvanlar da düzelir.
+     · Bütün cihazlar aynı sonucu üretir; senkron sorunu yoktur.
+   Maliyeti önemsiz: 17 oyuncu × 124 maç tek geçişte taranır.
 
-   Madalyaların bir kısmı GİZLİdir: profilde kilitli listede bile
-   görünmezler, ancak hak edilince ortaya çıkarlar. Sürpriz olsun
-   diye — nasıl alındığını önceden söylersek şaka kaçar.
+   ── Berabere kalınca: ÜNVAN SAHİBİNDE KALIR ─────────────────
+   Ünvanı almak için geçmek gerekir, eşitlemek yetmez. Bunu
+   uygulamak için her ölçüt {v, i} taşır: v değer, i ise o değere
+   KAÇINCI maçta ulaşıldığı. Eşitlikte küçük i kazanır — yani
+   oraya önce varan. Böylece ünvan sürekli el değiştirip
+   titremez, ve "geçmeden alamazsın" sözü harfiyen doğrudur.
 
-   Ölçüt anlamsızsa (kimse tam isabet yapmadıysa, derbi
-   oynanmadıysa) ünvan HİÇ dağıtılmaz; sıfırla övünülmesin.
-   Süren maçlar da sayılır, tıpkı puan tablosu gibi — yani
-   "Son Maçın Kralı" maç oynanırken golden gole el değiştirir.
+   Yeni ünvan eklemek: aşağıdaki listeye bir satır yaz, `deger`
+   ölçütün {v,i} nesnesini döndürsün. Gerisi kendiliğinden işler.
    ============================================================ */
 
-/* ---- ÜNVANLAR: tek sahipli, kapışmalı ---- */
 const TITLES = [
-  { id:'kral',   ad:'Son Maçın Kralı', emoji:'👑', esik:1,
-    ipucu: d => `Son maçta en çok puanı o topladı — ${d} puan`,
-    deger: d => d.sonMac },
-  { id:'kahin',  ad:'Kâhin',           emoji:'🔮', esik:1,
-    ipucu: d => `Sezonun tek maçtaki en yüksek puanı — ${d} puan`,
-    deger: d => d.enIyiMac,
-    /* Aynı rekora ulaşanlar arasında rekoru ÖNCE kıran sahiplenir */
-    kirici: d => d.enIyiSira },
-  { id:'nisanci',ad:'Keskin Nişancı',  emoji:'🎯', esik:1,
-    ipucu: d => `En çok tam isabet — ${d} maç`,
-    deger: d => d.tamIsabet },
-  { id:'derbi',  ad:'Derbi Adamı',     emoji:'⚔️', esik:1,
-    ipucu: d => `Derbilerden en çok puanı o çıkardı — ${d} puan`,
-    deger: d => d.derbi },
-  { id:'form',   ad:'Formda',          emoji:'🔥', esik:2,
-    ipucu: d => `Üst üste ${d} maçtır puan alıyor`,
-    deger: d => d.seri },
-  { id:'demir',  ad:'Demir Adam',      emoji:'🧱', esik:3,
-    ipucu: d => `En çok maçtan puan çıkaran o — ${d} maç`,
-    deger: d => d.puanliMac },
-  { id:'kumar',  ad:'Kumarbaz',        emoji:'🎲', esik:2,
-    ipucu: d => `Tutturduğu en yüksek oran — ${d.toFixed(2)}`,
-    deger: d => d.enBuyukOran },
+  { id:'kral',   ad:'Son Maçın Kralı', emoji:'👑', esik:1, olcut:'sonMac',
+    ipucu: v => `Son maçta en çok puanı o topladı — ${v} puan` },
+  { id:'kahin',  ad:'Kâhin',           emoji:'🔮', esik:1, olcut:'enIyiMac',
+    ipucu: v => `Tek maçtaki en yüksek puan — ${v} puan` },
+  { id:'nisanci',ad:'Keskin Nişancı',  emoji:'🎯', esik:1, olcut:'tamIsabet',
+    ipucu: v => `En çok tam isabet — ${v} maç` },
+  { id:'derbi',  ad:'Derbi Adamı',     emoji:'⚔️', esik:1, olcut:'derbi',
+    ipucu: v => `Derbilerden en çok puanı o çıkardı — ${v} puan` },
+  { id:'demir',  ad:'Demir Adam',      emoji:'🧱', esik:3, olcut:'puanliMac',
+    ipucu: v => `En çok maçtan puan çıkaran o — ${v} maç` },
+  { id:'kumar',  ad:'Kumarbaz',        emoji:'🎲', esik:2, olcut:'enBuyukOran',
+    ipucu: v => `Tutturduğu en yüksek oran — ${v.toFixed(2)}` },
+  { id:'sadik',  ad:'Sadık',           emoji:'📋', esik:3, olcut:'tahmin',
+    ipucu: v => `En çok maça tahmin giren o — ${v} maç` },
+  { id:'kanka',  ad:'Deli’nin Kankası',emoji:'🃏', esik:1, olcut:'deliKanka',
+    ipucu: v => `Deli ile en çok aynı skoru yazan o — ${v} maç` },
+  { id:'ayna',   ad:'Ayna Ustası',     emoji:'🪞', esik:1, olcut:'ayna',
+    ipucu: v => `Skoru en çok ters bilen o — ${v} maç (2-1 dedi, 1-2 bitti)` },
+  { id:'sifirci',ad:'Sıfırcı',         emoji:'🥚', esik:2, olcut:'sifirci',
+    ipucu: v => `En çok 0-0 yazan o — ${v} kez` },
+  { id:'yagmur', ad:'Gol Yağmuru',     emoji:'🌋', esik:1, olcut:'yagmur',
+    ipucu: v => `Bol gollü maçları en çok tam bilen o — ${v} maç` },
+  { id:'kilpayi',ad:'Kıl Payı',        emoji:'💀', esik:2, olcut:'kilPayi',
+    ipucu: v => `En çok tek golle kaçıran o — ${v} kez` },
 ];
 
-/* ---- MADALYALAR: eşiği geçen herkes alır ----
-   `gizli:true` olanlar hak edilene kadar hiçbir yerde görünmez. */
-const MEDALS = [
-  { id:'ilkkan', ad:'İlk Kan',        emoji:'🩸',
-    ne:'İlk puanını al',                     kosul: d => d.toplamPuan >= 1 },
-  { id:'ilkisabet', ad:'İlk İsabet',  emoji:'🎯',
-    ne:'Bir maçın skorunu tam bil',          kosul: d => d.tamIsabet >= 1 },
-  { id:'yuzler', ad:'Yüzler Kulübü',  emoji:'💯',
-    ne:'100 puana ulaş',                     kosul: d => d.toplamPuan >= 100 },
-  { id:'besyuz', ad:'Beş Yüzler',     emoji:'🏆',
-    ne:'500 puana ulaş',                     kosul: d => d.toplamPuan >= 500 },
-  { id:'cifte',  ad:'Çifte Dikiş',    emoji:'⚡',
-    ne:'3 maçın skorunu tam bil',            kosul: d => d.tamIsabet >= 3 },
-  { id:'kadro',  ad:'Tam Kadro',      emoji:'📋',
-    ne:'Oynanan her maça tahmin gir (en az 5 maç)',
-    kosul: d => d.oynanan >= 5 && d.tahminSayisi === d.oynanan },
-
-  /* ---- gizli olanlar ---- */
-  { id:'ayna',   ad:'Ayna',           emoji:'🪞', gizli:true,
-    ne:'Skoru tam ters bildin — 2-1 dedin, 1-2 bitti',
-    kosul: d => d.ayna >= 1 },
-  { id:'sifirci',ad:'Sıfırcı',        emoji:'🥚', gizli:true,
-    ne:'Üç kez 0-0 tahmini yaptın',          kosul: d => d.sifirci >= 3 },
-  { id:'yagmur', ad:'Gol Yağmuru',    emoji:'🌋', gizli:true,
-    ne:'Beş golden fazla atılan bir maçı tam bildin',
-    kosul: d => d.golYagmuru >= 1 },
-  { id:'cirak',  ad:'Deli’nin Çırağı',emoji:'🃏', gizli:true,
-    ne:'Bir maçta Deli ile aynı skoru yazdın',
-    kosul: d => d.deliCirak >= 1 },
-  { id:'kilpayi',ad:'Kıl Payı',       emoji:'💀', gizli:true,
-    ne:'Beş kez tek golle kaçırdın',         kosul: d => d.kilPayi >= 5 },
-];
+/* Bir ölçütün değeri ve o değere ulaşılan maç sırası.
+   art()  → sayaç: her artışta sırayı günceller
+   enBuyuk() → rekor: yalnızca aşıldığında sırayı günceller */
+const olc = () => ({ v:0, i:Infinity });
+const art     = (o, i, n = 1) => { o.v += n; o.i = i; };
+const enBuyuk = (o, i, n) => { if (n > o.v){ o.v = n; o.i = i; } };
 
 /* Oyuncu başına ham sayılar. Puan tablosuyla aynı maç kümesini
    kullanır: başlamış + skoru girilmiş her maç. */
@@ -3806,91 +3942,88 @@ function achievementStats(rows){
 
   rows.forEach(r => {
     const preds = Store.predictions[r.uid] || {};
-    let enIyiMac = 0, enIyiSira = Infinity, tamIsabet = 0, derbi = 0, sonMac = 0;
-    let seri = 0, puanliMac = 0, tahminSayisi = 0, enBuyukOran = 0;
-    let ayna = 0, sifirci = 0, golYagmuru = 0, deliCirak = 0, kilPayi = 0;
+    const d = { sonMac:olc(), enIyiMac:olc(), tamIsabet:olc(), derbi:olc(), seri:olc(),
+                puanliMac:olc(), enBuyukOran:olc(), tahmin:olc(), ayna:olc(),
+                sifirci:olc(), yagmur:olc(), deliKanka:olc(), kilPayi:olc() };
 
     const puanlar = oynanan.map((m, i) => {
       const p = preds[m.id], res = Store.results[m.id];
       if (!p) return null;                       // tahmin yoksa seri kırılır
-      tahminSayisi++;
+      art(d.tahmin, i);
       const s = scorePrediction(p, res, m);
       const tam = p.h === res.h && p.a === res.a;
 
-      if (s.pts > enIyiMac){ enIyiMac = s.pts; enIyiSira = i; }
-      if (s.pts > 0) puanliMac++;
-      if (tam) tamIsabet++;
-      if (m.derby) derbi += s.pts;
-      if (m.id === sonMacId) sonMac = s.pts;
-      if (s.tier === 2) kilPayi++;               // tek gol farkla kaçan
+      enBuyuk(d.enIyiMac, i, s.pts);
+      if (s.pts > 0) art(d.puanliMac, i);
+      if (tam) art(d.tamIsabet, i);
+      if (m.derby && s.pts) art(d.derbi, i, s.pts);
+      if (m.id === sonMacId){ d.sonMac.v = s.pts; d.sonMac.i = i; }
+      if (s.tier === 2) art(d.kilPayi, i);       // tek gol farkla kaçan
 
-      /* Gizliler */
-      if (p.h === 0 && p.a === 0) sifirci++;
-      if (!tam && p.h === res.a && p.a === res.h) ayna++;
-      if (tam && (res.h + res.a) > 5) golYagmuru++;
+      if (p.h === 0 && p.a === 0) art(d.sifirci, i);
+      if (!tam && p.h === res.a && p.a === res.h) art(d.ayna, i);
+      if (tam && (res.h + res.a) > 5) art(d.yagmur, i);
+
+      /* Deli'nin kankası: Deli ile aynı skoru yazmak. Deli kendi
+         kankası olamaz, yoksa ünvan hep onda kalırdı. */
       const dp = deliTah[m.id];
-      if (r.uid !== 'ai_deli' && dp && dp.h === p.h && dp.a === p.a) deliCirak++;
+      if (r.uid !== 'ai_deli' && dp && dp.h === p.h && dp.a === p.a) art(d.deliKanka, i);
 
       /* Tutturulan en yüksek oran — riski ödüllendiren ünvan için */
       if (tam){
         const o = oddsInfo(m.id)?.scores?.[`${p.h}:${p.a}`];
-        if (o && o > enBuyukOran) enBuyukOran = o;
+        if (o) enBuyuk(d.enBuyukOran, i, o);
       }
       return s.pts;
     });
 
     /* Form = SONDAN başlayarak kesintisiz puan alınan maç sayısı */
+    let seri = 0;
     for (let i = puanlar.length - 1; i >= 0; i--){
       if (!puanlar[i]) break;                    // null (tahmin yok) ya da 0 puan
       seri++;
     }
+    /* Serinin "ulaşma sırası" = serinin BAŞLADIĞI maç. Eşit seride
+       daha erken başlayan, yani daha uzun süredir formda olan kazanır. */
+    d.seri = { v:seri, i: seri ? puanlar.length - seri : Infinity };
 
-    stats[r.uid] = { enIyiMac, enIyiSira, tamIsabet, derbi, sonMac, seri,
-                     puanliMac, tahminSayisi, enBuyukOran, oynanan: oynanan.length,
-                     toplamPuan: r.points,
-                     ayna, sifirci, golYagmuru, deliCirak, kilPayi };
+    stats[r.uid] = d;
   });
   return stats;
 }
 
-/* uid → [ünvan].  rows puana göre sıralı geldiği için, eşitlik
-   kırıcıları eşit çıktığında üstteki oyuncu ünvanı korur. */
+/* uid → [ünvan].  Her ünvan için tek kazanan seçilir:
+   önce en yüksek değer, eşitlikte o değere önce ulaşan. */
 function titlesFor(rows, stats){
   stats = stats || achievementStats(rows);
   const out = {};
 
-  TITLES.forEach(a => {
-    const kirici = r => a.kirici ? a.kirici(stats[r.uid]) : 0;
-    let kazanan = null, enIyi = 0;
-
+  TITLES.forEach(t => {
+    let kazanan = null, en = null;
     rows.forEach(r => {
-      const v = a.deger(stats[r.uid]);
-      if (v < a.esik) return;                    // bu oyuncu bu dalda yok
-      if (!kazanan || v > enIyi){ kazanan = r; enIyi = v; return; }
-      if (v === enIyi && kirici(r) < kirici(kazanan)) kazanan = r;
+      const o = stats[r.uid][t.olcut];
+      if (!o || o.v < t.esik) return;            // bu oyuncu bu dalda yok
+      if (!kazanan || o.v > en.v || (o.v === en.v && o.i < en.i)){ kazanan = r; en = o; }
     });
-
     if (!kazanan) return;                        // dal henüz anlamsız
-    (out[kazanan.uid] ||= []).push({ ...a, tur:'unvan', sayi: enIyi, baslik: a.ipucu(enIyi) });
+    (out[kazanan.uid] ||= []).push({ ...t, sayi: en.v, baslik: t.ipucu(en.v) });
   });
   return out;
 }
 
-/* uid → [madalya] */
-function medalsFor(rows, stats){
+/* Ünvan → o an kimde. Profildeki "kimde, kaçla" tablosu için. */
+function titleBoard(rows, stats){
   stats = stats || achievementStats(rows);
-  const out = {};
-  rows.forEach(r => {
-    out[r.uid] = MEDALS.filter(m => m.kosul(stats[r.uid]))
-                       .map(m => ({ ...m, tur:'madalya', baslik: m.ne }));
-  });
-  return out;
+  const sahip = titlesFor(rows, stats);
+  const kimde = {};
+  Object.entries(sahip).forEach(([uid, list]) =>
+    list.forEach(t => kimde[t.id] = { uid, ...t }));
+  return TITLES.map(t => ({ ...t, tutan: kimde[t.id] || null }));
 }
 
-/* Puan tablosu ve profil aynı hesabı iki kez yapmasın */
 function achievementsFor(rows){
   const stats = achievementStats(rows);
-  return { stats, unvan: titlesFor(rows, stats), madalya: medalsFor(rows, stats) };
+  return { stats, unvan: titlesFor(rows, stats) };
 }
 function derbyTable(){
   const t = {}; BIG4.forEach(c => t[c] = { code:c, w:0, d:0, l:0, gf:0, ga:0, pts:0, played:0 });
@@ -4623,32 +4756,42 @@ function openProfile(uid){
   const best = [...progRows].sort((a,b) => b.got - a.got)[0];
   const recent = [...progRows].reverse().slice(0, 8);
 
-  /* ---- Rozet dolabı ----
-     Kazanılan ünvan ve madalyalar önde; henüz alınmamış AÇIK
-     madalyalar soluk durur ki peşinden gidilecek bir şey olsun.
-     GİZLİ madalyalar kilitli listede bile görünmez — sürpriz. */
-  const roz = achievementsFor(rows);
-  const kazanilanU = roz.unvan[uid] || [];
-  const kazanilanM = roz.madalya[uid] || [];
-  const kazanilanId = new Set(kazanilanM.map(m => m.id));
-  const kilitli = MEDALS.filter(m => !m.gizli && !kazanilanId.has(m.id));
+  /* ---- Ünvan tahtası ----
+     Yalnızca "bende olanlar" değil, ünvanların TAMAMI listelenir:
+     her birinin şu an kimde olduğu ve kaçla tutulduğu görünür.
+     Sebebi basit — ünvan tek kişilik olduğu için asıl bilgi
+     "geçmek için kaç lazım". Sahibi bu oyuncuysa satır vurgulanır,
+     boştaki ünvanlar ise "sahipsiz" olarak durur.               */
+  const stats = achievementStats(rows);
+  const tahta = titleBoard(rows, stats);
+  const bende = tahta.filter(t => t.tutan && t.tutan.uid === uid);
+
+  const satir = (t) => {
+    const benim = t.tutan && t.tutan.uid === uid;
+    const bos = !t.tutan;
+    const kim = bos ? 'sahipsiz'
+      : benim ? 'sende'
+      : (rows.find(r => r.uid === t.tutan.uid)?.name || '—');
+    return `<div class="tl ${benim ? 'mine' : ''} ${bos ? 'free' : ''} ${benim ? 'ach-' + t.id : ''}">
+      <i>${t.emoji}</i>
+      <div class="tl-b">
+        <b>${t.ad}</b>
+        <em>${t.tutan ? t.baslikKisa : 'bu dalda henüz kimse yok'}</em>
+      </div>
+      <span class="tl-who">${kim}</span>
+    </div>`;
+  };
+  /* Kısa açıklama: uzun ipucu satıra sığmıyor, sayıyı öne al */
+  tahta.forEach(t => { t.baslikKisa = t.tutan
+    ? (t.olcut === 'enBuyukOran' ? t.tutan.sayi.toFixed(2) : t.tutan.sayi) + ' ile tutuyor'
+    : ''; });
 
   const rozetHtml = `
-    <div class="pf-h">Rozetler
-      <span class="pf-count">${kazanilanU.length + kazanilanM.length}</span></div>
-    ${kazanilanU.length || kazanilanM.length ? `
-      <div class="badge-grid">
-        ${kazanilanU.map(a => `<div class="badge badge-u ach-${a.id}">
-          <i>${a.emoji}</i><b>${a.ad}</b><em>${a.baslik}</em></div>`).join('')}
-        ${kazanilanM.map(a => `<div class="badge">
-          <i>${a.emoji}</i><b>${a.ad}</b><em>${a.ne}</em></div>`).join('')}
-      </div>` : `<div class="pf-none">Henüz rozet yok — ilk puanla birlikte gelir.</div>`}
-    ${kilitli.length ? `
-      <div class="pf-sub">Kilitli</div>
-      <div class="badge-grid">
-        ${kilitli.map(a => `<div class="badge locked">
-          <i>${a.emoji}</i><b>${a.ad}</b><em>${a.ne}</em></div>`).join('')}
-      </div>` : ''}`;
+    <div class="pf-h">Ünvanlar
+      <span class="pf-count">${bende.length}/${TITLES.length}</span></div>
+    <div class="pf-note">Her ünvan tek kişide durur. Almak için sahibini
+      <b>geçmen</b> gerekir — eşitlemek yetmez.</div>
+    <div class="tl-list">${tahta.map(satir).join('')}</div>`;
 
   /* Başkasının sezon seçimi kilit açılana kadar gizli; kendi profilinde görünür */
   const mine = Store.me && Store.me.uid === uid;
@@ -4906,10 +5049,15 @@ function multBlock(){
 function filterBar(){
   const teams = [['ALL','Tüm Takımlar'], ...BIG4.map(c => [c, TEAMS[c].name])];
   const have = new Set(FIXTURES.map(m => m.comp));
+  /* Avrupa sekmesi HER ZAMAN durur — kura çekilmeden fikstürde Avrupa
+     maçı olmadığı için eskiden gizleniyordu, ama sekmenin yokluğu
+     "bu oyunda Avrupa maçı yok" izlenimi veriyordu. Artık görünür ve
+     maç girilene kadar kendi boş durumunu gösterir (bkz. euroBos).
+     Alt turnuva sekmeleri (UCL/UEL/UECL) ise yalnızca o turnuvadan
+     maç varken çıkar; boş yere yedi pil sıralamanın anlamı yok.     */
   const comps = [['ALL','Hepsi'],['DERBY','Derbiler'],['SL','Süper Lig'],
                  ['EU','Avrupa'],['UCL','Şampiyonlar L.'],['UEL','Avrupa L.'],['UECL','Konferans L.']]
-                 .filter(([k]) => ['ALL','DERBY','SL'].includes(k) ||
-                        (k === 'EU' ? ['UCL','UEL','UECL'].some(x => have.has(x)) : have.has(k)));
+                 .filter(([k]) => ['ALL','DERBY','SL','EU'].includes(k) || have.has(k));
   return `
   <div class="filterbar">
     <div class="row">
@@ -4988,7 +5136,7 @@ function matchCard(m){
         <button class="btn ${my ? 'saved' : ''}" data-save="${m.id}"
                 onclick="P_tahmin.savePick('${m.id}', event)">${my ? 'Güncelle' : 'Kaydet'}</button>
         <button class="btn ghost odds-btn" onclick="openOddsView('${m.id}')"
-                title="Bu maçın tüm oranları"><span>Oranlar</span></button>
+                title="Bu maçın tüm oranları">${oddsIcon(14)}<span>Oranlar</span></button>
       </div>
       <div class="odds-hint" id="hint_${m.id}">${oddsHintText(m, my?.h, my?.a)}</div>`;
   } else if (my){
@@ -5229,7 +5377,7 @@ function groupedCards(list, limit){
 function matchList(){
   const all = filterFixtures(upcomingFixtures(), fTeam, fComp);
   if (!all.length){
-    return `<div class="card quiet"><div class="empty">
+    return euroBos(fComp) || `<div class="card quiet"><div class="empty">
       <span class="em">🔭</span>
       <span class="ttl">Maç bulunamadı</span>
       <span class="hint">Bu filtreyle yaklaşan maç yok. Filtreleri temizleyip
@@ -5301,6 +5449,7 @@ function seasonBlock(){
 
     return `
     <div class="card reveal">
+      ${seasonFoto(cfg)}
       <div class="card-head">
         ${seasonMark(cfg, 22)}<h2>${cfg.title}</h2>
         <span class="tail">${seasonPointsLabel(kind)}</span>
@@ -5586,7 +5735,7 @@ function openOddsView(id){
     <button class="modal-x on-shot" onclick="closeOddsView()" aria-label="Kapat">✕</button>
     ${banner('odds', 104, 'Oranlar')}
     <div class="modal-head">
-      <span class="brand-mark" style="font-size:15px">⚖</span>
+      <span class="brand-mark odds-mark">${oddsIcon(17)}</span>
       <div>
         <div class="modal-title">${TEAMS[m.home].name} – ${TEAMS[m.away].name}</div>
         <div class="modal-sub">${fmtDate(m.dt)}</div>
@@ -6855,7 +7004,9 @@ function podium(rows){
 const LB_SORTS = {
   puan:   { ad:'Puan',        fn:(a,b) => b.points - a.points || b.exact - a.exact },
   isabet: { ad:'Tam isabet',  fn:(a,b) => b.exact - a.exact || b.points - a.points },
-  form:   { ad:'Form',        fn:(a,b) => b.delta - a.delta || b.points - a.points },
+  /* "Form" artık tek anlama geliyor: puan serisi. Eskiden bu sıralama
+     sıra değişimine (delta) bakıyordu; adı aynı, ölçütü başkaydı. */
+  form:   { ad:'Form',        fn:(a,b) => b.streak - a.streak || b.points - a.points },
 };
 /* Kayıtlı seçim listeden kaldırılmış bir ölçüt olabilir (İsim gibi);
    o zaman sessizce puana dön, boş tablo çizmektense. */
@@ -6928,19 +7079,19 @@ function fullBoard(){
           <div class="lb-name">
             <div class="n">${r.ai ? r.emoji + ' ' : ''}<span class="${
               r.rank === 1 ? 'shine' : ''}">${r.name}</span>${
+              r.streak >= ATES_ESIGI ? `<span class="streak tip"
+                data-tip="Üst üste ${r.streak} maçtır puan alıyor"
+                title="${r.streak} maçlık puan serisi">🔥<b>${r.streak}</b></span>` : ''}${
               r.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}${r.you ? ' (sen)' : ''}</div>
             <div class="s">${r.exact} tam isabet · ${r.derbyPts}p · ${r.euroPts}p</div>
             ${(() => {
-              /* Ünvanlar satırda görünür (nadir ve renkli), madalyalar
-                 tek bir sayaca sığar — yoksa satır rozet çorbasına döner.
-                 Tamamı profil penceresinde. */
-              const u = rozet.unvan[r.uid] || [], md = rozet.madalya[r.uid] || [];
-              if (!u.length && !md.length) return '';
+              /* Ünvanlar tek kişilik olduğu için bir satırda birkaç
+                 taneden fazlası olmaz; hepsi doğrudan gösterilir. */
+              const u = rozet.unvan[r.uid] || [];
+              if (!u.length) return '';
               return `<div class="achs">${
                 u.map(a => `<span class="ach ach-${a.id} tip" data-tip="${a.baslik}"
-                   title="${a.baslik}"><i>${a.emoji}</i><b>${a.ad}</b></span>`).join('')}${
-                md.length ? `<span class="ach ach-med tip" data-tip="${md.length} madalya — hepsi için profile bak"
-                   title="${md.length} madalya"><i>🎖</i><b>${md.length}</b></span>` : ''}</div>`;
+                   title="${a.baslik}"><i>${a.emoji}</i><b>${a.ad}</b></span>`).join('')}</div>`;
             })()}
             <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
               <span style="display:block;height:100%;width:${Math.round(r.points / maxPts * 100)}%;
@@ -6992,6 +7143,7 @@ function seasonPicksBoard(){
       const kalan = timeLeftShort(new Date(cfg.lock) - NOW());
       return `
       <div class="card reveal">
+        ${seasonFoto(cfg)}
         <div class="card-head">
           ${seasonMark(cfg, 22)}<h2>${cfg.title}</h2>
           <span class="tail">${seasonPointsLabel(kind)}</span>
@@ -7017,6 +7169,7 @@ function seasonPicksBoard(){
 
     return `
     <div class="card reveal">
+      ${seasonFoto(cfg)}
       <div class="card-head">
         ${seasonMark(cfg, 22)}<h2>${cfg.title}</h2>
         <span class="tail">${seasonPointsLabel(kind)}</span>
@@ -7165,10 +7318,15 @@ function derbyStandings(){
 function filterBar(){
   const teams = [['ALL','Tüm Takımlar'], ...BIG4.map(c => [c, TEAMS[c].name])];
   const have = new Set(FIXTURES.map(m => m.comp));
+  /* Avrupa sekmesi HER ZAMAN durur — kura çekilmeden fikstürde Avrupa
+     maçı olmadığı için eskiden gizleniyordu, ama sekmenin yokluğu
+     "bu oyunda Avrupa maçı yok" izlenimi veriyordu. Artık görünür ve
+     maç girilene kadar kendi boş durumunu gösterir (bkz. euroBos).
+     Alt turnuva sekmeleri (UCL/UEL/UECL) ise yalnızca o turnuvadan
+     maç varken çıkar; boş yere yedi pil sıralamanın anlamı yok.     */
   const comps = [['ALL','Hepsi'],['DERBY','Derbiler'],['SL','Süper Lig'],
                  ['EU','Avrupa'],['UCL','Şampiyonlar L.'],['UEL','Avrupa L.'],['UECL','Konferans L.']]
-                 .filter(([k]) => ['ALL','DERBY','SL'].includes(k) ||
-                        (k === 'EU' ? ['UCL','UEL','UECL'].some(x => have.has(x)) : have.has(k)));
+                 .filter(([k]) => ['ALL','DERBY','SL','EU'].includes(k) || have.has(k));
   return `
   <div class="filterbar">
     <div class="row">${teams.map(([k,l]) =>
@@ -7303,11 +7461,11 @@ function render(){
 
     <div class="sec-title"><h3>Oynanan Maçlar</h3><span class="rule"></span></div>
     ${filterBar()}
-    ${all.length ? cards : `<div class="card quiet"><div class="empty">
+    ${all.length ? cards : (euroBos(fComp) || `<div class="card quiet"><div class="empty">
         <span class="em">📼</span>
         <span class="ttl">Kayıt yok</span>
         <span class="hint">Bu filtreyle oynanmış maç bulunamadı.
-          Sezon ilerledikçe burası dolacak.</span></div></div>`}
+          Sezon ilerledikçe burası dolacak.</span></div></div>`)}
     ${all.length > shown ? `<button class="btn ghost" onclick="P_gecmis.showMore()"
         style="width:100%;margin-top:6px">${all.length - shown} maç daha göster ▾</button>` : ''}
   `;
