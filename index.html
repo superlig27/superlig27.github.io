@@ -2170,6 +2170,9 @@ body{
   border-color:color-mix(in srgb, var(--iris) 40%, transparent);
 }
 .tl.free{ opacity:.55; }
+/* Botun giremediği dal — soluk ve çizgili, "burada yarış yok" demek */
+.tl.disarida{ opacity:.4; }
+.tl.disarida .tl-b b{ text-decoration:line-through; text-decoration-thickness:1px; }
 /* Ünvana özel renk, satırdaki pillerle aynı dil */
 .tl.mine.ach-kral   .tl-b b{ color:var(--gold); }
 .tl.mine.ach-kahin  .tl-b b{ color:var(--violet); }
@@ -4157,7 +4160,14 @@ const TITLES = [
     ipucu: v => `En çok maçtan puan çıkaran o — ${v} maç` },
   { id:'kumar',  ad:'Kumarbaz',        emoji:'🎲', esik:2, olcut:'enBuyukOran',
     ipucu: v => `Tutturduğu en yüksek oran — ${v.toFixed(2)}` },
+  /* insanaOzel: botlar bu dalda yarışmaz. Sadık "hiç aksatmamayı"
+     ödüllendiriyor, ama Robot ve Deli tanımı gereği HER maça tahmin
+     giriyor — yani hiç kaçırmıyorlar. Yarışa katılırlarsa ünvan
+     kalıcı olarak onlarda kalır ve insanlar için anlamsızlaşır.
+     Doğruluk isteyen dallarda (Kâhin, Nişancı…) botların böyle bir
+     üstünlüğü yok, oralarda yarışmaya devam ediyorlar. */
   { id:'sadik',  ad:'Sadık',           emoji:'📋', esik:3, olcut:'tahmin',
+    insanaOzel:true,
     ipucu: v => `En çok maça tahmin giren o — ${v} maç` },
   { id:'kanka',  ad:'Deli’nin Kankası',emoji:'🃏', esik:1, olcut:'deliKanka',
     ipucu: v => `Deli ile en çok aynı skoru yazan o — ${v} maç` },
@@ -4247,6 +4257,7 @@ function titlesFor(rows, stats){
   TITLES.forEach(t => {
     let kazanan = null, en = null;
     rows.forEach(r => {
+      if (t.insanaOzel && r.ai) return;          // bu dalda botlar yarışmaz
       const o = stats[r.uid][t.olcut];
       if (!o || o.v < t.esik) return;            // bu oyuncu bu dalda yok
       if (!kazanan || o.v > en.v || (o.v === en.v && o.i < en.i)){ kazanan = r; en = o; }
@@ -5038,12 +5049,17 @@ function openProfile(uid){
     const sahipAdi = bos ? '' : (rows.find(r => r.uid === sahip)?.name || '—');
     const kim = bos ? 'sahipsiz' : benimMi ? 'sende' : sahipAdi;
     const etiketSinif = benimMi ? 'you' : profilinMi ? 'owner' : '';
+    /* Bot profilinde, botun giremediği dal ayrıca söylenir; yoksa
+       "neden hiç alamıyor" sorusu havada kalır. */
+    const disarida = t.insanaOzel && me.ai;
+    const aciklama = disarida ? 'botlar bu dalda yarışmaz'
+      : t.tutan ? t.baslikKisa : 'bu dalda henüz kimse yok';
     return `<div class="tl ${profilinMi ? 'mine' : ''} ${bos ? 'free' : ''} ${
-              profilinMi ? 'ach-' + t.id : ''}">
+              disarida ? 'disarida' : ''} ${profilinMi ? 'ach-' + t.id : ''}">
       <i>${t.emoji}</i>
       <div class="tl-b">
         <b>${t.ad}</b>
-        <em>${t.tutan ? t.baslikKisa : 'bu dalda henüz kimse yok'}</em>
+        <em>${aciklama}</em>
       </div>
       <span class="tl-who ${etiketSinif}" ${
         !bos && !benimMi ? `title="${sahipAdi} taşıyor"` : ''}>${kim}</span>
