@@ -2561,6 +2561,14 @@ const TEAMS = {
   AEK:{ name:'AEK Atina',        c1:'#ffcc00', c2:'#141418', st:'OPAP Arena',      pow:70 },
   USG:{ name:'Union SG',         c1:'#ffe500', c2:'#005baa', st:'Joseph Marien',   pow:72 },
   SHA:{ name:'Shakhtar',         c1:'#ff6600', c2:'#141418', st:'Arena Lviv',      pow:72, stripe:'v' },
+
+  /* Kurayla gelen dört takım (25.08.2026). Renkler çizilen armayı
+     boyar; gerçek arma adresi Armalar sayfasından girilince onun
+     yerini alır. VIK kodu Viktoria Plzeň'de olduğu için Viking VKG. */
+  VKG:{ name:'Viking',           c1:'#002f5f', c2:'#ffffff', st:'SR-Bank Arena',   pow:66 },
+  SLB:{ name:'Slovan Bratislava',c1:'#009fe3', c2:'#ffffff', st:'Tehelné pole',    pow:68 },
+  SBH:{ name:'Sabah',            c1:'#0b7a3b', c2:'#ffffff', st:'Bank Respublika', pow:63 },
+  LSK:{ name:'LASK Linz',        c1:'#141418', c2:'#ffffff', st:'Raiffeisen Arena',pow:67, stripe:'v' },
 };
 
 const strength = code => TEAMS[code]?.pow ?? 65;
@@ -3031,26 +3039,28 @@ function euroBos(comp){
 /* Şampiyonlar Ligi kupa oranları — favoriden uzağa sıralı.
    Puan bu oranlardan hesaplanır: favoriyi seçmek az, sürprizi
    tutturmak çok kazandırır. Oranlar değişirse tek yer burası. */
-/* Güncellendi 20.08.2026 — kilit (10.09) açılmadan önce.
-   Olympiakos listeden çıktı, yerine Dinamo Zagreb girdi; 36 takım
-   sabit kaldı. DİKKAT: seçimler Firestore'da takım ADIYLA saklanıyor,
-   bu yüzden kalan takımların yazılışına dokunulmadı — 'Bodø/Glimt',
-   'AEK Atina', 'Slavia Praha', 'Atlético Madrid', 'FC Bayern München'
-   aynen bırakıldı. Adı değiştirmek, o takımı seçmiş kişinin tahminini
-   sahipsiz bırakırdı. */
+/* KESİNLEŞMİŞ LİSTE — kura çekildi, 25.08.2026.
+   Celtic, Lyon, Royale Union SG ve Dinamo Zagreb elendi; yerlerine
+   Viking, Slovan Bratislava, Sabah ve LASK Linz girdi. 36 takım sabit.
+   (Değişim anında hiçbiri seçili değildi, kimsenin tahmini boşa düşmedi.)
+
+   DİKKAT: seçimler Firestore'da takım ADIYLA saklanıyor, bu yüzden
+   kalan takımların yazılışına dokunulmadı — 'Bodø/Glimt', 'AEK Atina',
+   'Slavia Praha', 'Atlético Madrid', 'FC Bayern München' aynen bırakıldı.
+   Adı değiştirmek, o takımı seçmiş kişinin tahminini sahipsiz bırakırdı. */
 const UCL_ODDS = {
-  'Paris Saint-Germain':6.00, 'Arsenal':7.00, 'FC Bayern München':7.00,
-  'Barcelona':7.00, 'Real Madrid':8.00, 'Manchester City':8.50,
-  'Liverpool':12.00, 'Manchester United':17.00, 'Inter':29.00,
-  'Atlético Madrid':34.00, 'Aston Villa':34.00, 'AS Roma':41.00,
-  'Borussia Dortmund':41.00, 'Napoli':41.00, 'Villarreal':51.00,
-  'RB Leipzig':51.00, 'Real Betis':51.00, 'Como':66.00,
-  'VfB Stuttgart':81.00, 'Porto':101.00, 'Sporting CP':101.00,
-  'PSV':126.00, 'Bodø/Glimt':126.00, 'Lille':126.00, 'Lens':126.00,
-  'Celtic':151.00, 'Lyon':151.00, 'Fenerbahçe':151.00, 'Feyenoord':151.00,
-  'Galatasaray':176.00, 'Club Brugge':201.00, 'Royale Union SG':226.00,
-  'Shakhtar Donetsk':251.00, 'Slavia Praha':251.00, 'AEK Atina':251.00,
-  'Dinamo Zagreb':326.00,
+  'Paris Saint-Germain':5.50, 'Arsenal':6.00, 'Barcelona':6.50,
+  'FC Bayern München':6.50, 'Real Madrid':7.50, 'Manchester City':8.50,
+  'Liverpool':12.00, 'Manchester United':15.00, 'Inter':26.00,
+  'Borussia Dortmund':31.00, 'Aston Villa':31.00, 'Napoli':31.00,
+  'Atlético Madrid':31.00, 'RB Leipzig':41.00, 'AS Roma':41.00,
+  'Real Betis':61.00, 'Villarreal':61.00, 'Como':61.00,
+  'VfB Stuttgart':71.00, 'Porto':91.00, 'Sporting CP':91.00,
+  'Lille':101.00, 'Lens':101.00, 'PSV':101.00, 'Fenerbahçe':101.00,
+  'Feyenoord':126.00, 'Bodø/Glimt':126.00, 'Galatasaray':126.00,
+  'Club Brugge':151.00, 'AEK Atina':201.00, 'Shakhtar Donetsk':201.00,
+  'Slavia Praha':201.00, 'Viking':251.00, 'Slovan Bratislava':401.00,
+  'Sabah':401.00, 'LASK Linz':401.00,
 };
 const UCL_TEAMS = Object.keys(UCL_ODDS);
 
@@ -3070,9 +3080,11 @@ const UCL_CODE = {
   'VfB Stuttgart':'STU', 'Sporting CP':'SPO', 'Porto':'POR',
   'Lens':'LEN', 'Lille':'LIL', 'PSV':'PSV', 'Feyenoord':'FEY',
   'Fenerbahçe':'FB', 'Celtic':'CEL', 'Galatasaray':'GS',
-  'Bodø/Glimt':'BOD', 'Club Brugge':'CLB', 'Lyon':'LYO',
-  'AEK Atina':'AEK', 'Royale Union SG':'USG', 'Slavia Praha':'SLA',
-  'Shakhtar Donetsk':'SHA', 'Dinamo Zagreb':'DIN',
+  'Bodø/Glimt':'BOD', 'Club Brugge':'CLB',
+  'AEK Atina':'AEK', 'Slavia Praha':'SLA', 'Shakhtar Donetsk':'SHA',
+  /* Kurayla gelen dört yeni takım. Viking için VIK kullanılamadı,
+     o kod Viktoria Plzeň'de — bu yüzden VKG. */
+  'Viking':'VKG', 'Slovan Bratislava':'SLB', 'Sabah':'SBH', 'LASK Linz':'LSK',
 };
 /* Şık değeri bir TEAMS kodu mu, yoksa bahisteki uzun ad mı? İkisini de kabul et. */
 const teamCodeOf = v => TEAMS[v] ? v : (UCL_CODE[v] || null);
