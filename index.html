@@ -1547,7 +1547,16 @@ body{
    Her rozetin tek sahibi var, o yüzden bir satırda genelde 0–2 tane
    olur. Dar ekranda yalnızca simge kalır: adı okumak için dokunma
    hedefi değil, kimliği taşıyan şey simgenin kendisi.            */
-.achs{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+/* min-width:0 şart: içindeki pil "nowrap" olduğu için, olmazsa en uzun
+   ünvan adı (Son Maçın Kralı) satırı kendi genişliğine zorluyor ve
+   satır taşıyor. Etiket gerekirse üç noktayla kısalsın, satır taşmasın. */
+/* min-width:0 + overflow:hidden şart. Pillerin içi "nowrap" olduğu
+   için en uzun ünvan adı (Son Maçın Kralı) satırı kendi genişliğine
+   zorluyor ve satır 4 piksel taşıyordu. Şerit kendi içinde kırpar,
+   taşmayı dışarı taşımaz; piller zaten alt satıra sarıyor. */
+.achs{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;
+       min-width:0; overflow:hidden; }
+.ach{ max-width:100%; }
 .ach{
   display:inline-flex; align-items:center; gap:4px; cursor:default;
   font-size:9.5px; font-weight:700; letter-spacing:.4px; line-height:1;
@@ -1566,6 +1575,22 @@ body{
               border-color:color-mix(in srgb, var(--magenta) 36%, transparent); }
 .ach-form   { color:var(--red); background:color-mix(in srgb, var(--red) 13%, transparent);
               border-color:color-mix(in srgb, var(--red) 34%, transparent); }
+/* Sonradan eklenen sekiz ünvan. Renk bir anlam taşır: başarı
+   dalları vurgu renklerinde, "kötü" ünvanlar (Ne Derse Tersine Oyna,
+   Balon) sönük gri — övünülecek şey olmadıkları belli olsun. */
+.ach-avrupa { color:var(--cyan); background:color-mix(in srgb, var(--cyan) 13%, transparent);
+              border-color:color-mix(in srgb, var(--cyan) 34%, transparent); }
+.ach-robotav{ color:var(--iris); background:color-mix(in srgb, var(--iris) 15%, transparent);
+              border-color:color-mix(in srgb, var(--iris) 36%, transparent); }
+.ach-uzunyol{ color:var(--gold); background:color-mix(in srgb, var(--gold) 13%, transparent);
+              border-color:color-mix(in srgb, var(--gold) 34%, transparent); }
+.ach-ezberci{ color:var(--dim); background:rgba(255,255,255,.06); border-color:var(--line-2); }
+.ach-kararsiz{ color:var(--violet); background:color-mix(in srgb, var(--violet) 14%, transparent);
+              border-color:color-mix(in srgb, var(--violet) 36%, transparent); }
+.ach-kurt   { color:var(--magenta); background:color-mix(in srgb, var(--magenta) 14%, transparent);
+              border-color:color-mix(in srgb, var(--magenta) 36%, transparent); }
+.ach-tersine{ color:var(--faint); background:rgba(255,255,255,.04); border-color:var(--line); }
+.ach-balon  { color:var(--faint); background:rgba(255,255,255,.04); border-color:var(--line); }
 /* Dar ekranda rozet adları yer kaplıyordu, hepsi simgeye iniyordu —
    ama o hâlde ne oldukları hiçbir yerden anlaşılmıyordu: dokunmatikte
    ne title ne de :hover balonu çıkar. Artık İLK rozet (listedeki en
@@ -2181,6 +2206,11 @@ body{
 .tl.mine.ach-form   .tl-b b{ color:var(--red); }
 .tl.mine.ach-kumar  .tl-b b{ color:var(--gold); }
 .tl.mine.ach-kanka  .tl-b b{ color:var(--violet); }
+.tl.mine.ach-avrupa .tl-b b{ color:var(--cyan); }
+.tl.mine.ach-robotav .tl-b b{ color:var(--iris); }
+.tl.mine.ach-uzunyol .tl-b b{ color:var(--gold); }
+.tl.mine.ach-kararsiz .tl-b b{ color:var(--violet); }
+.tl.mine.ach-kurt   .tl-b b{ color:var(--magenta); }
 .pf-note{
   font-size:10.5px; line-height:1.6; color:var(--faint);
   margin:-2px 0 10px;
@@ -4191,6 +4221,29 @@ const TITLES = [
     ipucu: v => `Bol gollü maçları en çok tam bilen o — ${v} maç` },
   { id:'kilpayi',ad:'Kıl Payı',        emoji:'💀', esik:2, olcut:'kilPayi',
     ipucu: v => `En çok tek golle kaçıran o — ${v} kez` },
+
+  /* ---- 25.08.2026'da eklenen sekiz ünvan ---- */
+  { id:'avrupa', ad:'Avrupa Fatihi',   emoji:'🌍', esik:1, olcut:'avrupa',
+    ipucu: v => `Avrupa maçlarından en çok puanı o topladı — ${v} puan` },
+  { id:'robotav',ad:'Robot Avcısı',    emoji:'🤖', esik:2, olcut:'robotYendi',
+    ipucu: v => `Robot'u en çok geçen o — ${v} maç` },
+  { id:'uzunyol',ad:'Uzun Yol',        emoji:'🛤️', esik:3, olcut:'uzunYol',
+    ipucu: v => `Sezonun en uzun puan serisi — ${v} maç` },
+  /* Simge bilerek 🔁 değil: "Ne Derse Tersine Oyna"nın 🔄'sıyla
+     küçük boyutta birbirine karışıyordu. Yazıcı hep aynı şeyi basar. */
+  { id:'ezberci',ad:'Ezberci',         emoji:'🖨️', esik:3, olcut:'ezberci',
+    ipucu: (v, d) => `Aynı skoru en çok yazan o — ${d.ezberciSkor} · ${v} kez` },
+  { id:'kararsiz',ad:'Kararsız',       emoji:'🌀', esik:4, olcut:'kararsiz',
+    ipucu: v => `En çok farklı skor deneyen o — ${v} ayrı skor` },
+  /* Deli hariç: uçuk skorlar yazdığı için puansız seri onun doğal hâli,
+     ünvan kalıcı olarak onda kalır ve yarış olmaktan çıkardı. */
+  { id:'tersine',ad:'Ne Derse Tersine Oyna', emoji:'🔄', esik:3, olcut:'tersine',
+    haric:['ai_deli'],
+    ipucu: v => `Sezonun en uzun puansız serisi — ${v} maç` },
+  { id:'kurt',   ad:'Yalnız Kurt',     emoji:'🦄', esik:2, olcut:'yalnizKurt',
+    ipucu: v => `O skoru yazan tek kişi olduğu maç sayısı — ${v}` },
+  { id:'balon',  ad:'Balon',           emoji:'🎈', esik:2, olcut:'balon',
+    ipucu: v => `Bol gollü yazıp eli boş dönen — ${v} maç` },
 ];
 
 /* Bir ölçütün değeri ve o değere ulaşılan maç sırası.
@@ -4206,13 +4259,35 @@ function achievementStats(rows){
   const oynanan  = FIXTURES.filter(m => matchState(m) !== 'open' && Store.results[m.id]);
   const sonMacId = oynanan.length ? oynanan[oynanan.length - 1].id : null;
   const deliTah  = Store.predictions['ai_deli'] || {};
+
+  /* Maç başına ÖN HESAP — herkes için bir kez.
+     · macSkor : o maçta hangi skoru kaç kişi yazmış (Yalnız Kurt için)
+     · robotPuan: Robot o maçtan kaç puan almış (Robot Avcısı için)
+     Bunları oyuncu döngüsünün içinde hesaplasaydık iş oyuncu sayısının
+     KARESİ kadar büyürdü; burada bir kez çıkarılıp paylaşılıyor. */
+  const macSkor = {}, robotPuan = {};
+  oynanan.forEach(m => {
+    const say = {};
+    rows.forEach(x => {
+      const p = (Store.predictions[x.uid] || {})[m.id];
+      if (p) { const k = `${p.h}-${p.a}`; say[k] = (say[k] || 0) + 1; }
+    });
+    macSkor[m.id] = say;
+    const rp = (Store.predictions['ai_robot'] || {})[m.id];
+    robotPuan[m.id] = rp ? scorePrediction(rp, Store.results[m.id], m).pts : null;
+  });
+
   const stats = {};
 
   rows.forEach(r => {
     const preds = Store.predictions[r.uid] || {};
     const d = { sonMac:olc(), enIyiMac:olc(), tamIsabet:olc(), derbi:olc(), seri:olc(),
                 puanliMac:olc(), enBuyukOran:olc(), tahmin:olc(), ayna:olc(),
-                sifirci:olc(), yagmur:olc(), deliKanka:olc(), kilPayi:olc() };
+                sifirci:olc(), yagmur:olc(), deliKanka:olc(), kilPayi:olc(),
+                avrupa:olc(), robotYendi:olc(), uzunYol:olc(), ezberci:olc(),
+                kararsiz:olc(), tersine:olc(), yalnizKurt:olc(), balon:olc() };
+    const skorSayim = {}, ayriSkorlar = new Set();
+    d.ezberciSkor = '';                          // en çok tekrarlanan skor (ipucunda yazılır)
 
     const puanlar = oynanan.map((m, i) => {
       const p = preds[m.id], res = Store.results[m.id];
@@ -4242,6 +4317,30 @@ function achievementStats(rows){
         const o = oddsInfo(m.id)?.scores?.[`${p.h}:${p.a}`];
         if (o) enBuyuk(d.enBuyukOran, i, o);
       }
+
+      /* ---- Yeni ünvanların ölçütleri ---- */
+      if (EURO_COMPS.includes(m.comp) && s.pts) art(d.avrupa, i, s.pts);
+
+      /* Robot'u geçmek: aynı maçta ondan çok puan almak. Robot kendini
+         geçemez; Deli geçebilir — o da herkes gibi tahmin yazıyor. */
+      const rp = robotPuan[m.id];
+      if (r.uid !== 'ai_robot' && rp !== null && s.pts > rp) art(d.robotYendi, i);
+
+      /* Ezberci / Kararsız: aynı skoru kaç kez yazdı, kaç ayrı skor denedi */
+      const anahtar = `${p.h}-${p.a}`;
+      skorSayim[anahtar] = (skorSayim[anahtar] || 0) + 1;
+      if (skorSayim[anahtar] > d.ezberci.v){
+        d.ezberci = { v: skorSayim[anahtar], i };
+        d.ezberciSkor = anahtar;
+      }
+      if (!ayriSkorlar.has(anahtar)){ ayriSkorlar.add(anahtar); d.kararsiz = { v: ayriSkorlar.size, i }; }
+
+      /* Yalnız Kurt: o skoru yazan tek kişi olmak */
+      if (macSkor[m.id][anahtar] === 1) art(d.yalnizKurt, i);
+
+      /* Balon: bol gollü yazıp eli boş dönmek */
+      if (p.h + p.a >= 4 && s.pts === 0) art(d.balon, i);
+
       return s.pts;
     });
 
@@ -4254,6 +4353,28 @@ function achievementStats(rows){
     /* Serinin "ulaşma sırası" = serinin BAŞLADIĞI maç. Eşit seride
        daha erken başlayan, yani daha uzun süredir formda olan kazanır. */
     d.seri = { v:seri, i: seri ? puanlar.length - seri : Infinity };
+
+    /* UZUN YOL — sezonun EN UZUN puan serisi (rekor, güncel seri değil).
+       Ateş rozeti "şu an" der, bu ünvan "bu sezon en iyisi" der.
+       Tahmin girilmemiş maç seriyi kırar: form oynamayı da kapsar. */
+    let enUzun = 0, enUzunSon = Infinity, ard = 0;
+    puanlar.forEach((v, i) => {
+      if (v){ ard++; if (ard > enUzun){ enUzun = ard; enUzunSon = i; } }
+      else ard = 0;
+    });
+    d.uzunYol = { v:enUzun, i:enUzunSon };
+
+    /* NE DERSE TERSİNE OYNA — en uzun puansız seri.
+       Atlanan maç seriyi NE KIRAR NE DE UZATIR: bir hafta ara vermek
+       kötü gidişi sıfırlamaz, ama oyunu tamamen bırakan da sonsuz
+       seri biriktiremez — sayaç son oynadığı maçta donar. */
+    let enKotu = 0, enKotuSon = Infinity, ard2 = 0;
+    puanlar.forEach((v, i) => {
+      if (v === null) return;                    // atlanan maç: görünmez
+      if (v > 0){ ard2 = 0; return; }            // puan aldı → seri bitti
+      ard2++; if (ard2 > enKotu){ enKotu = ard2; enKotuSon = i; }
+    });
+    d.tersine = { v:enKotu, i:enKotuSon };
 
     stats[r.uid] = d;
   });
@@ -4270,12 +4391,15 @@ function titlesFor(rows, stats){
     let kazanan = null, en = null;
     rows.forEach(r => {
       if (t.insanaOzel && r.ai) return;          // bu dalda botlar yarışmaz
+      if (t.haric?.includes(r.uid)) return;      // adı geçen oyuncu bu dalda yarışmaz
       const o = stats[r.uid][t.olcut];
       if (!o || o.v < t.esik) return;            // bu oyuncu bu dalda yok
       if (!kazanan || o.v > en.v || (o.v === en.v && o.i < en.i)){ kazanan = r; en = o; }
     });
     if (!kazanan) return;                        // dal henüz anlamsız
-    (out[kazanan.uid] ||= []).push({ ...t, sayi: en.v, baslik: t.ipucu(en.v) });
+    /* İpucu kazananın kendi sayılarını da alabilir — Ezberci hangi
+       skoru tekrarladığını yazıyor. */
+    (out[kazanan.uid] ||= []).push({ ...t, sayi: en.v, baslik: t.ipucu(en.v, stats[kazanan.uid]) });
   });
   return out;
 }
