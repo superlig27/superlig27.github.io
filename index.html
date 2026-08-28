@@ -4185,12 +4185,27 @@ function leaderboard(){
    oraya önce varan. Böylece ünvan sürekli el değiştirip
    titremez, ve "geçmeden alamazsın" sözü harfiyen doğrudur.
 
-   Yeni ünvan eklemek: aşağıdaki listeye bir satır yaz, `deger`
-   ölçütün {v,i} nesnesini döndürsün. Gerisi kendiliğinden işler.
+   ── BOTLAR ──────────────────────────────────────────────────
+   Robot ve Deli ünvan toplamaz. Ligin sıralamasında yarışırlar ama
+   ünvanlar oyuncular içindir; bot her maça tahmin yazdığı ve hep
+   aynı mantıkla oynadığı için birçok dalda insanların önüne geçip
+   ünvanı kalıcı olarak elinde tutuyordu.
+
+   TEK istisna, `botaAcik` ile işaretlenen Son Maçın Kralı: o ünvan
+   zaten her maç el değiştiriyor, botun bir haftalığına alması
+   yarışı bozmuyor — aksine "bu hafta bizi bot yendi" esprisi oluyor.
+
+   Kural bu yönde yazıldı (19 dala "insan özel" demek yerine botun
+   girebildiği tek dalı işaretlemek), çünkü yeni ünvan eklerken
+   unutulsa bile bot sessizce sızamaz: varsayılan kapalı.
+
+   Yeni ünvan eklemek: aşağıdaki listeye bir satır yaz, `olcut`
+   ölçütün {v,i} nesnesini göstersin. Gerisi kendiliğinden işler.
    ============================================================ */
 
 const TITLES = [
   { id:'kral',   ad:'Son Maçın Kralı', emoji:'👑', esik:1, olcut:'sonMac',
+    botaAcik:true,                             // botların girebildiği TEK dal
     ipucu: v => `Son maçta en çok puanı o topladı — ${v} puan` },
   { id:'kahin',  ad:'Kâhin',           emoji:'🔮', esik:1, olcut:'enIyiMac',
     ipucu: v => `Tek maçtaki en yüksek puan — ${v} puan` },
@@ -4202,14 +4217,7 @@ const TITLES = [
     ipucu: v => `En çok maçtan puan çıkaran o — ${v} maç` },
   { id:'kumar',  ad:'Kumarbaz',        emoji:'🎲', esik:2, olcut:'enBuyukOran',
     ipucu: v => `Tutturduğu en yüksek oran — ${v.toFixed(2)}` },
-  /* insanaOzel: botlar bu dalda yarışmaz. Sadık "hiç aksatmamayı"
-     ödüllendiriyor, ama Robot ve Deli tanımı gereği HER maça tahmin
-     giriyor — yani hiç kaçırmıyorlar. Yarışa katılırlarsa ünvan
-     kalıcı olarak onlarda kalır ve insanlar için anlamsızlaşır.
-     Doğruluk isteyen dallarda (Kâhin, Nişancı…) botların böyle bir
-     üstünlüğü yok, oralarda yarışmaya devam ediyorlar. */
   { id:'sadik',  ad:'Sadık',           emoji:'📋', esik:3, olcut:'tahmin',
-    insanaOzel:true,
     ipucu: v => `En çok maça tahmin giren o — ${v} maç` },
   { id:'kanka',  ad:'Deli’nin Kankası',emoji:'🃏', esik:1, olcut:'deliKanka',
     ipucu: v => `Deli ile en çok aynı skoru yazan o — ${v} maç` },
@@ -4235,10 +4243,7 @@ const TITLES = [
     ipucu: (v, d) => `Aynı skoru en çok yazan o — ${d.ezberciSkor} · ${v} kez` },
   { id:'kararsiz',ad:'Kararsız',       emoji:'🌀', esik:4, olcut:'kararsiz',
     ipucu: v => `En çok farklı skor deneyen o — ${v} ayrı skor` },
-  /* Deli hariç: uçuk skorlar yazdığı için puansız seri onun doğal hâli,
-     ünvan kalıcı olarak onda kalır ve yarış olmaktan çıkardı. */
   { id:'tersine',ad:'Ne Derse Tersine Oyna', emoji:'🔄', esik:3, olcut:'tersine',
-    haric:['ai_deli'],
     ipucu: v => `Sezonun en uzun puansız serisi — ${v} maç` },
   { id:'kurt',   ad:'Yalnız Kurt',     emoji:'🦄', esik:2, olcut:'yalnizKurt',
     ipucu: v => `O skoru yazan tek kişi olduğu maç sayısı — ${v}` },
@@ -4390,8 +4395,12 @@ function titlesFor(rows, stats){
   TITLES.forEach(t => {
     let kazanan = null, en = null;
     rows.forEach(r => {
-      if (t.insanaOzel && r.ai) return;          // bu dalda botlar yarışmaz
-      if (t.haric?.includes(r.uid)) return;      // adı geçen oyuncu bu dalda yarışmaz
+      /* BOTLAR yalnızca botaAcik işaretli dalda yarışır (şu an sadece
+         Son Maçın Kralı). Kural bu yönde yazıldı — 19 ünvana "insan
+         özel" etiketi koymak yerine, botun girebildiği TEK dalı
+         işaretlemek hem kısa hem de yeni ünvan eklerken güvenli:
+         işaretlemeyi unutursan bot yine giremez, sessizce sızamaz. */
+      if (r.ai && !t.botaAcik) return;
       const o = stats[r.uid][t.olcut];
       if (!o || o.v < t.esik) return;            // bu oyuncu bu dalda yok
       if (!kazanan || o.v > en.v || (o.v === en.v && o.i < en.i)){ kazanan = r; en = o; }
@@ -5185,17 +5194,16 @@ function openProfile(uid){
     const sahipAdi = bos ? '' : (rows.find(r => r.uid === sahip)?.name || '—');
     const kim = bos ? 'sahipsiz' : benimMi ? 'sende' : sahipAdi;
     const etiketSinif = benimMi ? 'you' : profilinMi ? 'owner' : '';
-    /* Bot profilinde, botun giremediği dal ayrıca söylenir; yoksa
-       "neden hiç alamıyor" sorusu havada kalır. */
-    const disarida = t.insanaOzel && me.ai;
-    const aciklama = disarida ? 'botlar bu dalda yarışmaz'
-      : t.tutan ? t.baslikKisa : 'bu dalda henüz kimse yok';
+    /* Bot profilinde girilemeyen dallar soluk durur. Tek tek "botlar
+       yarışmaz" yazmıyoruz — 19 satırda aynı cümle gürültü olurdu;
+       açıklama bölümün başında bir kez veriliyor. */
+    const disarida = me.ai && !t.botaAcik;
     return `<div class="tl ${profilinMi ? 'mine' : ''} ${bos ? 'free' : ''} ${
               disarida ? 'disarida' : ''} ${profilinMi ? 'ach-' + t.id : ''}">
       <i>${t.emoji}</i>
       <div class="tl-b">
         <b>${t.ad}</b>
-        <em>${aciklama}</em>
+        <em>${t.tutan ? t.baslikKisa : 'bu dalda henüz kimse yok'}</em>
       </div>
       <span class="tl-who ${etiketSinif}" ${
         !bos && !benimMi ? `title="${sahipAdi} taşıyor"` : ''}>${kim}</span>
@@ -5206,11 +5214,19 @@ function openProfile(uid){
     ? (t.olcut === 'enBuyukOran' ? t.tutan.sayi.toFixed(2) : t.tutan.sayi) + ' ile tutuyor'
     : ''; });
 
+  /* Bot profilinde sayaç "1/20" değil "1/1" olmalı: girebildiği tek
+     dal var, 20 üzerinden saymak hiç kazanamıyormuş gibi gösterirdi. */
+  const acikDal = me.ai ? TITLES.filter(t => t.botaAcik).length : TITLES.length;
+
   const rozetHtml = `
     <div class="pf-h">Ünvanlar
-      <span class="pf-count">${bende.length}/${TITLES.length}</span></div>
-    <div class="pf-note">Her ünvan tek kişide durur. Almak için sahibini
-      <b>geçmen</b> gerekir — eşitlemek yetmez.</div>
+      <span class="pf-count">${bende.length}/${acikDal}</span></div>
+    <div class="pf-note">${me.ai
+      ? `Yapay zekâ oyuncular ünvan toplamaz — her maça tahmin yazdıkları
+         için çoğu dalda haksız üstünlükleri olurdu. Yarışabildikleri tek
+         dal <b>Son Maçın Kralı</b>; o da her maç el değiştiriyor.`
+      : `Her ünvan tek kişide durur. Almak için sahibini
+         <b>geçmen</b> gerekir — eşitlemek yetmez.`}</div>
     <div class="tl-list">${tahta.map(satir).join('')}</div>`;
 
   /* Başkasının sezon seçimi kilit açılana kadar gizli; kendi profilinde görünür */
