@@ -3414,6 +3414,18 @@ function oddsInfo(id){
 
 const hasOdds = m => !!oddsInfo(m.id);
 
+/* ---- Tahmin penceresi -------------------------------------------
+   Oranı girilmiş maç her zaman tahmine açıktır. Oranı GİRİLMEMİŞ maç
+   da başlamasına iki haftadan az kalınca açılır: tahmin kaydedilir,
+   ama "ne kazanırsın" gösterilemez — çarpanı belirleyen oran tablosu
+   ortada yok. Oranlar sonradan girilirse puan kendiliğinden ona göre
+   hesaplanır; hiç girilmezse çarpan ×1'de kalır (bkz. scoreMult).
+   Böylece isteyen herkes erkenden tahminini yazabilir, ama iki
+   haftadan uzak 120 kart da listeyi boğmaz.                        */
+const ERKEN_PENCERE = 14 * 24 * 3600 * 1000;
+const erkenAcik  = m => new Date(m.dt) - NOW() <= ERKEN_PENCERE;
+const canPredict = m => matchState(m) === 'open' && (hasOdds(m) || erkenAcik(m));
+
 /* Bir SKORUN çarpanı — tam isabet ve 1 gol sapma için.
    DİKKAT: her zaman GERÇEKLEŞEN skorla çağrılır, tahmin edilenle değil.
    Nedeni: tahmin edilen skorla çağrılırsa uçuk skor yazmak bedava
@@ -5784,8 +5796,9 @@ function matchCard(m){
   const feat = isFeatured(m);
 
   const oddsReady = hasOdds(m);
+  const acik      = canPredict(m);      // oranlı ya da iki haftalık pencerede
   /* Tahmin girilebilir mi, girilmiş mi? Kart rengi buna göre. */
-  const actionable = open && oddsReady && isLoggedIn();
+  const actionable = acik && isLoggedIn();
   const status = !actionable ? '' : (my ? 'ok' : 'todo');
 
   const stateChip = open
@@ -5806,11 +5819,11 @@ function matchCard(m){
     : `<div class="vs-lite">VS</div>`;
 
   let pickArea = '';
-  if (open && !oddsReady){
-    /* Oran tablosu girilmeden maç tahmine kapalıdır — pencere budur */
+  if (open && !acik){
+    /* Ne oranı girilmiş ne de iki haftalık pencereye girmiş — pencere budur */
     pickArea = `
       <div class="login-cta">
-        <span>⏳ <b>Oranlar yakında</b> — bu maç oranlar girilince açılacak.</span>
+        <span>⏳ <b>Tahmine kapalı</b> — maçtan iki hafta önce açılır.</span>
       </div>`;
   } else if (open && !isLoggedIn()){
     pickArea = `
@@ -5831,8 +5844,8 @@ function matchCard(m){
                oninput="P_tahmin.hintOdds('${m.id}')">
         <button class="btn ${my ? 'saved' : ''}" data-save="${m.id}"
                 onclick="P_tahmin.savePick('${m.id}', event)">${my ? 'Güncelle' : 'Kaydet'}</button>
-        <button class="btn ghost odds-btn" onclick="openOddsView('${m.id}')"
-                title="Bu maçın tüm oranları">${oddsIcon(14)}<span>Oranlar</span></button>
+        ${oddsReady ? `<button class="btn ghost odds-btn" onclick="openOddsView('${m.id}')"
+                title="Bu maçın tüm oranları">${oddsIcon(14)}<span>Oranlar</span></button>` : ''}
       </div>
       <div class="odds-hint" id="hint_${m.id}">${oddsHintText(m, my?.h, my?.a)}</div>`;
   } else if (my){
@@ -5953,7 +5966,9 @@ function togglePicks(id, btn){
 /* Skor kutularının altındaki canlı ipucu: oran, çarpan, olası puan */
 function oddsHintText(m, h, a){
   const i = oddsInfo(m.id);
-  if (!i) return '';
+  /* Oran yoksa tahmin yine kaydedilir; sadece olası puan gösterilemez. */
+  if (!i) return `<span class="dim">Oranlar henüz girilmedi — tahminin kaydedilir,
+          kazanabileceğin puan oranlar girilince belli olur.</span>`;
   if (h === '' || a === '' || h == null || a == null){
     const fav = Object.keys(i.scores).reduce((b,k) => i.scores[k] < i.scores[b] ? k : b);
     return `<span class="dim">Bahisçinin favori skoru <b>${fav.replace(':','-')}</b>
@@ -6044,11 +6059,11 @@ async function saveResult(id){
 }
 
 /* ---------------- Maç listesi (güne göre gruplu) ----------------
-   Liste ikiye ayrılır: ORANI GİRİLMİŞ maçlar üstte, oranı henüz
-   girilmemişler altta ve KAPALI durur. Sebebi basit — oran girilmeden
-   maç tahmine kapalı (bkz. matchCard'daki "Oranlar yakında"), yani
-   sezon başında 120 tahmin edilemez kart, oynanabilir 4 maçı
-   gömüyordu. Alttaki bölüm istendiğinde tek düğmeyle açılır.      */
+   Liste ikiye ayrılır: TAHMİNE AÇIK maçlar üstte, henüz açılmamışlar
+   altta ve KAPALI durur. Açık olmak için ya oranların girilmiş olması
+   ya da maça iki haftadan az kalmış olması yeter (bkz. canPredict).
+   Sebebi basit — sezon başında 120 tahmin edilemez kart, oynanabilir
+   birkaç maçı gömüyordu. Alttaki bölüm tek düğmeyle açılır.       */
 
 /* Bir maç dizisini güne göre gruplayıp kartlara çevirir.
    Gün başlığındaki sayaç kendi bölümünü sayar. */
@@ -6080,8 +6095,15 @@ function matchList(){
         tüm fikstüre bakabilirsin.</span></div></div>`;
   }
 
-  const oranli  = all.filter(hasOdds);
-  const oransiz = all.filter(m => !hasOdds(m));
+  /* Ayrım ORANA göre: üstte oranı girilmiş maçlar, altta girilmemişler.
+     Alttakilerin bir kısmı (iki haftadan yakın olanlar) tahmine AÇIKTIR —
+     kutuları çalışır, sadece olası puan gösterilemez. Yine de burada
+     duruyorlar ki üst liste "puanını görebildiğin maçlar" kalsın.
+     Süren maçlar oranı olmasa da üstte kalır: canlı takip ediliyorlar. */
+  const ustte   = m => matchState(m) !== 'open' || hasOdds(m);
+  const oranli  = all.filter(ustte);
+  const oransiz = all.filter(m => !ustte(m));
+  const oransizAcik = oransiz.filter(canPredict).length;
 
   let html = '';
 
@@ -6095,21 +6117,30 @@ function matchList(){
   } else {
     html += `<div class="card quiet"><div class="empty">
       <span class="em">⏳</span>
-      <span class="ttl">Tahmine açık maç yok</span>
-      <span class="hint">Oranlar girilince maçlar burada belirir.
-        Aşağıdan tüm fikstüre göz atabilirsin.</span></div></div>`;
+      <span class="ttl">Oranlı maç yok</span>
+      <span class="hint">${oransizAcik
+        ? `Yine de aşağıdaki <b>${oransizAcik} maça</b> tahmin girebilirsin —
+           puanı oranlar girilince belli olur.`
+        : `Oranlar girilince maçlar burada belirir.
+           Aşağıdan tüm fikstüre göz atabilirsin.`}</span></div></div>`;
   }
 
-  /* Oranı olmayanlar: varsayılan kapalı */
+  /* Oranı girilmemişler: varsayılan kapalı */
   if (oransiz.length){
     html += `
       <button class="btn ghost soon-toggle ${showSoon ? 'open' : ''}"
               onclick="P_tahmin.toggleSoon()">
-        <span>⏳ Oranı girilmemiş ${oransiz.length} maç</span>
+        <span>⏳ Oranı girilmemiş ${oransiz.length} maç${
+          oransizAcik ? ` · ${oransizAcik} tanesi tahmine açık` : ''}</span>
         <span class="chev">▾</span>
       </button>`;
     if (showSoon){
-      html += `<div class="soon-note">Bu maçlar oranlar girilince tahmine açılacak.</div>`;
+      html += `<div class="soon-note">${oransizAcik
+        ? `Başlamasına iki haftadan az kalan <b>${oransizAcik} maça</b> şimdiden
+           tahmin girebilirsin; kazanacağın puan oranlar girilince belli olur.
+           Kalanlar iki hafta kala açılacak.`
+        : `Bu maçlar başlamalarına iki hafta kala tahmine açılacak —
+           oranlar daha erken girilirse hemen.`}</div>`;
       html += groupedCards(oransiz, shownSoon);
       if (oransiz.length > shownSoon){
         html += `<button class="btn ghost" onclick="P_tahmin.showMoreSoon()" style="width:100%;margin-top:6px">
@@ -6265,7 +6296,7 @@ async function pickSeason(kind, val){
 /* ---------------- Tahmin durumu özeti ---------------- */
 function pickSummary(){
   if (!isLoggedIn()) return '';
-  const openable = FIXTURES.filter(m => matchState(m) === 'open' && hasOdds(m));
+  const openable = FIXTURES.filter(canPredict);
   if (!openable.length) return '';
   const my = myPredictions();
   const done = openable.filter(m => my[m.id]).length;
@@ -6340,8 +6371,9 @@ function rulesBlock(){
 
       <div class="note" style="margin-top:10px">
         
-        <span>Oranlar yalnızca <b>yakın maçlar</b> için bulunabildiğinden, maçlar
-        yaklaştıkça açılır. "Oranlar yakında" yazan maçlar henüz tahmine kapalıdır.</span>
+        <span>Her maç, başlamasına <b>iki hafta</b> kala tahmine açılır — oranlar
+        girilmiş olmasa bile. Oranı olmayan maçta tahminin kaydedilir, sadece
+        kazanabileceğin puanı önceden göremezsin; oranlar girilince belli olur.</span>
       </div>
     </div>
   </div>`;
@@ -6362,7 +6394,7 @@ function render(){
     ${isAdmin() ? `<div style="margin:-4px 0 12px;display:flex;gap:9px;align-items:center;
          justify-content:space-between;flex-wrap:wrap">
         <span style="font-size:11.5px;color:var(--faint)">
-          ${FIXTURES.filter(m => matchState(m)==='open' && hasOdds(m)).length} maç açık ·
+          ${FIXTURES.filter(canPredict).length} maç tahmine açık ·
           ${FIXTURES.filter(m => matchState(m)==='open' && !hasOdds(m)).length} maç oransız
         </span>
         <span style="display:flex;gap:8px;flex-wrap:wrap">
