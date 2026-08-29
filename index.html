@@ -2123,6 +2123,24 @@ body{
 }
 .euro-marks .comp-mark.ico{ margin-right:0; vertical-align:middle; opacity:.9; }
 
+/* Kura sonucu: iki takım, sekizer rakip */
+.euro-draw{
+  display:grid; gap:12px; margin:18px auto 4px; max-width:520px; text-align:left;
+}
+@media (min-width:620px){ .euro-draw{ grid-template-columns:1fr 1fr; } }
+.ed-team{
+  padding:12px 13px; border-radius:var(--r-md);
+  background:rgba(255,255,255,.035); border:1px solid var(--line);
+}
+.ed-head{ display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.ed-head b{ font-family:var(--f-head); font-size:14px; letter-spacing:.6px; color:var(--text); }
+.ed-list{ display:grid; grid-template-columns:1fr 1fr; gap:6px 8px; }
+.ed-opp{ display:flex; align-items:center; gap:6px; min-width:0; }
+.ed-opp em{
+  font-style:normal; font-size:10.5px; color:var(--dim);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
 /* ---------- Küme düşme işareti ----------
    Tehlike rengi ve aşağı akan bir zemin: bahsin diğer ikisinden
    (şampiyonluk, kupa) farklı bir şey olduğunu renk söylüyor. */
@@ -2821,9 +2839,12 @@ const SL_FIXTURES = [
   [ 3,'SAM','FB','2026-08-30','21:30'],
   [ 3,'AME','TS','2026-08-31','21:30'],
   [ 3,'BJK','COR','2026-08-31','21:30'],
-  [ 4,'FB','BJK','2026-09-06',null],
-  [ 4,'TS','GEN','2026-09-06',null],
-  [ 4,'BAS','GS','2026-09-06',null],
+  /* 4. hafta TFF'de açıklandı (29.08.2026). Yalnızca saatler değil
+     TARİHLER de değişti: Başakşehir–GS iki gün, FB–BJK bir gün öne
+     alınmış. Bu haftadan itibaren saat kalıbı da 17:00/20:00. */
+  [ 4,'BAS','GS','2026-09-04','20:00'],
+  [ 4,'FB','BJK','2026-09-05','20:00'],
+  [ 4,'TS','GEN','2026-09-06','20:00'],
   [ 5,'BJK','ERZ','2026-09-13',null],
   [ 5,'GAZ','FB','2026-09-13',null],
   [ 5,'KON','TS','2026-09-13',null],
@@ -3043,6 +3064,29 @@ const upcomingFixtures = () => FIXTURES.filter(m => matchState(m) !== 'done');
 /* Filtreleme: takım kodu ya da 'ALL', turnuva kodu / 'DERBY' / 'ALL' */
 const EURO_COMPS = ['UCL','UEL','UECL'];
 
+/* ------------------------------------------------------------
+   AVRUPA KURASI — çekildi 27.08.2026 (uefa.com)
+   Galatasaray ve Fenerbahçe'nin lig aşamasındaki sekizer rakibi
+   belli. TAKVİM HENÜZ YOK: UEFA hangi rakibin hangi maç gününde,
+   evde mi deplasmanda mı ve kaçta oynanacağını birkaç gün sonra
+   açıklıyor — kura sayfasında yalnızca eşleşmeler var.
+
+   Bu yüzden maçlar EURO_FIXTURES'a EKLENMEDİ. Uydurma tarihle
+   eklemek, üstelik Avrupa maçları ÇİFT PUAN getirdiği için, ağır
+   puanlı maçları yanlış güne koymak olurdu. Aşağıdaki liste
+   yalnızca "rakipler belli" bilgisini taşır ve Avrupa sekmesinde
+   gösterilir.
+
+   Takvim açıklanınca: her satırı EURO_FIXTURES'a
+     { team:'GS', comp:'UCL', stage:'league', md:1, opp:'BAR',
+       away:false, dt:'2026-09-08T22:00:00+03:00' }
+   biçiminde taşı; bu sabit sonra silinebilir.
+   ------------------------------------------------------------ */
+const EURO_DRAW = {
+  GS: ['BAR','PSG','AVL','SPO','FEY','LIL','STU','AEK'],
+  FB: ['LIV','ATM','ROM','AVL','VIL','SHA','SLA','LSK'],
+};
+
 function filterFixtures(list, team, comp){
   return list.filter(m => {
     if (team !== 'ALL' && !m.big.includes(team)) return false;
@@ -3060,12 +3104,30 @@ function filterFixtures(list, team, comp){
 function euroBos(comp){
   if (comp !== 'EU' && !EURO_COMPS.includes(comp)) return '';
   if (FIXTURES.some(m => EURO_COMPS.includes(m.comp))) return '';   // maç var, boş durum gerekmez
+  /* Kura çekildiyse boş ekran yerine RAKİPLERİ göster: takvim
+     gelmemiş olsa da "kimlerle oynuyoruz" sorusunun cevabı hazır. */
+  const kuraVar = Object.values(EURO_DRAW).some(l => l.length);
+  const kuraHtml = !kuraVar ? '' : `
+    <div class="euro-draw">
+      ${Object.entries(EURO_DRAW).map(([kod, rakipler]) => `
+        <div class="ed-team">
+          <div class="ed-head">${crest(kod, 26)}<b>${TEAMS[kod]?.name || kod}</b></div>
+          <div class="ed-list">${rakipler.map(o => `
+            <span class="ed-opp" title="${TEAMS[o]?.name || o}">
+              ${crest(o, 20)}<em>${TEAMS[o]?.name || o}</em></span>`).join('')}</div>
+        </div>`).join('')}
+    </div>`;
+
   return `<div class="card quiet euro-empty"><div class="empty">
       <span class="em">🏆</span>
-      <span class="ttl">Avrupa maçları yolda</span>
-      <span class="hint">Dört büyüğün Şampiyonlar Ligi, Avrupa Ligi ve
-        Konferans Ligi maçları <b>kura çekilir çekilmez</b> buraya düşecek —
-        lig aşamasından itibaren hepsi tahmine açılacak.</span>
+      <span class="ttl">${kuraVar ? 'Kura çekildi, takvim bekleniyor' : 'Avrupa maçları yolda'}</span>
+      <span class="hint">${kuraVar
+        ? `Galatasaray ve Fenerbahçe'nin lig aşamasındaki rakipleri belli.
+           UEFA maç günlerini ve saatlerini açıklayınca maçlar buraya düşecek
+           ve tahmine açılacak.`
+        : `Dört büyüğün Şampiyonlar Ligi, Avrupa Ligi ve Konferans Ligi maçları
+           <b>kura çekilir çekilmez</b> buraya düşecek.`}</span>
+      ${kuraHtml}
       <span class="euro-marks">${EURO_COMPS.map(c => compMark(c, 26, 'ico')).join('')}</span>
       <span class="hint" style="margin-top:12px">Avrupa maçları
         <b style="color:var(--gold)">çift puan</b> getirir.</span>
