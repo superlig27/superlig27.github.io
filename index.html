@@ -2570,7 +2570,15 @@ const TEAMS = {
   AME:{ name:'Amedspor',        c1:'#0b6b3a', c2:'#b0182c', st:'Diyarbakır Stadyumu',     pow:56 },
   COR:{ name:'Çorum FK',        c1:'#b0182c', c2:'#141418', st:'Çorum Şehir Stadyumu',    pow:54 },
 
-  /* --- Avrupa rakipleri --- */
+  /* --- Avrupa rakipleri ---
+     29.08.2026 temizliği: burada bir zamanlar kurayı beklerken konmuş
+     tahmini kulüpler ve iki yer tutucu ('Beşiktaş rakibi', 'Basaksehir B')
+     duruyordu. Artık kuralar çekildi, o yüzden liste yalnızca GERÇEKTEN
+     karşılaşacağımız kulüpleri tutuyor: Şampiyonlar Ligi'nin 36'sı +
+     Beşiktaş'ın ve Trabzonspor'un Avrupa rakipleri. Silinenler:
+     Benfica, Ajax, Olympiakos, Lyon, Real Sociedad, PAOK, Rangers,
+     Eintracht, Viktoria Plzeň, Legia, Molde, Lugano, Gent, Dinamo Zagreb
+     ve iki yer tutucu. Hiçbirine fikstürde ya da bahiste değinilmiyordu. */
   RMA:{ name:'Real Madrid',      c1:'#ffffff', c2:'#d4af37', st:'Bernabéu',        pow:95 },
   MCI:{ name:'Man City',         c1:'#6cabdd', c2:'#1c2c5b', st:'Etihad',          pow:94 },
   BAY:{ name:'Bayern München',   c1:'#dc052d', c2:'#0066b2', st:'Allianz Arena',   pow:93 },
@@ -2578,26 +2586,10 @@ const TEAMS = {
   INT:{ name:'Inter',            c1:'#0068a8', c2:'#141418', st:'San Siro',        pow:90 },
   ARS:{ name:'Arsenal',          c1:'#ef0107', c2:'#ffffff', st:'Emirates',        pow:91 },
   ATM:{ name:'Atlético Madrid',  c1:'#cb3524', c2:'#262e62', st:'Metropolitano',   pow:88 },
-  BEN:{ name:'Benfica',          c1:'#e01e26', c2:'#ffffff', st:'Da Luz',          pow:84 },
-  AJX:{ name:'Ajax',             c1:'#d2122e', c2:'#ffffff', st:'Johan Cruijff',   pow:80 },
   CLB:{ name:'Club Brugge',      c1:'#0b4ea2', c2:'#000000', st:'Jan Breydel',     pow:78 },
   SLA:{ name:'Slavia Praha',     c1:'#d7141a', c2:'#ffffff', st:'Eden Aréna',      pow:75 },
-  OLY:{ name:'Olympiakos',       c1:'#d0021b', c2:'#ffffff', st:'Karaiskakis',     pow:77 },
   ROM:{ name:'Roma',             c1:'#8e1f2f', c2:'#f0bc42', st:'Olimpico',        pow:84 },
-  LYO:{ name:'Lyon',             c1:'#ffffff', c2:'#122b6e', st:'Groupama',        pow:80 },
-  RSO:{ name:'Real Sociedad',    c1:'#0a4d92', c2:'#ffffff', st:'Anoeta',          pow:80 },
   FEY:{ name:'Feyenoord',        c1:'#d4111c', c2:'#ffffff', st:'De Kuip',         pow:78 },
-  BSC:{ name:'Beşiktaş rakibi',  c1:'#888888', c2:'#444444', st:'—',               pow:70 },
-  PAO:{ name:'PAOK',             c1:'#141418', c2:'#ffffff', st:'Toumba',          pow:74 },
-  RAN:{ name:'Rangers',          c1:'#1b458f', c2:'#ffffff', st:'Ibrox',           pow:75 },
-  FRA:{ name:'Eintracht',        c1:'#000000', c2:'#e1000f', st:'Deutsche Bank Park', pow:81 },
-  VIK:{ name:'Viktoria Plzeň',   c1:'#0b4ea2', c2:'#d7141a', st:'Doosan Aréna',    pow:71 },
-  LEG:{ name:'Legia Warszawa',   c1:'#0b6b3a', c2:'#ffffff', st:'Wojska Polskiego',pow:72 },
-  MOL:{ name:'Molde',            c1:'#0b4ea2', c2:'#ffffff', st:'Aker Stadion',    pow:68 },
-  LUG:{ name:'Lugano',           c1:'#141418', c2:'#ffffff', st:'Cornaredo',       pow:66 },
-  GNT:{ name:'Gent',             c1:'#0b4ea2', c2:'#ffffff', st:'Ghelamco Arena',  pow:73 },
-  DIN:{ name:'Dinamo Zagreb',    c1:'#0b4ea2', c2:'#ffffff', st:'Maksimir',        pow:74 },
-  BSK:{ name:'Basaksehir B',     c1:'#12336b', c2:'#e8792b', st:'—',               pow:70 },
 
   /* Şampiyonlar Ligi bahsindeki kulüpler (UCL_ODDS listesinden).
      Buradaki renkler ÇİZİLEN armayı boyar; gerçek arma adresi
@@ -2626,11 +2618,30 @@ const TEAMS = {
 
   /* Kurayla gelen dört takım (25.08.2026). Renkler çizilen armayı
      boyar; gerçek arma adresi Armalar sayfasından girilince onun
-     yerini alır. VIK kodu Viktoria Plzeň'de olduğu için Viking VKG. */
+     yerini alır. Viking'in kodu VKG: bahis seçimleri Firestore'da
+     kulüp ADIYLA saklandığı ve UCL_CODE üzerinden koda çevrildiği
+     için, VIK boşalmış olsa da kodu değiştirmiyoruz. */
   VKG:{ name:'Viking',           c1:'#002f5f', c2:'#ffffff', st:'SR-Bank Arena',   pow:66 },
   SLB:{ name:'Slovan Bratislava',c1:'#009fe3', c2:'#ffffff', st:'Tehelné pole',    pow:68 },
   SBH:{ name:'Sabah',            c1:'#0b7a3b', c2:'#ffffff', st:'Bank Respublika', pow:63 },
   LSK:{ name:'LASK Linz',        c1:'#141418', c2:'#ffffff', st:'Raiffeisen Arena',pow:67, stripe:'v' },
+
+  /* --- Beşiktaş'ın Avrupa Ligi rakipleri (kura 28.08.2026) ---
+     Celtic ve Union SG zaten yukarıda kayıtlı, tekrar eklenmiyor. */
+  LEV:{ name:'Bayer Leverkusen', c1:'#e32221', c2:'#141418', st:'BayArena',        pow:83 },
+  MAR:{ name:'Marsilya',         c1:'#2faee0', c2:'#ffffff', st:'Vélodrome',       pow:81 },
+  OMO:{ name:'Omonia',           c1:'#00843d', c2:'#ffffff', st:'GSP Stadyumu',    pow:64 },
+  CRY:{ name:'Crystal Palace',   c1:'#1b458f', c2:'#c4122e', st:'Selhurst Park',   pow:77, stripe:'v' },
+  HOF:{ name:'Hoffenheim',       c1:'#1c63b8', c2:'#ffffff', st:'PreZero Arena',   pow:73 },
+  HAP:{ name:'Hapoel Beer Sheva',c1:'#c8102e', c2:'#ffffff', st:'Turner Stadyumu', pow:65 },
+
+  /* --- Trabzonspor'un Konferans Ligi rakipleri (kura 28.08.2026) --- */
+  FRE:{ name:'Freiburg',         c1:'#e2001a', c2:'#141418', st:'Europa-Park',     pow:76 },
+  KIZ:{ name:'Kızılyıldız',      c1:'#c8102e', c2:'#ffffff', st:'Rajko Mitić',     pow:74 },
+  HEA:{ name:'Hearts',           c1:'#6f263d', c2:'#ffffff', st:'Tynecastle',      pow:66 },
+  KUP:{ name:'KuPS',             c1:'#f5c400', c2:'#141418', st:'Savon Sanomat',   pow:60 },
+  JAB:{ name:'Jablonec',         c1:'#00843d', c2:'#ffffff', st:'Střelnice',       pow:62 },
+  CSK:{ name:'CSKA Sofya',       c1:'#c8102e', c2:'#ffffff', st:'Balgarska Armia', pow:63 },
 };
 
 const strength = code => TEAMS[code]?.pow ?? 65;
@@ -3038,6 +3049,39 @@ const EURO_FIXTURES = [
   { team:'FB', comp:'UCL', stage:'league', md:7, opp:'VIL', away:false, dt:'2027-01-20T20:45:00+03:00' },
   { team:'FB', comp:'UCL', stage:'league', md:8, opp:'ATM', away:true,  dt:'2027-01-27T23:00:00+03:00' },
 ];
+
+/* ------------------------------------------------------------
+   BEŞİKTAŞ (Avrupa Ligi) ve TRABZONSPOR (Konferans Ligi)
+   Kura 28.08.2026'da çekildi; rakipler ve ev/deplasman belli.
+   TAKVİM HENÜZ YOK — UEFA gün ve saatleri 30 Ağustos'a kadar
+   açıklıyor. Avrupa maçları ÇİFT PUAN getirdiği için uydurma
+   tarihle eklemiyoruz; yanlış güne konmuş ağır puanlı bir maç,
+   hiç eklenmemiş olmasından daha kötü.
+
+   AŞAĞIDAKİ SIRA KURA SIRASIDIR, maç günü sırası DEĞİLDİR:
+   UEFA torba torba çekiyor, hangi rakibin kaçıncı haftada
+   oynanacağı takvimle birlikte geliyor. Bu yüzden md alanı boş.
+
+   Takvim açıklanınca yapılacak: her satıra md ve dt ekle, yorumu
+   kaldır, EURO_FIXTURES'ın içine taşı. Başka hiçbir yere dokunma —
+   armalar, filtreler ve ×2 çarpanı kendiliğinden çalışır.
+
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'LEV', away:true,  dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'MAR', away:false, dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'CEL', away:true,  dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'USG', away:false, dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'OMO', away:true,  dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'CRY', away:false, dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'HOF', away:true,  dt:'?' },
+   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'HAP', away:false, dt:'?' },
+
+   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'FRE', away:false, dt:'?' },
+   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'KIZ', away:true,  dt:'?' },
+   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'HEA', away:false, dt:'?' },
+   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'KUP', away:true,  dt:'?' },
+   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'JAB', away:false, dt:'?' },
+   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'CSK', away:true,  dt:'?' },
+   ------------------------------------------------------------ */
 
 /* Avrupa maçları henüz eklenmediyse bilgilendirme gösterilir */
 const EURO_PENDING = () => !EURO_FIXTURES.length;
