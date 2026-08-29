@@ -3007,7 +3007,37 @@ function buildLeague(){
    Rakip takım TEAMS içinde yoksa oraya bir satır eklemen yeterli.
    Puanlama, rozet ve filtreler kendiliğinden çalışır (Avrupa çarpanı ×2).
    ------------------------------------------------------------ */
-const EURO_FIXTURES = [];
+/* ------------------------------------------------------------
+   ŞAMPİYONLAR LİGİ LİG AŞAMASI — takvim açıklandı (29.08.2026)
+   Galatasaray ve Fenerbahçe'nin sekizer maçı, toplam 16.
+
+   Saatler TSİ (+03:00). Her iki takım da 4 ev + 4 deplasman oynuyor.
+   Rakipler 27.08 kurasıyla birebir uyuşuyor (bkz. EURO_DRAW).
+
+   Maç günleri iki güne yayılıyor (GS bir gün, FB ertesi gün); son
+   hafta ikisi de 27 Ocak'ta. md alanı lig aşaması maç gününü tutar.
+   ------------------------------------------------------------ */
+const EURO_FIXTURES = [
+  /* --- Galatasaray --- */
+  { team:'GS', comp:'UCL', stage:'league', md:1, opp:'SPO', away:true,  dt:'2026-09-09T22:00:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:2, opp:'BAR', away:false, dt:'2026-10-13T22:00:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:3, opp:'LIL', away:true,  dt:'2026-10-21T19:45:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:4, opp:'STU', away:false, dt:'2026-11-03T20:45:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:5, opp:'AVL', away:false, dt:'2026-11-24T20:45:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:6, opp:'AEK', away:true,  dt:'2026-12-08T23:00:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:7, opp:'FEY', away:false, dt:'2027-01-19T20:45:00+03:00' },
+  { team:'GS', comp:'UCL', stage:'league', md:8, opp:'PSG', away:true,  dt:'2027-01-27T23:00:00+03:00' },
+
+  /* --- Fenerbahçe --- */
+  { team:'FB', comp:'UCL', stage:'league', md:1, opp:'ROM', away:false, dt:'2026-09-10T19:45:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:2, opp:'AVL', away:true,  dt:'2026-10-14T22:00:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:3, opp:'SLA', away:false, dt:'2026-10-20T19:45:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:4, opp:'LIV', away:false, dt:'2026-11-04T20:45:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:5, opp:'SHA', away:true,  dt:'2026-11-25T23:00:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:6, opp:'LSK', away:true,  dt:'2026-12-09T23:00:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:7, opp:'VIL', away:false, dt:'2027-01-20T20:45:00+03:00' },
+  { team:'FB', comp:'UCL', stage:'league', md:8, opp:'ATM', away:true,  dt:'2027-01-27T23:00:00+03:00' },
+];
 
 /* Avrupa maçları henüz eklenmediyse bilgilendirme gösterilir */
 const EURO_PENDING = () => !EURO_FIXTURES.length;
