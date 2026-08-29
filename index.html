@@ -4395,11 +4395,11 @@ const TITLES = [
     ipucu: (v, d) => `Aynı skoru en çok yazan o — ${d.ezberciSkor} · ${v} kez` },
   { id:'kararsiz',ad:'Kararsız',       emoji:'🌀', esik:4, olcut:'kararsiz',
     ipucu: v => `En çok farklı skor deneyen o — ${v} ayrı skor` },
-  { id:'tersine',ad:'Ne Derse Tersine Oyna', emoji:'🔄', esik:3, olcut:'tersine',
+  { id:'tersine',ad:'Ne Derse Tersine Oyna', emoji:'🔄', esik:3, olcut:'tersine', kotu:true,
     ipucu: v => `Sezonun en uzun puansız serisi — ${v} maç` },
   { id:'kurt',   ad:'Yalnız Kurt',     emoji:'🦄', esik:2, olcut:'yalnizKurt',
     ipucu: v => `O skoru yazan tek kişi olduğu maç sayısı — ${v}` },
-  { id:'balon',  ad:'Balon',           emoji:'🎈', esik:2, olcut:'balon',
+  { id:'balon',  ad:'Balon',           emoji:'🎈', esik:2, olcut:'balon', kotu:true,
     ipucu: v => `Bol gollü yazıp eli boş dönen — ${v} maç` },
 ];
 
@@ -4538,8 +4538,16 @@ function achievementStats(rows){
   return stats;
 }
 
-/* uid → [ünvan].  Her ünvan için tek kazanan seçilir:
-   önce en yüksek değer, eşitlikte o değere önce ulaşan. */
+/* uid → [ünvan].  Her ünvan için tek kazanan seçilir. Sıralama:
+     1) değeri yüksek olan
+     2) değer eşitse o değere ÖNCE ulaşan (ünvan boşuna el değiştirmesin)
+     3) değer de ulaşma maçı da eşitse puan tablosunda ÜSTTEKİ
+
+   kotu:true işaretli ünvanlarda (Ne Derse Tersine Oyna, Balon) 3. kademe
+   TERSİNE döner: tam eşitlikte ünvan tabloda ALTTAKİNE gider. Mantığı
+   basit — övgü yukarı, ayıp aşağı. 1. ve 2. kademe aynı kalır, yani
+   "o çukura önce düşen" ayıbı taşımaya devam eder; ünvan sıralama her
+   oynadığında zıplamaz.                                              */
 function titlesFor(rows, stats){
   stats = stats || achievementStats(rows);
   const out = {};
@@ -4555,7 +4563,12 @@ function titlesFor(rows, stats){
       if (r.ai && !t.botaAcik) return;
       const o = stats[r.uid][t.olcut];
       if (!o || o.v < t.esik) return;            // bu oyuncu bu dalda yok
-      if (!kazanan || o.v > en.v || (o.v === en.v && o.i < en.i)){ kazanan = r; en = o; }
+      /* rows puan sırasıyla geldiği için, tam eşitlikte devralMAmak
+         ünvanı üsttekine bırakır; devralmak ise en son gelene, yani
+         tabloda en alttakine. Kötü ünvanlarda istediğimiz bu.        */
+      const tamEsit = kazanan && o.v === en.v && o.i === en.i;
+      if (!kazanan || o.v > en.v || (o.v === en.v && o.i < en.i)
+          || (tamEsit && t.kotu)){ kazanan = r; en = o; }
     });
     if (!kazanan) return;                        // dal henüz anlamsız
     /* İpucu kazananın kendi sayılarını da alabilir — Ezberci hangi
