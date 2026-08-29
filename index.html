@@ -2091,6 +2091,13 @@ body{
   font-size:14px; line-height:1; flex-shrink:0;
 }
 
+/* Yeni üye hakkı kutusu — altın vurgu, normal uyarıdan ayrılsın */
+.season-cta.grace{
+  border-color:color-mix(in srgb, var(--gold) 38%, transparent);
+  background:color-mix(in srgb, var(--gold) 9%, transparent);
+}
+.season-cta.grace .dot{ background:var(--gold); }
+
 /* ---------- Form serisi ateşi ----------
    Adın hemen yanında, ünvan pillerinden ayrı bir dilde: bu bir
    ödül değil, "şu an sıcak" demek. Alev hafifçe nefes alır. */
@@ -2363,7 +2370,14 @@ if (!firebaseConfig.projectId || firebaseConfig.projectId.includes('PROJE-ID')){
       ]);
 
       const users = [];
-      uSnap.forEach(d => users.push({ uid: d.id, name: d.data().name || 'Oyuncu' }));
+      /* createdAt da alınıyor: yeni üyeye tanınan 24 saatlik sezon
+         bahsi hakkı buna dayanıyor (bkz. graceKalan). Eski kayıtlarda
+         alan olmayabilir — o zaman null kalır ve hak verilmez. */
+      uSnap.forEach(d => {
+        const x = d.data();
+        users.push({ uid: d.id, name: x.name || 'Oyuncu',
+                     createdAt: x.createdAt?.toMillis?.() ?? null });
+      });
 
       const predictions = {};
       pSnap.forEach(d => {
@@ -3151,8 +3165,14 @@ const SEASON_PICKS = {
   champion: { title:'SÜPER LİG ŞAMPİYONU', logoKey:'SL', points:120, kind:'team',
               desc:'2026/27 kupasını kaldıracak takımı seç. Sürpriz seçim daha çok kazandırır.',
               options: BIG4,
-              /* Güncellendi 20.08.2026 — kilit (29.08) açılmadan önce */
-              odds: { GS:2.15, FB:2.15, TS:9.00, BJK:10.00 },
+              /* Güncellendi 29.08.2026 — kilit açılmadan birkaç saat önce.
+                 Bahisçide GS 2.03, FB 2.23'tü; ikisi BİLEREK eşitlendi.
+                 Eşitlik değeri ortalama İHTİMALDEN alındı, oranların
+                 kabaca ortasından değil: 1/2.03 = .4926 ve 1/2.23 = .4484,
+                 ortalaması .4705 → 1/.4705 = 2.13. Böylece kitabın
+                 toplam ihtimali korunuyor; birini diğerine çekmek
+                 favoriyi olduğundan güçlü ya da zayıf gösterirdi. */
+              odds: { GS:2.13, FB:2.13, TS:8.00, BJK:13.25 },
               lock: SL_LOCK },
 
   uclWinner:{ title:'ŞAMPİYONLAR LİGİ’Nİ KİM KAZANIR?', logoKey:'UCL', points:150, kind:'list',
@@ -3171,10 +3191,38 @@ const SEASON_PICKS = {
               lock: SL_LOCK },
 };
 
-/* Kilit açıldı mı? Açılana kadar oyuncular başkasının seçimini göremez. */
+/* ============================================================
+   YENİ ÜYE HAKKI
+   Sonradan katılan biri sezon bahislerini hiç oynayamadan başlamasın
+   diye: kayıt olduktan sonraki 24 saat boyunca üç sezon bahsini
+   kilit geçmiş olsa bile yapabilir.
+
+   ÖNEMLİ — bu hak tek yönlü çalışır. Hak süresi boyunca oyuncu için
+   seasonLocked() "kilitli değil" der; canSeeSeason() de bu fonksiyona
+   dayandığı için aynı oyuncu BAŞKALARININ seçimini göremez. Yani
+   seçimini herkesin kâğıdına bakmadan yapar. Kilit zaten açılmış
+   olduğundan diğer oyuncular onun seçimini görebilir; asimetri
+   bilinçli, avantaj geç kalana değil erken oynayana kalsın diye.
+   ============================================================ */
+const YENI_UYE_SURESI = 24 * 3600 * 1000;          // 24 saat
+
+/* Giriş yapan oyuncunun hakkından kalan süre (ms). 0 = hak yok/bitti. */
+function graceKalan(){
+  const uid = Store.me && !Store.me.anon ? Store.me.uid : null;
+  if (!uid) return 0;
+  const u = Store.users.find(x => x.uid === uid);
+  if (!u?.createdAt) return 0;                     // kayıt zamanı bilinmiyorsa hak yok
+  return Math.max(0, u.createdAt + YENI_UYE_SURESI - NOW().getTime());
+}
+const yeniUye = () => graceKalan() > 0;
+
+/* Kilit açıldı mı? Açılana kadar oyuncular başkasının seçimini göremez.
+   Yeni üye hakkı süresince bu oyuncu için kilit YOK sayılır. */
 function seasonLocked(kind){
   const cfg = SEASON_PICKS[kind];
-  return !!cfg && NOW() >= new Date(cfg.lock);
+  if (!cfg) return false;
+  if (NOW() < new Date(cfg.lock)) return false;    // kilit zaten açılmamış
+  return !yeniUye();                               // yeni üyeye kilit işlemez
 }
 
 /* Başkalarının seçimi görülebilir mi?
@@ -5987,7 +6035,9 @@ function seasonBlock(){
 
   return Object.keys(SEASON_PICKS).map(kind => {
     const cfg = SEASON_PICKS[kind];
-    const locked = now >= new Date(cfg.lock);
+    /* seasonLocked() üzerinden gidilmeli, tarihe doğrudan bakılmamalı:
+       yeni üye hakkı yalnızca o fonksiyonun içinde tanımlı. */
+    const locked = seasonLocked(kind);
     const multi  = cfg.kind === 'multi';
     const picked = my[kind];
     const chosen = multi ? (Array.isArray(picked) ? picked : []) : null;
@@ -6014,7 +6064,12 @@ function seasonBlock(){
         <p class="sub" style="margin-bottom:14px">
           ${cfg.desc}
           ${locked ? ` <span style="color:var(--red)">· Giriş kapandı</span>`
-                   : ` <span style="color:var(--cyan)">· ${timeLeftShort(new Date(cfg.lock) - now)} kaldı</span>`}
+            : yeniUye()
+              /* Genel kilit geçmiş, oyuncu kendi 24 saatlik hakkıyla
+                 oynuyor: geri sayım o hakka göre gösterilmeli, yoksa
+                 geçmiş bir tarihe eksi sayı çıkardı. */
+              ? ` <span style="color:var(--gold)">· yeni üye hakkın: ${timeLeftShort(graceKalan())} kaldı</span>`
+              : ` <span style="color:var(--cyan)">· ${timeLeftShort(new Date(cfg.lock) - now)} kaldı</span>`}
         </p>
 
         ${multi ? `<div class="ms-count ${chosen.length === cfg.max ? 'full' : ''}">
@@ -6066,9 +6121,22 @@ function seasonSection(top){
     return cfg.kind === 'multi' ? !(Array.isArray(v) && v.length === cfg.max) : !v;
   }).length;
 
+  /* Yeni üyeye durumu açıkça söyle: kilit geçmiş ama onun hakkı sürüyor.
+     Süre bittiğinde bu kutu kendiliğinden kaybolur. */
+  const kalanHak = graceKalan();
+  const hakKutusu = kalanHak ? `
+    <div class="season-cta grace">
+      <span class="dot"></span>
+      <span><b>Yeni üye hakkın var.</b> Sezon bahislerinin süresi doldu ama
+      sen kaydolduktan sonraki <b>24 saat</b> boyunca üçünü de oynayabilirsin —
+      <b style="color:var(--gold)">${timeLeftShort(kalanHak)}</b> kaldı.
+      Bu süre boyunca diğerlerinin seçimleri sana kapalı, kimseye bakmadan seç.</span>
+    </div>` : '';
+
   return `
     <div class="sec-title"><h3>Sezon Tahminleri</h3><span class="rule"></span></div>
-    ${top && eksik ? `<div class="season-cta">
+    ${hakKutusu}
+    ${top && eksik && !kalanHak ? `<div class="season-cta">
         <span class="dot"></span>
         <span><b>${eksik} sezon tahminin eksik.</b> Bunlar sezon başında bir kez
         yapılır ve kilitlendikten sonra değiştirilemez — kaçırma.</span>
@@ -7702,7 +7770,11 @@ function seasonPicksBoard(){
        seçim yaptığı görünür. Yoksa geç seçen, erken seçeni kopyalar.
        Yönetici, kendi seçimini yaptıysa erken görebilir. */
     if (!canSeeSeason(kind)){
-      const kalan = timeLeftShort(new Date(cfg.lock) - NOW());
+      /* Yeni üye için genel kilit çoktan geçti; ona "şu kadar sonra
+         açılacak" demek anlamsız olurdu. Kendi hakkı bitince liste
+         zaten açılacağı için geri sayım o hakka göre yazılır. */
+      const hak   = graceKalan();
+      const kalan = timeLeftShort(hak || (new Date(cfg.lock) - NOW()));
       return `
       <div class="card reveal">
         ${seasonFoto(cfg)}
@@ -7716,8 +7788,10 @@ function seasonPicksBoard(){
             <div>
               <b>Seçimler gizli</b>
               <em>${voted}/${rows.length} oyuncu seçimini yaptı ·
-                  <b style="color:var(--cyan)">${kalan}</b> sonra herkese açılacak</em>
-              <em class="sub">${fmtDate(cfg.lock)}</em>
+                  <b style="color:var(--cyan)">${kalan}</b> sonra ${
+                    hak ? 'sana da açılacak' : 'herkese açılacak'}</em>
+              <em class="sub">${hak ? 'Kendi seçimini yapana kadar kimseninkini göremezsin'
+                                    : fmtDate(cfg.lock)}</em>
             </div>
           </div>
           ${isAdmin() ? `<div class="peek-note lone">Yönetici olarak erken
