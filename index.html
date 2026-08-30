@@ -3048,40 +3048,29 @@ const EURO_FIXTURES = [
   { team:'FB', comp:'UCL', stage:'league', md:6, opp:'LSK', away:true,  dt:'2026-12-09T23:00:00+03:00' },
   { team:'FB', comp:'UCL', stage:'league', md:7, opp:'VIL', away:false, dt:'2027-01-20T20:45:00+03:00' },
   { team:'FB', comp:'UCL', stage:'league', md:8, opp:'ATM', away:true,  dt:'2027-01-27T23:00:00+03:00' },
+
+  /* --- Beşiktaş · Avrupa Ligi (takvim 30.08.2026) ---
+     Sekiz maç, 4 ev + 4 deplasman, hepsi perşembe.
+     Lig aşaması 17 Eylül'de başlayıp 28 Ocak'ta bitiyor. */
+  { team:'BJK', comp:'UEL', stage:'league', md:1, opp:'MAR', away:false, dt:'2026-09-17T22:00:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:2, opp:'HOF', away:true,  dt:'2026-10-15T22:00:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:3, opp:'CRY', away:false, dt:'2026-10-22T22:00:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:4, opp:'CEL', away:true,  dt:'2026-11-05T23:00:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:5, opp:'HAP', away:false, dt:'2026-11-26T20:45:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:6, opp:'LEV', away:true,  dt:'2026-12-10T23:00:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:7, opp:'USG', away:false, dt:'2027-01-21T20:45:00+03:00' },
+  { team:'BJK', comp:'UEL', stage:'league', md:8, opp:'OMO', away:true,  dt:'2027-01-28T23:00:00+03:00' },
+
+  /* --- Trabzonspor · Konferans Ligi (takvim 30.08.2026) ---
+     Konferans Ligi'nin lig aşaması ALTI maç (Avrupa Ligi'nde sekiz).
+     3 ev + 3 deplasman, hepsi perşembe, 15 Ekim – 17 Aralık. */
+  { team:'TS', comp:'UECL', stage:'league', md:1, opp:'KUP', away:true,  dt:'2026-10-15T19:45:00+03:00' },
+  { team:'TS', comp:'UECL', stage:'league', md:2, opp:'HEA', away:false, dt:'2026-10-22T19:45:00+03:00' },
+  { team:'TS', comp:'UECL', stage:'league', md:3, opp:'FRE', away:false, dt:'2026-11-05T20:45:00+03:00' },
+  { team:'TS', comp:'UECL', stage:'league', md:4, opp:'CSK', away:true,  dt:'2026-11-26T23:00:00+03:00' },
+  { team:'TS', comp:'UECL', stage:'league', md:5, opp:'JAB', away:false, dt:'2026-12-10T20:45:00+03:00' },
+  { team:'TS', comp:'UECL', stage:'league', md:6, opp:'KIZ', away:true,  dt:'2026-12-17T23:00:00+03:00' },
 ];
-
-/* ------------------------------------------------------------
-   BEŞİKTAŞ (Avrupa Ligi) ve TRABZONSPOR (Konferans Ligi)
-   Kura 28.08.2026'da çekildi; rakipler ve ev/deplasman belli.
-   TAKVİM HENÜZ YOK — UEFA gün ve saatleri 30 Ağustos'a kadar
-   açıklıyor. Avrupa maçları ÇİFT PUAN getirdiği için uydurma
-   tarihle eklemiyoruz; yanlış güne konmuş ağır puanlı bir maç,
-   hiç eklenmemiş olmasından daha kötü.
-
-   AŞAĞIDAKİ SIRA KURA SIRASIDIR, maç günü sırası DEĞİLDİR:
-   UEFA torba torba çekiyor, hangi rakibin kaçıncı haftada
-   oynanacağı takvimle birlikte geliyor. Bu yüzden md alanı boş.
-
-   Takvim açıklanınca yapılacak: her satıra md ve dt ekle, yorumu
-   kaldır, EURO_FIXTURES'ın içine taşı. Başka hiçbir yere dokunma —
-   armalar, filtreler ve ×2 çarpanı kendiliğinden çalışır.
-
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'LEV', away:true,  dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'MAR', away:false, dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'CEL', away:true,  dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'USG', away:false, dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'OMO', away:true,  dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'CRY', away:false, dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'HOF', away:true,  dt:'?' },
-   { team:'BJK', comp:'UEL',  stage:'league', md:?, opp:'HAP', away:false, dt:'?' },
-
-   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'FRE', away:false, dt:'?' },
-   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'KIZ', away:true,  dt:'?' },
-   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'HEA', away:false, dt:'?' },
-   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'KUP', away:true,  dt:'?' },
-   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'JAB', away:false, dt:'?' },
-   { team:'TS',  comp:'UECL', stage:'league', md:?, opp:'CSK', away:true,  dt:'?' },
-   ------------------------------------------------------------ */
 
 /* Avrupa maçları henüz eklenmediyse bilgilendirme gösterilir */
 const EURO_PENDING = () => !EURO_FIXTURES.length;
