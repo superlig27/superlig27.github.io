@@ -358,6 +358,43 @@ body{
 .hero-side .tag{ font-size:9.5px; letter-spacing:1.6px; color:var(--faint); text-transform:uppercase; }
 .hero-vs{ font-family:var(--f-head); font-size:20px; color:var(--faint); letter-spacing:1px; }
 
+/* ---------- Aynı saatte başlayan maçlar ----------
+   Bir hafta içinde iki (bazen üç) maç aynı saatte oynanabiliyor.
+   Eskiden hero yalnızca dizinin ilk maçını çiziyordu, diğeri hiç
+   görünmüyordu. Artık aynı saatli maçların hepsi yan yana kutulanır;
+   dar ekranda alt alta iner. Geri sayım TEK kalır — saatleri aynı
+   olduğu için ikinci bir sayaç aynı rakamları sayardı.            */
+/* İki sütun sabit: iki maç solda-sağda, üç maç 2+1, dört maç 2×2.
+   auto-fit denendi ama geniş ekranda dördü 3+1 dizip tek başına kalan
+   kutuyu yamuk gösteriyordu. Tek sayıda maçta sonuncusu iki sütuna
+   yayılır ki altta boşluk kalmasın. */
+.hero-grid{
+  display:grid; gap:12px; margin:20px 0 16px;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+.hero-one:last-child:nth-child(odd){ grid-column:1 / -1; }
+.hero-one{
+  padding:15px 12px 13px; border-radius:var(--r-md);
+  background:rgba(255,255,255,.035); border:1px solid var(--line);
+}
+.hero-one .hero-matchup{ margin:0 0 11px; gap:6px; }
+.hero-one .hero-side{ gap:7px; }
+.hero-one .hero-side .nm{ font-size:12.5px; }
+.hero-one .hero-side .tag{ display:none; }   /* dar kutuda EV/DEP yazısı sığmıyor */
+.hero-one .hero-vs{ font-size:14px; }
+.hero-meta{
+  display:flex; justify-content:center; align-items:center;
+  gap:7px; flex-wrap:wrap; font-size:11px; color:var(--faint);
+}
+.hero-one .hero-meta{ font-size:10px; gap:5px; }
+.hero-live-line{
+  text-align:center; font-size:9.5px; font-weight:700;
+  letter-spacing:2.2px; color:var(--red);
+}
+@media (max-width:480px){
+  .hero-grid{ grid-template-columns:1fr; gap:10px; }
+}
+
 /* Geri sayım */
 .countdown{ display:flex; justify-content:center; gap:8px; }
 .cd-cell{
@@ -5530,13 +5567,22 @@ let showSoon = false, shownSoon = 14;
 
 /* ---------------- Hero: sıradaki / oynanan maç ---------------- */
 function heroBlock(){
-  const m = upcomingFixtures()[0];
-  if (!m) return `<div class="card"><div class="empty">Sezon tamamlandı.</div></div>`;
+  const sirada = upcomingFixtures();
+  const ilk = sirada[0];
+  if (!ilk) return `<div class="card"><div class="empty">Sezon tamamlandı.</div></div>`;
 
-  const H = TEAMS[m.home], A = TEAMS[m.away], b = badgeOf(m);
-  const live = matchState(m) === 'live';
-  const r = RESULTS[m.id];
-  const next = live ? upcomingFixtures().find(f => matchState(f) === 'open') : null;
+  /* AYNI SAATTE başlayan maçların HEPSİ gösterilir. Önceden yalnızca
+     dizinin ilk maçı çiziliyordu; aynı anda oynanan iki maçtan biri
+     hiç görünmüyordu. Saatler eşit olduğu için maç durumu (açık/canlı)
+     ve geri sayım ortak — tek sayaç yetiyor.
+     Karşılaştırma metinle değil ZAMAN DAMGASIYLA: Süper Lig saatleri
+     isoIstanbul() ile üretiliyor, Avrupa maçlarınınki elle yazılıyor;
+     aynı anı gösteren iki dizge birebir aynı olmayabilir.          */
+  const t0   = new Date(ilk.dt).getTime();
+  const grup = sirada.filter(f => new Date(f.dt).getTime() === t0);
+  const cok  = grup.length > 1;
+  const live = matchState(ilk) === 'live';
+  const next = live ? sirada.find(f => matchState(f) === 'open') : null;
 
   const cd = `
     <div class="countdown">
@@ -5546,21 +5592,72 @@ function heroBlock(){
       <div class="cd-cell"><b id="cd-s">00</b><span>sn</span></div>
     </div>`;
 
-  const middle = live
-    ? `<div style="text-align:center">
-         <div class="score tint" style="font-size:46px">${r ? `${r.h} — ${r.a}` : '– — –'}</div>
-         <div style="font-size:10.5px;color:var(--red);letter-spacing:2.5px;margin-top:9px;font-weight:700">
-           ${r?.minute ? r.minute + "' OYNANIYOR" : 'OYNANIYOR'}
-         </div>
+  /* buyuk: tek maçlık düzen mi (büyük armalar) yoksa kutu içi mi */
+  const eslesme = (m, buyuk) => {
+    const H = TEAMS[m.home], A = TEAMS[m.away];
+    return `
+      <div class="hero-matchup">
+        <div class="hero-side">
+          <span class="crest-wrap">${crest(m.home, buyuk ? 54 : 40)}</span>
+          <div><div class="nm">${H.short || H.name}</div><div class="tag">EV SAHİBİ</div></div>
+        </div>
+        <div class="hero-vs">VS</div>
+        <div class="hero-side">
+          <span class="crest-wrap">${crest(m.away, buyuk ? 54 : 40)}</span>
+          <div><div class="nm">${A.short || A.name}</div><div class="tag">DEPLASMAN</div></div>
+        </div>
+      </div>`;
+  };
+
+  const kunye = (m, buyuk) => {
+    const b = badgeOf(m);
+    return `
+      <div class="hero-meta"${buyuk ? ' style="margin-top:18px"' : ''}>
+        <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
+        <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
+        <span>${buyuk ? `${fmtDate(m.dt)} · ${m.venue}` : m.venue}</span>
+      </div>`;
+  };
+
+  const skor = (m, buyuk) => {
+    const r = RESULTS[m.id];
+    return `
+      <div style="text-align:center;margin-bottom:${buyuk ? 0 : 10}px">
+        <div class="score tint" style="font-size:${buyuk ? 46 : 32}px">
+          ${r ? `${r.h} — ${r.a}` : '– — –'}</div>
+        <div class="hero-live-line" style="margin-top:${buyuk ? 9 : 5}px">
+          ${r?.minute ? r.minute + "' OYNANIYOR" : 'OYNANIYOR'}</div>
+      </div>`;
+  };
+
+  /* Sonraki maç bloğu (canlı maç sürerken geri sayım ona döner) */
+  const sonraki = !next ? '' : `
+    <div style="margin-top:20px;padding-top:18px;border-top:1px dashed var(--line)">
+      <div style="text-align:center;font-size:9.5px;letter-spacing:2.4px;color:var(--faint);
+                  text-transform:uppercase;margin-bottom:11px">
+        Sıradaki · ${TEAMS[next.home].name} – ${TEAMS[next.away].name}
+      </div>${cd}
+    </div>`;
+
+  const govde = cok
+    ? `<div class="hero-grid">
+         ${grup.map(m => `
+           <div class="hero-one">
+             ${eslesme(m, false)}
+             ${live ? skor(m, false) : ''}
+             ${kunye(m, false)}
+           </div>`).join('')}
        </div>
-       ${next ? `
-       <div style="margin-top:20px;padding-top:18px;border-top:1px dashed var(--line)">
-         <div style="text-align:center;font-size:9.5px;letter-spacing:2.4px;color:var(--faint);
-                     text-transform:uppercase;margin-bottom:11px">
-           Sıradaki · ${TEAMS[next.home].name} – ${TEAMS[next.away].name}
-         </div>${cd}
-       </div>` : ''}`
-    : cd;
+       ${live ? sonraki : `
+         <div class="hero-meta" style="margin-bottom:14px">${fmtDate(ilk.dt)}</div>
+         ${cd}`}`
+    : `${eslesme(ilk, true)}
+       ${live ? skor(ilk, true) + sonraki : cd}
+       ${kunye(ilk, true)}`;
+
+  const kicker = live
+    ? (cok ? `ŞU AN ${grup.length} MAÇ OYNANIYOR` : 'ŞU AN OYNANIYOR')
+    : (cok ? `SIRADAKİ ${grup.length} MAÇ · AYNI SAATTE` : 'SIRADAKİ MAÇ');
 
   return `
   <div class="hero">
@@ -5568,30 +5665,10 @@ function heroBlock(){
       <div style="text-align:center">
         <span class="hero-kicker">
           <span class="pulse-dot" ${live ? 'style="background:var(--red)"' : ''}></span>
-          ${live ? 'ŞU AN OYNANIYOR' : 'SIRADAKİ MAÇ'}
+          ${kicker}
         </span>
       </div>
-
-      <div class="hero-matchup">
-        <div class="hero-side">
-          <span class="crest-wrap">${crest(m.home, 54)}</span>
-          <div><div class="nm">${H.short || H.name}</div><div class="tag">EV SAHİBİ</div></div>
-        </div>
-        <div class="hero-vs">VS</div>
-        <div class="hero-side">
-          <span class="crest-wrap">${crest(m.away, 54)}</span>
-          <div><div class="nm">${A.short || A.name}</div><div class="tag">DEPLASMAN</div></div>
-        </div>
-      </div>
-
-      ${middle}
-
-      <div style="text-align:center;margin-top:18px;display:flex;justify-content:center;
-                  gap:8px;flex-wrap:wrap;align-items:center">
-        <span class="tier ${b.cls}">${compMark(m.comp)}${b.text}</span>
-        <span class="mult ${m.derby ? 'hot' : m.comp !== 'SL' ? 'eu' : ''}">×${b.mult}</span>
-        <span style="font-size:11px;color:var(--faint)">${fmtDate(m.dt)} · ${m.venue}</span>
-      </div>
+      ${govde}
     </div>
   </div>`;
 }
