@@ -778,6 +778,55 @@ body{
 .stat span{ font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--faint); }
 
 /* ---------- Geçmiş maç satırı ---------- */
+/* ---------- Geçmiş kartında oyuncunun kendi puanı ----------
+   Maçın SAĞINDA ince bir sütun: büyük sayı, altında etiket, en altta
+   ne yazdığın. Renk kademeden gelir (ptsClass), böylece tam isabet ile
+   ıska bir bakışta ayrılıyor. Dar ekranda sütun yerine maçın altında
+   tek satırlık şeride dönüşür — matchup zaten 390px'de kıl payı
+   sığıyor, yanına sütun koymak takım adlarını kesardı.            */
+.hist-main{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; }
+.hist-main .matchup{ min-width:0; }
+.mypts{
+  flex-shrink:0; text-align:right; min-width:72px;
+  padding-left:13px; border-left:1px solid var(--line);
+}
+.mypts b{
+  display:block; font-family:var(--f-num); font-size:25px; line-height:1;
+  letter-spacing:.5px; font-variant-numeric:tabular-nums;
+}
+.mypts span{
+  display:block; margin-top:4px;
+  font-size:8.5px; font-weight:700; letter-spacing:1.5px;
+  color:var(--faint); text-transform:uppercase;
+}
+.mypts em{
+  display:block; margin-top:6px; font-style:normal;
+  font-size:9.5px; color:var(--faint); white-space:nowrap;
+}
+.mypts.bos b{ color:var(--faint); }
+/* Maç sürerken puan her golde değişebilir; sayı nabız gibi solup açılır */
+.mypts.canli b{ animation:pulseFade 2.4s ease-in-out infinite; }
+@keyframes pulseFade{ 50%{ opacity:.55; } }
+
+@media (max-width:480px){
+  /* Öne çıkan geçmiş kartlarında arma 40px çiziliyor ve 375px'te
+     "Fenerbahçe" 4, "Gençlerbirliği" 5 piksel eksikten kesiliyordu.
+     Dar ekranda armayı sade kartlarla aynı boya indirmek her iki
+     tarafa 8'er piksel kazandırıyor — isimler tam yazılıyor.     */
+  .hist .crest-wrap .crest{ width:32px; height:34px; }
+
+  .hist-main{ grid-template-columns:1fr; gap:0; }
+  .mypts{
+    display:flex; align-items:baseline; justify-content:flex-end; gap:7px;
+    min-width:0; margin-top:11px; padding:10px 2px 0 0;
+    border-left:0; border-top:1px solid var(--line);
+  }
+  .mypts b{ font-size:20px; }
+  .mypts span{ margin-top:0; }
+  /* Tahmin bilgisi sola, puan sağa: şerit iki uçtan okunur */
+  .mypts em{ order:-1; margin:0 auto 0 0; }
+}
+
 .hist{
   border:1px solid var(--line); border-radius:var(--r-lg); margin-bottom:12px; overflow:hidden;
   background:
@@ -2257,6 +2306,45 @@ body{
   border-color:color-mix(in srgb, var(--iris) 40%, transparent);
 }
 .tl.free{ opacity:.55; }
+
+/* Satır tıklanabilir: o dalın tam sıralamasını açar */
+.tl{ cursor:pointer; }
+.tl:hover{ background:rgba(255,255,255,.07); border-color:var(--line-2); }
+.tl:focus-visible{ outline:2px solid var(--iris); outline-offset:2px; }
+.tl-go{ flex-shrink:0; font-size:15px; line-height:1; color:var(--faint); opacity:.5; }
+.tl:hover .tl-go{ color:var(--text); opacity:1; }
+
+/* ---------- Ünvan sıralaması penceresi ----------
+   Profilin üstünde açılır (z-index profil penceresinden yüksek),
+   kapanınca altındaki profil olduğu gibi kalır. */
+.modal.modal-top{ z-index:240; }
+.tb-list{ display:grid; gap:5px; }
+.tb-row{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 11px; border-radius:var(--r-md);
+  background:rgba(255,255,255,.03); border:1px solid var(--line);
+}
+.tb-row .no{
+  flex-shrink:0; width:24px; text-align:center; line-height:1;
+  font-family:var(--f-num); font-size:13px; color:var(--faint);
+}
+.tb-row .who{
+  flex:1; min-width:0; font-size:12px; color:var(--dim);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.tb-row .val{
+  flex-shrink:0; font-family:var(--f-num); font-size:15px; color:var(--text);
+}
+.tb-row .val em{ font-style:normal; font-size:10px; color:var(--faint); margin-left:3px; }
+/* Ünvanı tutan */
+.tb-row.top{ background:rgba(255,255,255,.07); border-color:var(--line-2); }
+.tb-row.top .who{ color:var(--text); font-weight:700; }
+.tb-row.top .no{ font-size:15px; }
+/* Bakılan profilin satırı */
+.tb-row.self{ border-color:color-mix(in srgb, var(--iris) 45%, transparent); }
+/* Eşiğin altı: sıralamada var, ünvana aday değil */
+.tb-row.alt{ opacity:.5; }
+.tb-note{ font-size:10.5px; color:var(--faint); line-height:1.6; margin:0 0 10px; }
 /* Botun giremediği dal — soluk ve çizgili, "burada yarış yok" demek */
 .tl.disarida{ opacity:.4; }
 .tl.disarida .tl-b b{ text-decoration:line-through; text-decoration-thickness:1px; }
@@ -3557,6 +3645,11 @@ function calcPoints(pH, pA, rH, rA, m){
   return scorePrediction({ h:pH, a:pA }, { h:rH, a:rA }, m).pts;
 }
 
+/* Kademenin tek kelimelik karşılığı — geçmiş kartındaki puan
+   kutusunda sayının altına sığması gerekiyor, uzun cümle olmaz. */
+const TIER_KISA = { 10:'tam isabet', 8:'1 gol farkla', 6:'doğru sonuç',
+                    2:'kıl payı', 0:'ıska' };
+
 function ptsClass(tier){
   if (!tier) return 'pt-0';
   if (tier >= 10) return 'pt-10';
@@ -4472,6 +4565,15 @@ const TITLES = [
   { id:'balon',  ad:'Balon',           emoji:'🎈', esik:2, olcut:'balon', kotu:true,
     ipucu: v => `Bol gollü yazıp eli boş dönen — ${v} maç` },
 ];
+
+/* Ölçütün birimi — ünvan sıralamasında sayının yanında görünür.
+   ipucu() cümlesi satıra sığmıyor, orada yalnız sayı + birim yazıyor. */
+const OLCUT_BIRIM = {
+  sonMac:'puan', enIyiMac:'puan', tamIsabet:'maç', derbi:'puan', puanliMac:'maç',
+  enBuyukOran:'oran', tahmin:'maç', deliKanka:'maç', ayna:'maç', sifirci:'kez',
+  yagmur:'maç', kilPayi:'kez', avrupa:'puan', robotYendi:'maç', uzunYol:'maç',
+  ezberci:'kez', kararsiz:'skor', tersine:'maç', yalnizKurt:'maç', balon:'maç',
+};
 
 /* Bir ölçütün değeri ve o değere ulaşılan maç sırası.
    art()  → sayaç: her artışta sırayı günceller
@@ -5434,7 +5536,10 @@ function openProfile(uid){
        açıklama bölümün başında bir kez veriliyor. */
     const disarida = me.ai && !t.botaAcik;
     return `<div class="tl ${profilinMi ? 'mine' : ''} ${bos ? 'free' : ''} ${
-              disarida ? 'disarida' : ''} ${profilinMi ? 'ach-' + t.id : ''}">
+              disarida ? 'disarida' : ''} ${profilinMi ? 'ach-' + t.id : ''}"
+              role="button" tabindex="0" title="${t.ad} sıralamasını gör"
+              onclick="openTitleBoard('${t.id}','${uid}')"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTitleBoard('${t.id}','${uid}')}">
       <i>${t.emoji}</i>
       <div class="tl-b">
         <b>${t.ad}</b>
@@ -5442,6 +5547,7 @@ function openProfile(uid){
       </div>
       <span class="tl-who ${etiketSinif}" ${
         !bos && !benimMi ? `title="${sahipAdi} taşıyor"` : ''}>${kim}</span>
+      <span class="tl-go" aria-hidden="true">›</span>
     </div>`;
   };
   /* Kısa açıklama: uzun ipucu satıra sığmıyor, sayıyı öne al */
@@ -5540,6 +5646,98 @@ function openProfile(uid){
 }
 function closeProfile(){
   const el = document.getElementById('profileModal');
+  if (!el) return;
+  el.classList.remove('show');
+  setTimeout(() => el.remove(), 260);
+}
+
+/* ---------- Ünvan sıralaması ----------
+   Profildeki ünvan satırına tıklayınca o DALIN tam sıralaması açılır:
+   kim kaçla nerede. Sıralama titlesFor() ile BİREBİR aynı kuralı
+   kullanır, yoksa listenin başındaki kişi ile ünvanı tutan kişi
+   birbirini tutmazdı:
+     1) değeri yüksek olan
+     2) eşitse o değere önce ulaşan
+     3) tam eşitlikte puan tablosunda üstteki — kötü ünvanlarda alttaki
+   Böylece listenin ilk sırası, eşiği geçiyorsa, ünvanın sahibidir. */
+function titleRanking(t, rows, stats){
+  const liste = rows
+    .map((r, sira) => ({ r, sira, o: stats[r.uid]?.[t.olcut] }))
+    .filter(x => !(x.r.ai && !t.botaAcik))    // bot yalnız kendi dalında
+    .filter(x => x.o && x.o.v > 0);
+  liste.sort((a, b) =>
+    b.o.v - a.o.v ||
+    a.o.i - b.o.i ||
+    (t.kotu ? b.sira - a.sira : a.sira - b.sira));
+  return liste;
+}
+
+/* Ölçüte göre sayının yazılışı: oran ondalıklı, gerisi tam sayı */
+const olcutDeger = (olcut, v) => olcut === 'enBuyukOran' ? v.toFixed(2) : v;
+
+function openTitleBoard(id, uid){
+  const t = TITLES.find(x => x.id === id);
+  if (!t) return;
+  const rows  = leaderboard();
+  const stats = achievementStats(rows);
+  const liste = titleRanking(t, rows, stats);
+  const tutan = liste.length && liste[0].o.v >= t.esik ? liste[0] : null;
+
+  let el = document.getElementById('titleModal');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'titleModal'; el.className = 'modal modal-top';
+    el.addEventListener('click', e => { if (e.target === el) closeTitleBoard(); });
+    document.body.appendChild(el);
+  }
+
+  const satirlar = liste.map((x, i) => {
+    const altta = x.o.v < t.esik;                     // eşiği geçmiyor
+    const ek = t.olcut === 'ezberci' && stats[x.r.uid].ezberciSkor
+      ? ` <em>· ${stats[x.r.uid].ezberciSkor}</em>` : '';
+    return `<div class="tb-row ${tutan && i === 0 ? 'top' : ''} ${
+              x.r.uid === uid ? 'self' : ''} ${altta ? 'alt' : ''}">
+      <span class="no">${tutan && i === 0 ? t.emoji : i + 1}</span>
+      <span class="who">${x.r.ai ? x.r.emoji + ' ' : ''}${x.r.name}</span>
+      <span class="val">${olcutDeger(t.olcut, x.o.v)}<em>${
+        OLCUT_BIRIM[t.olcut] || ''}</em>${ek}</span>
+    </div>`;
+  }).join('');
+
+  const not = !liste.length
+    ? 'Bu dalda henüz kimse sayı yapmadı.'
+    : tutan
+      /* ipucu zaten "… o — 10 ayrı skor" diye bitiyor; sahibin adını
+         tekrar yazmıyoruz, listenin ilk satırında emojisiyle duruyor. */
+      ? `${t.ipucu(tutan.o.v, stats[tutan.r.uid])}.
+         Almak için <b>geçmen</b> gerekir — eşitlemek yetmez.`
+      : `Ünvanın sahibi yok: taşımak için en az <b>${
+           olcutDeger(t.olcut, t.esik)} ${OLCUT_BIRIM[t.olcut] || ''}</b> gerekiyor.`;
+
+  el.innerHTML = `<div class="modal-card" style="max-width:392px">
+    <button class="modal-x" onclick="closeTitleBoard()" aria-label="Kapat">✕</button>
+    <div class="modal-head">
+      <span class="brand-mark" style="font-size:18px">${t.emoji}</span>
+      <div>
+        <div class="modal-title">${t.ad}</div>
+        <div class="modal-sub">${liste.length} oyuncu bu dalda sayı yaptı</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="tb-note">${not}</div>
+      ${liste.length ? `<div class="tb-list">${satirlar}</div>` : ''}
+      ${liste.some(x => x.o.v < t.esik) ? `<div class="tb-note" style="margin:10px 0 0">
+        Soluk satırlar <b>${olcutDeger(t.olcut, t.esik)} ${OLCUT_BIRIM[t.olcut] || ''}</b>
+        eşiğinin altında — sıralamada varlar ama ünvana aday değiller.</div>` : ''}
+      <button class="btn ghost" style="width:100%;margin-top:14px"
+              onclick="closeTitleBoard()">← Profile dön</button>
+    </div>
+  </div>`;
+  requestAnimationFrame(() => el.classList.add('show'));
+}
+
+function closeTitleBoard(){
+  const el = document.getElementById('titleModal');
   if (!el) return;
   el.classList.remove('show');
   setTimeout(() => el.remove(), 260);
@@ -8239,6 +8437,32 @@ function historyCard(m){
 
   const best = rows.filter(x => x.pts !== null && x.pts === rows[0]?.pts && x.pts > 0);
 
+  /* ---- Oyuncunun kendi puanı ----
+     Kartın sağında, maçın hemen yanında durur: "ben bundan ne aldım".
+     Giriş yapılmamışsa hiç çizilmez — herkese "0 puan" göstermek
+     yanıltıcı olurdu. Maç sürerken skor her golde değiştiği için
+     puan ŞİMDİLİK diye işaretlenir, tıpkı tahmin kartlarındaki gibi. */
+  const benimTahmin = isLoggedIn() ? myPredictions()[m.id] : null;
+  const benimSkor   = (benimTahmin && r) ? scorePrediction(benimTahmin, r, m) : null;
+
+  const puanKutusu = !isLoggedIn() ? '' : (() => {
+    if (!benimTahmin) return `
+      <div class="mypts bos">
+        <b>—</b><span>tahmin yok</span>
+      </div>`;
+    if (!benimSkor) return `
+      <div class="mypts bos">
+        <b>?</b><span>bekliyor</span>
+        <em>${benimTahmin.h}-${benimTahmin.a} dedin</em>
+      </div>`;
+    return `
+      <div class="mypts ${ptsClass(benimSkor.tier)} ${live ? 'canli' : ''}">
+        <b>${benimSkor.pts > 0 ? '+' : ''}${benimSkor.pts}</b>
+        <span>${live ? 'şimdilik' : 'puan'}</span>
+        <em>${benimTahmin.h}-${benimTahmin.a} · ${TIER_KISA[benimSkor.tier]}</em>
+      </div>`;
+  })();
+
   return `
   <article class="hist reveal ${feat ? '' : 'plain'}" style="--hc:${H.c1};--ac:${A.c1}">
     <div class="derby-top">
@@ -8250,18 +8474,21 @@ function historyCard(m){
     </div>
 
     <div class="derby-body">
-      <div class="matchup">
-        <div class="side">
-          <span class="crest-wrap">${crest(m.home, feat ? 40 : 32)}</span>
-          <div class="info"><div class="nm ${hw ? 'win' : 'lose'}">${H.name}</div>
-            <div class="meta">${m.venue || ''}</div></div>
+      <div class="hist-main">
+        <div class="matchup">
+          <div class="side">
+            <span class="crest-wrap">${crest(m.home, feat ? 40 : 32)}</span>
+            <div class="info"><div class="nm ${hw ? 'win' : 'lose'}">${H.name}</div>
+              <div class="meta">${m.venue || ''}</div></div>
+          </div>
+          <div class="center"><div class="score ${live ? 'tint' : ''}">${r ? `${r.h} — ${r.a}` : '– — –'}</div></div>
+          <div class="side away">
+            <span class="crest-wrap">${crest(m.away, feat ? 40 : 32)}</span>
+            <div class="info"><div class="nm ${aw ? 'win' : 'lose'}">${A.name}</div>
+              <div class="meta">deplasman</div></div>
+          </div>
         </div>
-        <div class="center"><div class="score ${live ? 'tint' : ''}">${r ? `${r.h} — ${r.a}` : '– — –'}</div></div>
-        <div class="side away">
-          <span class="crest-wrap">${crest(m.away, feat ? 40 : 32)}</span>
-          <div class="info"><div class="nm ${aw ? 'win' : 'lose'}">${A.name}</div>
-            <div class="meta">deplasman</div></div>
-        </div>
+        ${puanKutusu}
       </div>
 
       ${best.length && !live ? `
