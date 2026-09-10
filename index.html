@@ -987,6 +987,37 @@ body{
 #toast.show{ transform:translate(-50%,0); }
 #toast .bar{ width:3px; align-self:stretch; border-radius:3px; background:var(--grad); }
 
+/* ---------- Yeni sürüm şeridi ----------
+   Toast'a benziyor ama KENDİLİĞİNDEN KAYBOLMAZ ve bir düğmesi var:
+   burada kullanıcıdan bir karar isteniyor, haber verilmiyor. Toast
+   2,6 saniyede siliniyor; oyuncu tam o sırada başka yere bakıyorsa
+   sürümün eskidiğini hiç öğrenemezdi.                              */
+#surumBar{
+  /* left:0/right:0 + margin-inline:auto ile ortalanıyor, left:50% ile
+     DEĞİL: sabit konumlu bir kutuya yalnızca left:50% verilince kullanılabilir
+     genişlik ekranın yarısında kalıyor, içerik de o yarıya sığmak için
+     eziliyordu — "Yeni sürüm hazır." dört satıra bölünüyordu. Bu yazılışta
+     kutu tüm ekran genişliğini ölçüt alır, sonra kendini ortalar. */
+  position:fixed; left:0; right:0; margin-inline:auto; width:fit-content;
+  bottom:26px; transform:translateY(140%);
+  z-index:201; padding:10px 12px 10px 16px; border-radius:var(--r-md);
+  background:color-mix(in srgb, var(--bg-2) 96%, transparent); border:1px solid var(--line-2);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  font-size:13px; font-weight:500; box-shadow:var(--shadow-lg);
+  transition:transform .42s cubic-bezier(.2,.9,.3,1);
+  display:flex; align-items:center; gap:12px; max-width:92vw;
+}
+#surumBar.show{ transform:translateY(0); }
+#surumBar .bar{ width:3px; align-self:stretch; border-radius:3px; background:var(--grad); }
+#surumBar .msg{ color:var(--dim); }
+#surumBar button{
+  flex-shrink:0; cursor:pointer; font-family:var(--f-body); font-size:12.5px; font-weight:700;
+  padding:7px 14px; border-radius:9px; border:0; color:#161018; background:var(--grad);
+}
+#surumBar .kapat{
+  background:none; color:var(--faint); padding:7px 6px; font-weight:500; font-size:16px; line-height:1;
+}
+
 /* ---------- Konfeti ---------- */
 .confetti{ position:fixed; width:8px; height:13px; z-index:190; pointer-events:none; border-radius:1px; }
 
@@ -5127,6 +5158,105 @@ function watchResults(render){
   });
 }
 
+/* ============================================================
+   SÜRÜM DENETİMİ — açık duran sekmelere yeni sürümü duyurur
+
+   Sorun: fikstür tarihleri, puanlama kuralları, hata düzeltmeleri —
+   hepsi index.html'in İÇİNDE. Sayfayı sabah açıp akşama kadar açık
+   bırakan biri, gün içinde yayınlanan düzeltmeyi hiç görmüyor;
+   düzeltilmiş maç saatini bilmeden eski saate göre tahmin yapıyor.
+   (Sonuçlar ve medya zaten onSnapshot ile canlı akıyor — bkz.
+   watchResults; sorun VERİDE değil, KODUN kendisinde.)
+
+   Çözüm: sunucudaki index.html'in ETag'ini periyodik olarak sor.
+   Değiştiyse yeni bir sürüm yayınlanmış demektir.
+
+   Neden ETag de elle yazılan bir sürüm numarası değil: numarayı her
+   yayında artırmak gerekir ve bir kez unutulduğunda denetim sessizce
+   çalışmaz olur. ETag'i sunucu dosyanın kendisinden üretir, yani
+   yayınlamak onu değiştirmeye yeter.
+
+   KENDİLİĞİNDEN YENİLEMİYORUZ. Oyuncu skor kutusuna 2-1 yazmış
+   olabilir; altından sayfayı çekmek yazdığını siler. Karar ona ait.
+   ============================================================ */
+const SURUM_ARALIK = 5 * 60 * 1000;         // beş dakikada bir yoklanır
+let surumEtag = null, surumUyarildi = false;
+
+/* Sunucudaki sürümün parmak izi. cache:'no-store' şart: GitHub Pages
+   index.html'i 'max-age=600' ile veriyor, tarayıcının kopyasını
+   sorsaydık on dakika boyunca eski etiketi okurduk.               */
+async function surumOku(){
+  try {
+    const y = await fetch(location.pathname, { method:'HEAD', cache:'no-store' });
+    if (!y.ok) return null;
+    return y.headers.get('ETag') || y.headers.get('Last-Modified') || null;
+  } catch(e){ return null; }                 // çevrimdışı: sessizce geç
+}
+
+async function surumDenetle(){
+  if (surumUyarildi) return;
+  const s = await surumOku();
+  if (!s || !surumEtag || s === surumEtag) return;
+  surumUyarildi = true;
+  surumBildir();
+}
+
+function surumBildir(){
+  let el = document.getElementById('surumBar');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'surumBar';
+    el.setAttribute('role','status');
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span class="bar"></span>
+    <span class="msg">Yeni sürüm hazır.</span>
+    <button type="button" onclick="surumYenile()">Yenile</button>
+    <button type="button" class="kapat" onclick="surumKapat()" aria-label="Kapat">✕</button>`;
+  /* requestAnimationFrame KULLANILMIYOR: sekme arka plandayken rAF
+     çalışmıyor — şerit kuruluyor ama 'show' takılmadığı için ekranın
+     dışında kalıyordu, üstelik surumUyarildi true olduğundan bir daha
+     denenmiyor, yani uyarı sessizce kayboluyordu. Sayfadaki diğer
+     kullanımlarda sorun yok: onları hep görünür sekmede bir tıklama
+     tetikliyor. Burayı ise arka planda çalışan zamanlayıcı tetikliyor.
+     Düzeni zorla okutup sınıfı hemen takmak her iki durumda da doğru. */
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+function surumKapat(){
+  document.getElementById('surumBar')?.classList.remove('show');
+  /* Bir daha rahatsız etmiyoruz: kapatmak "şimdi değil" demek.
+     Sekme yenilenince zaten yeni sürüme geçilmiş olacak. */
+}
+
+/* Yenilerken önbelleği ZORLA atlat. Düz location.reload() GitHub
+   Pages'in on dakikalık kopyasını geri verebiliyor; o zaman kullanıcı
+   yeniliyor, hiçbir şey değişmiyor, şerit tekrar çıkıyordu.
+   cache:'reload' hem sunucudan taze çeker hem tarayıcının kopyasını
+   günceller — sonraki reload artık yeni dosyayı görür.             */
+async function surumYenile(){
+  try { await fetch(location.href, { cache:'reload' }); } catch(e){}
+  location.reload();
+}
+
+function initSurum(){
+  /* Açılıştaki etiket ölçüt. Dosya file:// ile açıldıysa ya da sunucu
+     etiket vermiyorsa denetimi hiç kurmuyoruz — yanlış alarm vermektense
+     hiç uyarmamak yeğ. */
+  surumOku().then(s => {
+    if (!s) return;
+    surumEtag = s;
+    setInterval(surumDenetle, SURUM_ARALIK);
+    /* Sekmeye geri dönüldüğünde de bak: asıl senaryo bu — sabah açılan
+       sekmeye akşam dönülüyor, beş dakikalık tur yeni sürümü çoktan
+       kaçırmış olabilir. */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') surumDenetle();
+    });
+  });
+}
+
 /* ---------- Sayfa açılış ---------- */
 async function boot(activePage, render){
   applyTheme(currentTheme());        // ilk boyamadan önce temayı uygula
@@ -5146,6 +5276,7 @@ async function boot(activePage, render){
   initCounters();
   watchDeli(render);                 // Deli fikir değiştirdikçe tazele
   watchResults(render);              // gol girilince herkeste tazele
+  initSurum();                       // yeni sürüm yayınlanınca haber ver
 
   // oturum değişince (başka sekmede çıkış vb.) tazele
   window.Cloud?.onChange(async () => {
