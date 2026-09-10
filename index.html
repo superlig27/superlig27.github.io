@@ -2793,7 +2793,7 @@ function compLogo(code){
 /* Turnuva rozetinin başındaki küçük logo (yoksa hiç çizilmez) */
 function compMark(code, size = 14, cls = ''){
   const u = compLogo(code);
-  return u ? `<img class="comp-mark ${cls}" src="${u}" width="${size}" height="${size}"
+  return u ? `<img class="comp-mark ${cls}" src="${esc(u)}" width="${size}" height="${size}"
     alt="" loading="lazy" onerror="this.remove()">` : '';
 }
 
@@ -3809,7 +3809,7 @@ function crest(code, size = 44){
   const url = logoOf(code);
   if (!url) return crestShield(code, size);
   const t = TEAMS[code];
-  return `<img class="crest crest-img" src="${url}"
+  return `<img class="crest crest-img" src="${esc(url)}"
     width="${size}" height="${Math.round(size * 67/64)}" alt="${t ? t.name : code}"
     decoding="async" onerror="this.outerHTML=crestShield('${code}',${size})">`;
 }
@@ -5071,7 +5071,10 @@ function startCountdown(target, els){
   const tick = () => {
     if (!els.d || !els.d.isConnected){ clearInterval(cdInterval); return; }
     const t = timeParts(new Date(target).getTime() - NOW().getTime());
-    els.d.textContent = String(t.d);
+    /* Gün de iki basamağa tamamlanır: yanındaki saat/dakika/saniye
+       kutuları hep iki haneli, tek haneli "0" onların yanında kırık
+       duruyordu. Üç haneli gün (124) yine olduğu gibi yazılır. */
+    els.d.textContent = String(t.d).padStart(2,'0');
     els.h.textContent = String(t.h).padStart(2,'0');
     els.m.textContent = String(t.m).padStart(2,'0');
     els.s.textContent = String(t.s).padStart(2,'0');
@@ -5177,11 +5180,11 @@ function authChipHtml(){
       <span class="av">?</span><span class="lb">Giriş yap</span></button>`;
   }
   const initial = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
-  const ad = `${me.name}${me.admin ? ' (yönetici)' : ''}`;
+  const ad = esc(me.name) + (me.admin ? ' (yönetici)' : '');
   return `<button class="auth-chip on" onclick="openAccount()"
     aria-label="Hesabım — ${ad}" title="${ad}">
     <span class="av">${initial}</span>
-    <span class="lb">${me.name}${me.admin ? ' <b>YÖNETİCİ</b>' : ''}</span>
+    <span class="lb">${esc(me.name)}${me.admin ? ' <b>YÖNETİCİ</b>' : ''}</span>
   </button>`;
 }
 function refreshAuthChip(){
@@ -5324,7 +5327,7 @@ async function doSignup(){
   try {
     await window.Cloud.signup(email, pass, name);
     closeAuth();
-    toast(`Aramıza hoş geldin, <b>${name}</b>`);
+    toast(`Aramıza hoş geldin, <b>${esc(name)}</b>`);
     await reloadAfterAuth();
   } catch(e){ authMsg(authError(e)); }
 }
@@ -5353,7 +5356,7 @@ function demoLogin(name){
   const meRow = Store.users.find(u => u.uid === 'u_sen');
   if (meRow) meRow.name = name;
   closeAuth();
-  toast(`Hoş geldin, <b>${name}</b>`);
+  toast(`Hoş geldin, <b>${esc(name)}</b>`);
   refreshAuthChip();
   if (typeof render === 'function') render();
 }
@@ -5382,7 +5385,7 @@ function openAccount(){
     <div class="modal-head">
       <span class="brand-mark" style="font-size:16px">${(me.name||'?').charAt(0).toLocaleUpperCase('tr')}</span>
       <div>
-        <div class="modal-title">${me.name}</div>
+        <div class="modal-title">${esc(me.name)}</div>
         <div class="modal-sub">${me.demo ? 'Çevrimdışı — kaydedilmiyor' : me.email}</div>
       </div>
     </div>
@@ -5578,7 +5581,7 @@ function openProfile(uid){
     const hidden = !mine && !canSeeSeason(k);
     const txt = hidden ? `<em>${has ? 'seçildi' : 'seçilmedi'}</em>`
       : !has ? '<em>seçilmedi</em>'
-      : (Array.isArray(v) ? v : [v]).map(x => TEAMS[x]?.name || x).join(', ');
+      : (Array.isArray(v) ? v : [v]).map(x => esc(TEAMS[x]?.name || x)).join(', ');
     const got = seasonPoints(k, v, SEASON_RESULT[k]);
     return `<div class="pf-season">
       <span class="k">${seasonMark(cfg, 13)} ${cfg.title}</span>
@@ -5592,7 +5595,7 @@ function openProfile(uid){
       <span class="brand-mark" style="font-size:16px">${
         me.ai ? me.emoji : (me.name||'?').charAt(0).toLocaleUpperCase('tr')}</span>
       <div>
-        <div class="modal-title">${me.name}${me.you ? ' (sen)' : ''}${
+        <div class="modal-title">${esc(me.name)}${me.you ? ' (sen)' : ''}${
           me.ai ? '<span class="ai-tag">YAPAY ZEKÂ</span>' : ''}</div>
         <div class="modal-sub">${me.rank}. sıra · ${rows.length} oyuncu arasında</div>
       </div>
@@ -5698,7 +5701,7 @@ function openTitleBoard(id, uid){
     return `<div class="tb-row ${tutan && i === 0 ? 'top' : ''} ${
               x.r.uid === uid ? 'self' : ''} ${altta ? 'alt' : ''}">
       <span class="no">${tutan && i === 0 ? t.emoji : i + 1}</span>
-      <span class="who">${x.r.ai ? x.r.emoji + ' ' : ''}${x.r.name}</span>
+      <span class="who">${x.r.ai ? x.r.emoji + ' ' : ''}${esc(x.r.name)}</span>
       <span class="val">${olcutDeger(t.olcut, x.o.v)}<em>${
         OLCUT_BIRIM[t.olcut] || ''}</em>${ek}</span>
     </div>`;
@@ -5784,7 +5787,7 @@ function heroBlock(){
 
   const cd = `
     <div class="countdown">
-      <div class="cd-cell"><b id="cd-d">0</b><span>gün</span></div>
+      <div class="cd-cell"><b id="cd-d">00</b><span>gün</span></div>
       <div class="cd-cell"><b id="cd-h">00</b><span>saat</span></div>
       <div class="cd-cell"><b id="cd-m">00</b><span>dk</span></div>
       <div class="cd-cell"><b id="cd-s">00</b><span>sn</span></div>
@@ -6215,7 +6218,7 @@ function matchCard(m){
           <b>${r.h}-${r.a}</b> skoruna göre, her golde değişir.</div>` : ''}
         ${rows.map(({u,p,pts,tier}) => `
           <div class="prow ${u.you ? 'me' : ''}">
-            <span class="who">${u.ai ? u.emoji + ' ' : ''}${u.name}${u.you ? ' (sen)' : ''}</span>
+            <span class="who">${u.ai ? u.emoji + ' ' : ''}${esc(u.name)}${u.you ? ' (sen)' : ''}</span>
             <span class="sc">${p.h} — ${p.a}</span>
             ${pts !== null ? `<span class="pt ${ptsClass(tier)}">${pts}p</span>` : ''}
           </div>`).join('')}
@@ -6518,7 +6521,7 @@ function seasonBlock(){
 
         ${multi ? `<div class="ms-count ${chosen.length === cfg.max ? 'full' : ''}">
             ${chosen.length}/${cfg.max} takım seçildi${chosen.length === cfg.max ? ' ✓' : ''}
-            ${chosen.length ? `<span class="ms-list">${chosen.map(c => TEAMS[c]?.name || c).join(' · ')}</span>` : ''}
+            ${chosen.length ? `<span class="ms-list">${chosen.map(c => esc(TEAMS[c]?.name || c)).join(' · ')}</span>` : ''}
           </div>` : ''}
 
         ${cfg.kind === 'list' ? `
@@ -7686,7 +7689,7 @@ function onEdit(code, val){
     box.innerHTML = TEAMS[code] ? crestShield(code, 34) : '<span class="lg-none">—</span>';
     return;
   }
-  box.innerHTML = `<img class="crest crest-img" src="${v}" width="34" height="36"
+  box.innerHTML = `<img class="crest crest-img" src="${esc(v)}" width="34" height="36"
     alt="" onerror="this.outerHTML='<span class=\\'lg-bad\\' title=\\'Görsel yüklenemedi\\'>✕</span>'">`;
 }
 
@@ -7710,7 +7713,7 @@ function row(code){
   const comp = !t && COMPS[code];
   const url = ensure()[code] || '';
   const onizleme = comp
-    ? (url ? `<img class="crest crest-img" src="${url}" width="34" height="34" alt=""
+    ? (url ? `<img class="crest crest-img" src="${esc(url)}" width="34" height="34" alt=""
               onerror="this.outerHTML='<span class=\\'lg-bad\\'>✕</span>'">`
            : `<span class="lg-none">—</span>`)
     : crest(code, 34);
@@ -8050,7 +8053,7 @@ function podium(rows){
       ${medal(place, 46)}
       <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;
                   text-overflow:ellipsis;max-width:100%;${r.you ? 'color:var(--iris)' : ''}"
-           >${r.ai ? r.emoji + ' ' : ''}${r.name}</div>
+           >${r.ai ? r.emoji + ' ' : ''}${esc(r.name)}</div>
       <div style="width:100%;height:${h}px;border-radius:12px 12px 0 0;position:relative;
                   background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.02));
                   border:1px solid var(--line);border-bottom:none;display:grid;place-items:center;">
@@ -8145,13 +8148,13 @@ function fullBoard(){
       ${sirali.map(r => `
         <div class="lb-row clickable ${r.you ? 'me' : ''} ${r.rank <= 3 ? 'top' + r.rank : ''}"
              onclick="openProfile('${r.uid}')" role="button" tabindex="0"
-             data-name="${r.name.replace(/"/g,'&quot;')}"
+             data-name="${esc(r.name)}"
              onkeydown="if(event.key==='Enter')openProfile('${r.uid}')"
-             title="${r.name} — gelişimini gör">
+             title="${esc(r.name)} — gelişimini gör">
           <div class="rank">${r.rank <= 3 ? medal(r.rank, 28) : r.rank}</div>
           <div class="lb-name">
             <div class="n">${r.ai ? r.emoji + ' ' : ''}<span class="${
-              r.rank === 1 ? 'shine' : ''}">${r.name}</span>${
+              r.rank === 1 ? 'shine' : ''}">${esc(r.name)}</span>${
               r.streak >= ATES_ESIGI ? `<span class="streak tip"
                 data-tip="Üst üste ${r.streak} maçtır puan alıyor"
                 title="${r.streak} maçlık puan serisi">🔥<b>${r.streak}</b></span>` : ''}${
@@ -8275,7 +8278,7 @@ function seasonPicksBoard(){
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${label}</div>
               <div style="font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;
-                          text-overflow:ellipsis">${list.map(u => u.name).join(', ')}</div>
+                          text-overflow:ellipsis">${esc(list.map(u => u.name).join(', '))}</div>
               <div style="height:3px;border-radius:3px;margin-top:6px;background:rgba(255,255,255,.06);overflow:hidden">
                 <span style="display:block;height:100%;width:${pct}%;border-radius:3px;
                              background:${t ? 'linear-gradient(90deg, var(--c1), var(--c2))' : 'var(--grad)'}"></span>
@@ -8493,7 +8496,7 @@ function historyCard(m){
 
       ${best.length && !live ? `
         <div class="note" style="margin-top:13px">
-          <span>Maçın kralı: <b>${best.map(x => x.u.name).join(', ')}</b>
+          <span>Maçın kralı: <b>${esc(best.map(x => x.u.name).join(', '))}</b>
           — ${best[0].pts} puan${best[0].p.h === r.h && best[0].p.a === r.a ? ' (tam isabet)' : ''}</span>
         </div>` : ''}
 
@@ -8503,7 +8506,7 @@ function historyCard(m){
       <div class="picks" id="picks_${m.id}">
         ${rows.map(({u,p,pts,tier}) => `
           <div class="prow ${u.you ? 'me' : ''}">
-            <span class="who">${u.ai ? u.emoji + ' ' : ''}${u.name}${u.you ? ' (sen)' : ''}</span>
+            <span class="who">${u.ai ? u.emoji + ' ' : ''}${esc(u.name)}${u.you ? ' (sen)' : ''}</span>
             <span class="sc">${p.h} — ${p.a}</span>
             ${pts !== null ? `<span class="pt ${ptsClass(tier)}">${pts}p</span>`
                            : `<span class="pt pt-2" style="font-size:11px">bekliyor</span>`}
