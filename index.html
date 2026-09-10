@@ -2981,13 +2981,17 @@ const SL_FIXTURES = [
   [ 4,'BAS','GS','2026-09-04','20:00'],
   [ 4,'FB','BJK','2026-09-05','20:00'],
   [ 4,'TS','GEN','2026-09-06','20:00'],
-  [ 5,'BJK','ERZ','2026-09-13',null],
-  [ 5,'GAZ','FB','2026-09-13',null],
-  [ 5,'KON','TS','2026-09-13',null],
-  [ 5,'GS','KOC','2026-09-13',null],
-  [ 6,'FB','EYU','2026-09-20',null],
-  [ 6,'TS','GS','2026-09-20',null],
-  [ 6,'AME','BJK','2026-09-20',null],
+  /* 5. ve 6. hafta TFF tarafından açıklandı (tff.org, hafta=5 ve hafta=6).
+     Önceden dört maç da haftanın Pazar gününe, saatsiz yazılmıştı;
+     gerçekte hafta Cuma'dan Pazartesi'ye yayılıyor. Saatler de artık
+     kesin, o yüzden null kalmadı. */
+  [ 5,'BJK','ERZ','2026-09-11','20:00'],
+  [ 5,'KON','TS','2026-09-12','20:00'],
+  [ 5,'GS','KOC','2026-09-13','20:00'],
+  [ 5,'GAZ','FB','2026-09-14','20:00'],
+  [ 6,'TS','GS','2026-09-19','20:00'],
+  [ 6,'FB','EYU','2026-09-20','17:00'],
+  [ 6,'AME','BJK','2026-09-20','20:00'],
   [ 7,'BJK','KOC','2026-10-11',null],
   [ 7,'SAM','TS','2026-10-11',null],
   [ 7,'RIZ','FB','2026-10-11',null],
